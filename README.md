@@ -12,7 +12,7 @@ Yomulog is a cross-platform manga tracking and reading app built with React Nati
 - Fully responsive UI (mobile/tablet/web)
 
 ## 📂 Folder Structure
-
+```bash
 /yomulog
 ├── /assets                # Static files like icons, images, fonts
 │   └── logo.png
@@ -38,6 +38,7 @@ Yomulog is a cross-platform manga tracking and reading app built with React Nati
 ├── app.json               # Expo config
 ├── tsconfig.json          # TypeScript config
 ├── package.json
+```
 
 ## 🛠 Tech Stack
 
