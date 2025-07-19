@@ -8,18 +8,25 @@ This file documents the core TypeScript models used across the app, including ob
 
 ```ts
 export type Manga = {
-  id: string;                // Unique MangaDex ID
-  title: string;             // Manga title (English or default)
-  altTitles?: string[];      // Alternate titles in other languages
+  id: string;
+  title: string;
+  altTitles?: string[];
   author?: string;
   artist?: string;
   genres?: string[];
   status?: 'ongoing' | 'completed' | 'hiatus' | 'cancelled';
-  coverImageUrl: string;     // URL to manga cover
+  coverImageUrl: string;
   description?: string;
-  isLiked: boolean;          // Tracked in local liked list
+  isLiked: boolean;
   lastReadChapter?: string;
-  updatedAt?: string;        // Last update ISO timestamp
+  lastOpenedChapter?: string;   // NEW - the actual last opened chapter (used for 'continue')
+  readPercent?: number;         // NEW - percent of chapters read
+  isDownloaded?: boolean;       // NEW - if *any* chapter is downloaded
+  downloadStatus?: 'complete' | 'partial' | 'error';  // NEW - error tracking
+  classification?: 'liked' | 'unliked' | null;        // NEW - post-read classification
+  sourceAvailability?: 'available' | 'unavailable' | 'cancelled'; // NEW
+  alternateSources?: string[];  // NEW - alternate host URLs
+  updatedAt?: string;
 };
 ```
 
@@ -63,10 +70,28 @@ export type Chapter = {
   mangaId: string;
   chapter: string;
   title?: string;
-  pages: string[];           // List of page image URLs
+  pages: string[];
   updatedAt?: string;
+  isDownloaded?: boolean;               // NEW
+  downloadError?: boolean;              // NEW
+  readStatus?: 'read' | 'unread';       // NEW
 };
 ```
+
+// NEW - Used to track download errors and display banner warnings
+export type DownloadError = {
+  mangaId: string;
+  chapterId: string;
+  timestamp: number;
+  errorMessage?: string;
+};
+
+// NEW - Cross-device sync and conflict resolution
+export type UserSyncAction = {
+  mangaId: string;
+  action: 'like' | 'unlike' | 'read' | 'download';
+  timestamp: number;
+};
 
 ---
 
@@ -122,3 +147,7 @@ All API responses are converted to your internal types via a mapper function in 
 
 ---
 
+// Future Types (Planned):
+// - RecentlyReadEntry
+// - UnavailableMangaEntry
+// - RefreshCardMeta

@@ -1,12 +1,18 @@
-
-
 # 🔌 Yomulog — API Documentation
 
 This document outlines the external APIs used or planned for integration in the Yomulog app.
 
+## 📑 Table of Contents
+1. [MangaDex API](#1-mangadex-api-primary-source)
+2. [Supabase](#2-supabase-optional-sync-backend)
+3. [OpenAI API](#3-openai-api-future-feature)
+4. [Image Search Service](#4-image-search-service-reverse-image-lookup--future)
+
 ---
 
 ## 📘 1. MangaDex API (Primary Source)
+
+**Status:** ✅ Implemented
 
 **Purpose:**  
 Used to fetch manga metadata, cover images, chapters, and update information.
@@ -24,9 +30,14 @@ https://api.mangadex.org/docs
 - MangaDex API is free and open but has rate limits.
 - Requires handling paginated data and language filtering (e.g. English only).
 
+**Fallback Plan:**  
+If MangaDex fails to return results, YomuLog should attempt to fetch data from alternate sources (planned feature). Users will see an error banner if no metadata is available, and affected titles may be moved to an "Unavailable Manga" list.
+
 ---
 
 ## 🔐 2. Supabase (Optional Sync Backend)
+
+**Status:** 🔄 In Progress
 
 **Purpose:**  
 Used for cloud sync of liked manga, downloaded chapters, and user preferences.
@@ -43,9 +54,14 @@ https://supabase.com/docs
 - Supabase can replace local-only `AsyncStorage` for multi-device support.
 - Requires setup of a Supabase project and API key.
 
+**Authentication:**  
+Uses Supabase Auth or custom JWT for syncing. Anonymous guest mode supported if login is skipped.
+
 ---
 
 ## 🧠 3. OpenAI API (Future Feature)
+
+**Status:** 💤 Planned
 
 **Purpose:**  
 Used to power AI-enhanced search and recommendations.
@@ -66,6 +82,8 @@ https://platform.openai.com/docs
 
 ## 🔍 4. Image Search Service (Reverse Image Lookup – Future)
 
+**Status:** 💤 Planned
+
 **Purpose:**  
 Allows user to upload manga cover or panel to identify the series.
 
@@ -82,3 +100,6 @@ Allows user to upload manga cover or panel to identify the series.
 **Notes:**
 - Needs preprocessing of image (base64 or multipart upload)
 - Most free APIs have usage caps or limited reliability
+
+**User Flow Status:** 🔮 Future Quest (AI Discovery Tier)  
+Reverse image search will be optional, likely powered by either OpenAI Vision or external APIs like SauceNAO. Identified titles can optionally be saved to the user’s search history.
