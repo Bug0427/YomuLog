@@ -411,6 +411,72 @@ A visual refresh animation using a sliding arrow image. Activated by pulling/sli
 
 - Optional animated loading effect can be included while refreshing content.
 
+---
+
+### 📚 Planned Screens
+
+#### Recently Read Screen
+**Purpose:**  
+Displays up to 30 manga that the user has read most recently.
+
+**Planned Components:**
+```
+- `FloatingNavBar`
+- `RecentlyReadGrid` (grid view of manga cards)
+- `ViewToggleButton` (toggle between grid and list)
+- `ScrollArrows`
+```
+
+**Features:**
+```
+- Max 30 entries stored
+- Auto-removal of older entries beyond limit
+- Entries sorted by most recently opened/read
+- Tap to open Reader or Manga Info Screen
+- Long press to remove from list
+- Collapsible like Recently Updated
+```
+
+#### Unavailable Manga Screen
+**Purpose:**  
+Displays manga that has been removed from all source hosts but still exists in the user's history.
+
+**Planned Components:**
+```
+- `UnavailableMangaGrid`
+- `InfoNoteBox` (explaining reason for removal)
+- `ScrollArrows`
+- `BackButton`
+```
+
+**Features:**
+```
+- Manga entries preserved with title and progress
+- Tap opens manga info (if cached) or shows unavailability message
+- User can choose to remove permanently
+- Triggered when all sources fail
+```
+
+#### Downloaded Chapters Screen
+**Purpose:**  
+Displays a list of downloaded chapters per manga, accessed by tapping a manga in the Downloads screen.
+
+**Planned Components:**
+```
+- `BackButton`
+- `ChapterListView`
+- `DeleteChapterButton`
+- `DownloadStatusIcon`
+```
+
+**Features:**
+```
+- View chapter-level downloads
+- Error icon for failed/corrupted files
+- Tap to open Reader
+- Delete individual or multiple chapters
+```
+
 # 
 # Modals, tools, and edge-case screens (like share screen or AI reset) are not included here and may be added to a separate section or to `components.md`.
 
