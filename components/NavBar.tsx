@@ -7,20 +7,20 @@ const NavBar = () => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={() => console.warn('Navigation to Home not yet implemented')}>
-        <Text style={styles.navItem}>Home</Text>
+      <TouchableOpacity style={styles.navItem} onPress={() => console.warn('Navigation to Home not yet implemented')}>
+        <Text style={styles.navText}>Home</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => console.warn('Navigation to Search not yet implemented')}>
-        <Text style={styles.navItem}>Search</Text>
+      <TouchableOpacity style={styles.navItem} onPress={() => console.warn('Navigation to Search not yet implemented')}>
+        <Text style={styles.navText}>Search</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => console.warn('Navigation to Library not yet implemented')}>
-        <Text style={styles.navItem}>Library</Text>
+      <TouchableOpacity style={styles.navItem} onPress={() => console.warn('Navigation to Library not yet implemented')}>
+        <Text style={styles.navText}>Library</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => console.warn('Navigation to Downloads not yet implemented')}>
-        <Text style={styles.navItem}>Downloads</Text>
+      <TouchableOpacity style={styles.navItem} onPress={() => console.warn('Navigation to Downloads not yet implemented')}>
+        <Text style={styles.navText}>Downloads</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => console.warn('Navigation to Settings not yet implemented')}>
-        <Text style={styles.navItem}>Settings</Text>
+      <TouchableOpacity style={styles.navItem} onPress={() => console.warn('Navigation to Settings not yet implemented')}>
+        <Text style={styles.navText}>Settings</Text>
       </TouchableOpacity>
     </View>
   );
@@ -28,25 +28,24 @@ const NavBar = () => {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
     flexDirection: 'row',
-    backgroundColor: '#fff8f0',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    zIndex: 10,
+    alignItems: 'stretch',
+    backgroundColor: '#D4B89B',
+    width: '100%',
+    height: 40,
+    overflow: 'hidden',
   },
   navItem: {
-    fontSize: 16,
+    flex: 1,
+    borderWidth: 2.5,
+    borderColor: '#543C27',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navText: {
+    fontSize: 12,
     fontWeight: '600',
-    color: '#6b4c3b',
+    color: '#543C27',
   },
 });
 
