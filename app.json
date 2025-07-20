@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Yomulog",
-    "slug": "yomulog",
+    "name": "YomuLog",
+    "slug": "YomuLog",
     "version": "1.0.0",
     "orientation": "portrait",
     "platforms": ["ios", "android", "web"],
