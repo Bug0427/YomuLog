@@ -3,10 +3,10 @@ import { View, Text } from 'react-native';
 
 import React from 'react';
 
-export default function ReaderScreen() {
+export default function SettingsScreen() {
     return (
         <View>
-        <Text>Reader Screen</Text>
+        <Text>Settings Screen</Text>
         </View>
     );
 }
