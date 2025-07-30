@@ -35,6 +35,7 @@ const HomeScreenStyles = StyleSheet.create({
         textShadowColor: '#D7D2EE',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 1,
+        paddingTop: 25,
     },
     scrollContainer: {
         backgroundColor: '#AFA6DD',
