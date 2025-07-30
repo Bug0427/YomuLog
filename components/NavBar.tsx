@@ -30,9 +30,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    backgroundColor: '#D4B89B',
+    backgroundColor: '#E3D3BD',
     width: '100%',
-    height: 40,
+    height: 50,
     overflow: 'hidden',
   },
   navItem: {

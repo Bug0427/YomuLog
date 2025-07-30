@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
+import { MangaSliderStyles } from '../styles/global';
 
 interface MangaItem {
   id: string;
@@ -14,17 +15,23 @@ interface MangaSliderProps {
 
 const MangaSlider: React.FC<MangaSliderProps> = ({ data }) => {
   return (
-    <View style={styles.sliderWrapper}>
+    <View style={MangaSliderStyles.sliderWrapper}>
       <FlatList
-        contentContainerStyle={styles.sliderContainer}
+        contentContainerStyle={MangaSliderStyles.sliderContainer}
         data={data}
         horizontal
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={item.onPress}>
-            <Image source={{ uri: item.image }} style={styles.image} />
-            <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+        renderItem={({ item, index }) => (
+          <TouchableOpacity
+            style={[
+              MangaSliderStyles.card,
+              index === data.length - 1 && MangaSliderStyles.lastCard
+            ]}
+            onPress={item.onPress}
+          >
+            <Image source={{ uri: item.image }} style={MangaSliderStyles.image} />
+            <Text style={MangaSliderStyles.title} numberOfLines={1}>{item.title}</Text>
           </TouchableOpacity>
         )}
       />
@@ -32,35 +39,6 @@ const MangaSlider: React.FC<MangaSliderProps> = ({ data }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  sliderWrapper: {
-    marginVertical: 20,
-    padding: 7,
-    borderWidth: 2,
-    borderColor: '#463B54',
-    backgroundColor: '#E3D3BD',
-  },
-  sliderContainer: {
-    paddingHorizontal: 5,
-  },
-  card: {
-    width: 80,
-    alignItems: 'center',
-    backgroundColor: '#E3D3BD', // soft beige tone for cozy feel
-    borderWidth: 1,
-    borderColor: '#543C27', // dark brown border
-    padding: 5,
-  },
-  image: {
-    width: 100,
-    height: 90,
-    marginBottom: 5,
-  },
-  title: {
-    color: '#fff',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-});
+
 
 export default MangaSlider;
