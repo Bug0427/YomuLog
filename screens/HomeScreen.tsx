@@ -3,6 +3,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import NavBar from '../components/NavBar'; 
 import LoginIcon from '../components/LoginIcon';
+import MangaSlider from '../components/MangaSlider';
 
 export default function HomeScreen() {
   return (
@@ -12,6 +13,41 @@ export default function HomeScreen() {
         <LoginIcon />
       </View>
       <NavBar />
+      <MangaSlider
+        data={[
+          {
+            id: '1',
+            title: 'Sample Manga 1',
+            image: 'https://via.placeholder.com/100x140.png?text=Manga+1',
+            onPress: () => console.log('Pressed Manga 1'),
+          },
+          {
+            id: '2',
+            title: 'Sample Manga 2',
+            image: 'https://via.placeholder.com/100x140.png?text=Manga+2',
+            onPress: () => console.log('Pressed Manga 2'),
+          },
+          {
+            id: '3',
+            title: 'Sample Manga 3',
+            image: 'https://via.placeholder.com/100x140.png?text=Manga+3',
+            onPress: () => console.log('Pressed Manga 3'),
+          },
+          {
+            id: '4',
+            title: 'Sample Manga 4',
+            image: 'https://via.placeholder.com/100x140.png?text=Manga+4',
+            onPress: () => console.log('Pressed Manga 4'),
+          },
+          {
+            id: '5',
+            title: 'Sample Manga 5',
+            image: 'https://via.placeholder.com/100x140.png?text=Manga+5',
+            onPress: () => console.log('Pressed Manga 5'),
+          },
+
+        ]}
+      />
     </View>
   );
 }
