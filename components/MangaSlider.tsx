@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#E3D3BD', // soft beige tone for cozy feel
     borderWidth: 1,
-    borderColor: '#463B54', // dark brown border
+    borderColor: '#543C27', // dark brown border
     padding: 5,
   },
   image: {

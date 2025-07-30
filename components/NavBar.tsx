@@ -19,7 +19,7 @@ const NavBar = () => {
       <TouchableOpacity style={styles.navItem} onPress={() => console.warn('Navigation to Downloads not yet implemented')}>
         <Text style={styles.navText}>Downloads</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.navItem} onPress={() => console.warn('Navigation to Settings not yet implemented')}>
+      <TouchableOpacity style={[styles.navItem, { borderRightWidth: 2 }]} onPress={() => console.warn('Navigation to Settings not yet implemented')}>
         <Text style={styles.navText}>Settings</Text>
       </TouchableOpacity>
     </View>
@@ -37,7 +37,8 @@ const styles = StyleSheet.create({
   },
   navItem: {
     flex: 1,
-    borderWidth: 2.5,
+    borderWidth: 2,
+    borderRightWidth: 0,
     borderColor: '#543C27',
     justifyContent: 'center',
     alignItems: 'center',
