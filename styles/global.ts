@@ -7,6 +7,7 @@ const HomeScreenStyles = StyleSheet.create({
         paddingTop: 60,
         paddingHorizontal: 5,
         flexGrow: 1,
+        minHeight: '100%',
     },
     header: {
         flexDirection: 'row',
@@ -37,11 +38,9 @@ const HomeScreenStyles = StyleSheet.create({
     },
     scrollContainer: {
         backgroundColor: '#AFA6DD',
-        flex: 1,
-        minHeight: '100%',
+        flexGrow: 1,
     },
 });
-
 
 const MangaSliderStyles = StyleSheet.create({
     sliderWrapper: {
@@ -78,4 +77,69 @@ const MangaSliderStyles = StyleSheet.create({
     },
 });
 
-export { HomeScreenStyles, MangaSliderStyles };
+const NavBarStyles = StyleSheet.create({
+    container: {
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        backgroundColor: '#E3D3BD',
+        width: '100%',
+        height: 50,
+        overflow: 'hidden',
+    },
+    navItem: {
+        flex: 1,
+        borderWidth: 2,
+        borderRightWidth: 0,
+        borderColor: '#543C27',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    navText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#543C27',
+    },
+});
+
+const IconStyles = StyleSheet.create({
+  iconContainer: {
+    padding: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    flex: 1,
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+});
+
+const AnchorStyles = StyleSheet.create({
+    scrollButtonUp: {
+        position: 'absolute',
+        right: 10,
+        bottom: 105,
+        zIndex: 10,
+        padding: 3,
+        paddingHorizontal: 5,
+        elevation: 3,
+        borderWidth: 2,
+        borderColor: '#AFA6DD',
+    },
+    scrollButtonDown: {
+        position: 'absolute',
+        right: 10,
+        bottom: 70,
+        zIndex: 10,
+        padding: 3,
+        paddingHorizontal: 5,
+        elevation: 3,
+        borderWidth: 2,
+        borderColor: '#AFA6DD',
+    },
+    scrollButtonColor:{color: '#463B54',}
+});
+
+export { HomeScreenStyles, MangaSliderStyles, NavBarStyles, IconStyles,  AnchorStyles};

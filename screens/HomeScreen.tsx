@@ -1,19 +1,36 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Animated, Easing } from 'react-native';
 import NavBar from '../components/NavBar'; 
 import LoginIcon from '../components/LoginIcon';
 import MangaSlider from '../components/MangaSlider';
 import { sampleMangaData } from '../data/sampleMangaData';
-import {HomeScreenStyles} from '../styles/global';
+import { HomeScreenStyles } from '../styles/global';
+import { Anchor } from '../components/Anchor';
+
 
 export default function HomeScreen() {
+  const scrollRef = React.useRef<ScrollView>(null);
+  const [isScrolling, setIsScrolling] = React.useState(false);
+
+  const handleScrollStart = () => {
+    setIsScrolling(true);
+  };
+
+  const handleScrollEnd = () => {
+    setTimeout(() => setIsScrolling(false), 500);
+  };
+
   return (
-    <View style={{ flex: 1 }}>
+    <View style={[{ flex: 1, position: 'relative' }, HomeScreenStyles.scrollContainer]}>
       <ScrollView
-      style={HomeScreenStyles.scrollContainer}
+        ref={scrollRef}
+        scrollEventThrottle={16}
+        style={HomeScreenStyles.scrollContainer}
         contentContainerStyle={HomeScreenStyles.container}
         bounces={true}
         alwaysBounceVertical={true}
+        onScrollBeginDrag={handleScrollStart}
+        onScrollEndDrag={handleScrollEnd}
       >
         <View style={HomeScreenStyles.header}>
           <Text style={HomeScreenStyles.title}>YomuLog</Text>
@@ -76,6 +93,7 @@ export default function HomeScreen() {
         </Pressable>
         <MangaSlider data={sampleMangaData} />
       </ScrollView>
+      <Anchor scrollRef={scrollRef} isScrolling={isScrolling} />
     </View>
   );
 }
