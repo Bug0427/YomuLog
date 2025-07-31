@@ -27,6 +27,7 @@ const GeneralStyles = StyleSheet.create({
 
 });
 
+//screen styles
 const HomeScreenStyles = StyleSheet.create({
     header: {
         flexDirection: 'row',
@@ -44,7 +45,45 @@ const HomeScreenStyles = StyleSheet.create({
         textShadowRadius: 1,
     },
 });
+const SearchScreenStyles = StyleSheet.create({
+    searchBar:{
+        borderColor: '#543C27',
+        borderWidth: 2,
+        padding: 8,
+        paddingHorizontal:50,
+    },
+    searchBarIcon:{
+        borderColor: '#543C27',
+        borderWidth: 2,
+        padding: 8,
+        borderRightWidth:0,
+    },
+    filter:{
+        borderColor: '#543C27',
+        borderWidth: 2,
+        padding:5,
+        marginLeft: 23,
+    },
+    order:{ 
+        borderColor: '#543C27',
+        borderWidth: 2,  
+        borderRadius:20, 
+        padding:8,
+        marginRight: 21,
+    },
+    alignment:{
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        paddingHorizontal: 10, 
+        paddingVertical: 8, 
+        textAlignVertical: 'center',
+    },
+    defaultColor:{
+        color: '#543C27',
+    },
+});
 
+//component styles
 const MangaSliderStyles = StyleSheet.create({
     sliderWrapper: {
         marginVertical: 3,
@@ -79,7 +118,6 @@ const MangaSliderStyles = StyleSheet.create({
         textAlign: 'center',
     },
 });
-
 const NavBarStyles = StyleSheet.create({
     container: {
         flexDirection: 'row',
@@ -103,7 +141,6 @@ const NavBarStyles = StyleSheet.create({
         color: '#543C27',
     },
 });
-
 const IconStyles = StyleSheet.create({
   iconContainer: {
     padding: 0,
@@ -118,7 +155,6 @@ const IconStyles = StyleSheet.create({
     borderRadius: 20,
   },
 });
-
 const AnchorStyles = StyleSheet.create({
     scrollButtonUp: {
         position: 'absolute',
@@ -144,7 +180,5 @@ const AnchorStyles = StyleSheet.create({
     },
     scrollButtonColor:{color: '#463B54',}
 });
-
-const SearchScreenStyles = StyleSheet.create({});
 
 export { GeneralStyles, HomeScreenStyles, MangaSliderStyles, NavBarStyles, IconStyles,  AnchorStyles, SearchScreenStyles};
