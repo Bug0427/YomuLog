@@ -1,7 +1,8 @@
 // styles/global.ts
 import { StyleSheet } from 'react-native';
 
-const HomeScreenStyles = StyleSheet.create({
+const GeneralStyles = StyleSheet.create({
+
     container: {
         backgroundColor: '#AFA6DD',
         paddingTop: 60,
@@ -9,6 +10,24 @@ const HomeScreenStyles = StyleSheet.create({
         flexGrow: 1,
         minHeight: '100%',
     },
+    h1: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#463B54',
+        textShadowColor: '#D7D2EE',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 1,
+        paddingTop: 25,
+    },
+    scrollContainer: {
+        backgroundColor: '#AFA6DD',
+        flexGrow: 1,
+    },
+
+
+});
+
+const HomeScreenStyles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -23,23 +42,6 @@ const HomeScreenStyles = StyleSheet.create({
         textShadowColor: '#D7D2EE',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 1,
-    },
-    alignment: {
-        flexDirection: 'row',
-        paddingTop: 25,
-    },
-    h1: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#463B54',
-        textShadowColor: '#D7D2EE',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 1,
-        paddingTop: 25,
-    },
-    scrollContainer: {
-        backgroundColor: '#AFA6DD',
-        flexGrow: 1,
     },
 });
 
@@ -143,4 +145,6 @@ const AnchorStyles = StyleSheet.create({
     scrollButtonColor:{color: '#463B54',}
 });
 
-export { HomeScreenStyles, MangaSliderStyles, NavBarStyles, IconStyles,  AnchorStyles};
+const SearchScreenStyles = StyleSheet.create({});
+
+export { GeneralStyles, HomeScreenStyles, MangaSliderStyles, NavBarStyles, IconStyles,  AnchorStyles, SearchScreenStyles};
