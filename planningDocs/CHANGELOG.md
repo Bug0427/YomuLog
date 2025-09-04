@@ -4,12 +4,49 @@ All notable changes to **Yomulog** will be documented here. This file follows [K
 
 ---
 
-## [0.1.0] — 2025-07-09
+## [0.2.0] — 2025-09-04
 ### Added
-- Initial project structure
-- Full documentation suite (`README.md`, `ui-flows.md`, etc.)
-- Expo project initialized with TypeScript
-- `data-model.md` with sample types
+- Outlined planning logic for future cross-device sync using timestamp-based conflict resolution (not yet implemented)
+- Future planning doc for account-based manga import system
+- Updated design-notes with experimental features section
+- Reorganized files and planning docs for clarity
+- Minor style improvements to UI components
+
+## [0.1.1] — 2025-07-31
+### Added
+- Search screen styling and filter icon visuals
+- Navigation bar updates and pathway additions
+- General refactoring to reduce visual clutter
+- Search bar functionality implemented
+
+## [0.1.0] — 2025-07-30
+### Added
+- MangaSlider component and anchor buttons
+- Top/bottom nav components and placeholder data
+- NavBar border fixes and icon additions
+- App title and visual structure for core screens
+
+## [0.0.9] — 2025-07-21
+### Added
+- Profile icons and banner design
+- Initial dependency installation and app init
+- Created NavBar and layout structure
+
+## [0.0.8] — 2025-07-20
+### Added
+- Loader frames and background assets
+- Initial screen planning and ui-flow documentation
+- Core planning updates to markdown files
+
+## [0.0.7] — 2025-07-19
+### Added
+- Initial project documentation
+- Base screen structure and planning folder creation
+
+## [0.0.1] — 2025-07-09
+### Added
+- First commit
+- Expo project initialized with folder structure
 
 ---
 

@@ -113,7 +113,7 @@ This document outlines the visual and interaction design strategies used in Yomu
 
 ### 🔄 Cross-Platform Sync & Import (Planned)
 
-- User accounts enable cross-device sync of preferences, library, and reading pace.
+- User accounts enable cross-device sync of preferences, library, and place.
 - Planned OAuth-style login integration with external manga platforms (e.g., MangaDex, Webtoon) to import user reading lists.
 - Will investigate legal considerations for integrating external data and possible public release.
 - These features are long-term goals reflecting the app’s maintainability and future evolution strategy.
