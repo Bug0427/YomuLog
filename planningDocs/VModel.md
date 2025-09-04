@@ -25,7 +25,7 @@ This schedule follows a V-Model approach tailored to a single developer building
 |--------|------|------|------|
 | Aug 5  |      | Finalize `ScreenLayouts.pdf` & confirm flow | Ensure all screens are accounted for and clearly structured. |
 | Aug 6  |      | Polish `design-notes.md` | Include layout info, color schemes, mascot UI behavior, and navigation logic. |
-| Aug 7  |      | Finalize `StatusScreen.txt` + `Goals.txt` | Align roadmap with Nova structure and user motivation system. |
+| Aug 7  |      | Finalize `Planning docs | Align roadmap with app screens, diagrams, and app outlines. |
 
 ---
 ### PHASE 2: Component Design (🎨 UI Building Blocks)
