@@ -110,6 +110,14 @@ This document outlines the visual and interaction design strategies used in Yomu
 - Recommendation refresh via RefreshCard at end of Home tab slider.
 - Multi-select edit modes for mass deletion in DownloadedChaptersScreen and Library.
 - Storage limitation banner appears if device has insufficient space for downloads.
+
+### 🔄 Cross-Platform Sync & Import (Planned)
+
+- User accounts enable cross-device sync of preferences, library, and reading pace.
+- Planned OAuth-style login integration with external manga platforms (e.g., MangaDex, Webtoon) to import user reading lists.
+- Will investigate legal considerations for integrating external data and possible public release.
+- These features are long-term goals reflecting the app’s maintainability and future evolution strategy.
+
 ---
 
 ## 📦 Image Usage
