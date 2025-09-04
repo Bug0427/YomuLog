@@ -52,3 +52,4 @@ This document outlines the functional features of the Yomulog app, categorized i
 | Account-Based Sync Resolution  | Use timestamps to resolve multi-device sync conflicts          | 🌐     |
 | Chapter Error UI Banner        | Show dismissable error if downloaded file is corrupted         | 📦     |
 | Hold-to-Select UI Enhancements | Enable hold-to-delete, hold-to-unlike, hold-for-options        | 📱     |
+| Dynamic Genre Filter Tags         | Suggest top 10 genres based on user behavior; press once to filter, press again to unselect, long-press to activate "remove mode" with an X icon; filters appear in filter menu; Done button exits remove mode | 🧠     |

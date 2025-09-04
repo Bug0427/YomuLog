@@ -1,6 +1,6 @@
 import NavBar from '../components/NavBar'; 
 import {GeneralStyles, SearchScreenStyles} from '../styles/global';
-import { View, TouchableOpacity, Text } from 'react-native';
+import { View, TouchableOpacity, Text, ScrollView } from 'react-native';
 import React from 'react';
 import { TrackedScrollView } from '../components/TrackedScrollView';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
@@ -30,6 +30,15 @@ export default function SearchScreen() {
             <TouchableOpacity style={SearchScreenStyles.filter}>
                 <Text><MaterialCommunityIcons name="filter-outline" size={16} color="#543C27" /></Text>
             </TouchableOpacity>
+        </View>
+        <View style={SearchScreenStyles.genreSlider}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {['Romance', 'Action', 'Fantasy', 'Comedy', 'Drama', 'Slice of Life', 'Mystery'].map((genre) => (
+              <TouchableOpacity key={genre} style={SearchScreenStyles.genrePill}>
+                <Text style={SearchScreenStyles.genreText}>{genre}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
         </View>
         </TrackedScrollView>

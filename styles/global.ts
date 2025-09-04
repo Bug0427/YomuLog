@@ -81,6 +81,24 @@ const SearchScreenStyles = StyleSheet.create({
     defaultColor:{
         color: '#543C27',
     },
+    genreSlider: {
+        paddingVertical: 5,
+        paddingLeft: 10,
+    },
+    genrePill: {
+        backgroundColor: '#E3D3BD',
+        borderColor: '#543C27',
+        borderWidth: 2,
+        borderRadius: 20,
+        paddingHorizontal: 15,
+        paddingVertical: 6,
+        marginRight: 8,
+    },
+    genreText: {
+        color: '#543C27',
+        fontSize: 13,
+        fontWeight: '600',
+    },
 });
 
 //component styles
