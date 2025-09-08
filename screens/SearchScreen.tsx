@@ -1,8 +1,16 @@
-import NavBar from '../components/NavBar'; 
-import {GeneralStyles, SearchScreenStyles} from '../styles/global';
-import { View, TouchableOpacity, Text, ScrollView } from 'react-native';
+// React & React Native
 import React from 'react';
+import { View, TouchableOpacity, Text, ScrollView } from 'react-native';
+
+// Components
+import NavBar from '../components/NavBar';
+import LoginIcon from '../components/LoginIcon';
 import { TrackedScrollView } from '../components/TrackedScrollView';
+
+// Data & Styles
+import {GeneralStyles, SearchScreenStyles} from '../styles/global';
+
+// Icons
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 
 export default function SearchScreen() {
@@ -12,8 +20,12 @@ export default function SearchScreen() {
             style={GeneralStyles.scrollContainer}
             contentContainerStyle={GeneralStyles.container}
         >
+        <View style={GeneralStyles.header}>
+          <Text style={GeneralStyles.title}>YomuLog</Text>
+          <LoginIcon />
+        </View>
         <View>
-        <NavBar />
+          <NavBar />
         <View style={SearchScreenStyles.alignment}>
             <TouchableOpacity style={SearchScreenStyles.order}>
                 <Text style={SearchScreenStyles.defaultColor}>☰</Text>
@@ -41,7 +53,7 @@ export default function SearchScreen() {
           </ScrollView>
         </View>
         </View>
-        </TrackedScrollView>
-        </View>
-    );
+      </TrackedScrollView>
+    </View>
+  );
 }

@@ -23,18 +23,12 @@ const GeneralStyles = StyleSheet.create({
         backgroundColor: '#AFA6DD',
         flexGrow: 1,
     },
-
-
-});
-
-//screen styles
-const HomeScreenStyles = StyleSheet.create({
     header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 10,
-        marginBottom: 10,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingHorizontal: 10,
+            marginBottom: 10,
     },
     title: {
         fontSize: 36,
@@ -44,7 +38,9 @@ const HomeScreenStyles = StyleSheet.create({
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 1,
     },
+
 });
+
 const SearchScreenStyles = StyleSheet.create({
     searchBar:{
         borderColor: '#543C27',
@@ -160,18 +156,18 @@ const NavBarStyles = StyleSheet.create({
     },
 });
 const IconStyles = StyleSheet.create({
-  iconContainer: {
-    padding: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    flex: 1,
-  },
-  profileImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
+    iconContainer: {
+        padding: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        flex: 1,
+    },
+    profileImage: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+    },
 });
 const AnchorStyles = StyleSheet.create({
     scrollButtonUp: {
@@ -199,4 +195,4 @@ const AnchorStyles = StyleSheet.create({
     scrollButtonColor:{color: '#463B54',}
 });
 
-export { GeneralStyles, HomeScreenStyles, MangaSliderStyles, NavBarStyles, IconStyles,  AnchorStyles, SearchScreenStyles};
+export { GeneralStyles, MangaSliderStyles, NavBarStyles, IconStyles,  AnchorStyles, SearchScreenStyles};

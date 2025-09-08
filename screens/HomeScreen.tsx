@@ -14,7 +14,7 @@ import { TrackedScrollView } from '../components/TrackedScrollView';
 
 // Data & Styles
 import { sampleMangaData } from '../data/sampleMangaData';
-import { HomeScreenStyles, GeneralStyles } from '../styles/global';
+import {GeneralStyles } from '../styles/global';
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
@@ -25,13 +25,13 @@ export default function HomeScreen() {
           style={GeneralStyles.scrollContainer}
           contentContainerStyle={GeneralStyles.container}
       >
-        <View style={HomeScreenStyles.header}>
-          <Text style={HomeScreenStyles.title}>YomuLog</Text>
+        <View style={GeneralStyles.header}>
+          <Text style={GeneralStyles.title}>YomuLog</Text>
           <LoginIcon />
         </View>
         <NavBar />
         <View />
-                <Pressable onPress={() => navigation.navigate('SearchScreen' as never)}>
+        <Pressable onPress={() => navigation.navigate('SearchScreen' as never)}>
           <Text style={GeneralStyles.h1}>New Manga</Text>
         </Pressable>
         <MangaSlider data={sampleMangaData} />
@@ -87,5 +87,8 @@ export default function HomeScreen() {
         <MangaSlider data={sampleMangaData} />
       </TrackedScrollView>
     </View>
+
+
+
   );
 }
