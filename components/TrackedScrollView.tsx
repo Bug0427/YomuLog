@@ -1,25 +1,31 @@
+// components/TrackedScrollView.tsx
 import React from 'react';
 import { ScrollView, ScrollViewProps } from 'react-native';
 import { useScrollTracker } from '../hooks/useScrollTracker';
 
-interface TrackedScrollViewProps extends ScrollViewProps {
-    children: React.ReactNode;
-}
+type Props = ScrollViewProps & { children: React.ReactNode };
 
-export function TrackedScrollView({ children, ...props }: TrackedScrollViewProps) {
-    const { scrollRef, isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
+export function TrackedScrollView(props: Props) {
+  const { children, style, contentContainerStyle, ...rest } = props;
+  const { scrollRef, handleScrollStart, handleScrollEnd } = useScrollTracker();
 
-    return (
-        <ScrollView
-        ref={scrollRef}
-        scrollEventThrottle={16}
-        onScrollBeginDrag={handleScrollStart}
-        onScrollEndDrag={handleScrollEnd}
-        bounces={true}
-        alwaysBounceVertical={true}
-        {...props}
-        >
-        {children}
-        </ScrollView>
-    );
+  return (
+    <ScrollView
+      ref={scrollRef}
+      style={[{ flex: 1 }, style]}
+      contentContainerStyle={[{ paddingBottom: 24 }, contentContainerStyle]}
+      scrollEventThrottle={16}
+      onScrollBeginDrag={handleScrollStart}
+      onScrollEndDrag={handleScrollEnd}
+      keyboardDismissMode="on-drag"
+      keyboardShouldPersistTaps="handled"
+      contentInsetAdjustmentBehavior="automatic"
+      showsVerticalScrollIndicator
+      bounces
+      alwaysBounceVertical
+      {...rest}
+    >
+      {children}
+    </ScrollView>
+  );
 }
