@@ -94,6 +94,10 @@ const CardView: React.FC<Props> = ({
     ? Math.round(cardWidth / aspectRatio)
     : Math.max(88, Math.round(cardWidth / 3));
 
+  // Center full rows by adjusting side padding, but keep row items left-aligned so the last row starts at column 1
+  const gridWidth = columns > 1 ? (columns * cardWidth + (columns - 1) * itemSpacing) : cardWidth;
+  const sidePad = Math.max(contentPadding, Math.floor((available - gridWidth) / 2));
+
   const renderItem = ({ item }: { item: CardItem }) => {
     if (viewMode === 'grid') {
       return (
@@ -171,8 +175,8 @@ const CardView: React.FC<Props> = ({
       key={columns}
       keyExtractor={(it) => String(it.id)}
       numColumns={columns}
-      columnWrapperStyle={columns > 1 ? { gap: itemSpacing, justifyContent: 'center' } : undefined}
-      contentContainerStyle={{ paddingHorizontal: contentPadding, paddingBottom: contentPadding }}
+      columnWrapperStyle={columns > 1 ? { gap: itemSpacing, justifyContent: 'flex-start' } : undefined}
+      contentContainerStyle={{ paddingHorizontal: sidePad, paddingBottom: contentPadding }}
       renderItem={renderItem}
       showsVerticalScrollIndicator={false}
       onEndReached={() => { if (!isLoading && hasMore) onLoadMore?.(); }}
