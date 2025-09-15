@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Animated, Pressable, Text, Easing } from 'react-native';
-import { AnchorStyles } from '../styles/global';
+import { AnchorStyles } from '../../styles/global';
 
 interface AnchorProps {
     scrollRef: React.RefObject<any>;

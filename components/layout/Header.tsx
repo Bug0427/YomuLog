@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { GeneralStyles } from '../styles/global';
-import LoginIcon from './LoginIcon';
-import NavBar from './NavBar';
+import { GeneralStyles } from '../../styles/global';
+import LoginIcon from '../admin/LoginIcon';
+import NavBar from '../layout/NavBar';
 
 export default function Header() {
     return (

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity } from 'react-native';
-import { MangaSliderStyles } from '../styles/global';
+import { MangaSliderStyles } from '../../styles/global';
 
 interface MangaItem {
   id: string;

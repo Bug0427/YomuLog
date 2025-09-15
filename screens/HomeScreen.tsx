@@ -7,9 +7,9 @@ import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/navigation';
 
 // Components
-import Header from '../components/Header';
-import MangaSlider from '../components/MangaSlider';
-import { TrackedScrollView } from '../components/TrackedScrollView';
+import Header from '../components/layout/Header';
+import MangaSlider from '../components/cardLayouts/MangaSlider';
+import { TrackedScrollView } from '../components/layout/TrackedScrollView';
 
 // Data & Styles
 import { sampleMangaData } from '../data/sampleMangaData';

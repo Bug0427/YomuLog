@@ -1,7 +1,7 @@
 // components/TrackedScrollView.tsx
 import React from 'react';
 import { ScrollView, ScrollViewProps } from 'react-native';
-import { useScrollTracker } from '../hooks/useScrollTracker';
+import { useScrollTracker } from '../../hooks/useScrollTracker';
 
 type Props = ScrollViewProps & { children: React.ReactNode };
 

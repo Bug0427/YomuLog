@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   LayoutChangeEvent,
 } from 'react-native';
-import { CardViewStyles } from '../styles/global';
+import { CardViewStyles } from '../../styles/global';
 
 export type ViewMode = 'grid' | 'row';
 
