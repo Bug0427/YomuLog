@@ -1,6 +1,6 @@
 // React & React Native
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View } from 'react-native';
 
 // Navigation
 import { useNavigation, NavigationProp } from '@react-navigation/native';
@@ -19,56 +19,20 @@ export default function HomeScreen() {
 
   return (
     
-    <View style={GeneralStyles.screen}>
-      <TrackedScrollView
-          style={{}}
-          contentContainerStyle={{ paddingHorizontal: 5, paddingBottom: 24  }}
-      >
+    <View style={GeneralStyles.section}>
+      <TrackedScrollView>
         <Header />
-        <Pressable onPress={() => navigation.navigate('SearchScreen' as never)}>
-          <Text style={GeneralStyles.h1}>New Manga</Text>
-        </Pressable>
-        <MangaSlider data={sampleMangaData} />
-        <Pressable onPress={() => navigation.navigate('SearchScreen' as never)}>
-          <Text style={GeneralStyles.h1}>Popular Picks</Text>
-        </Pressable>
-        <MangaSlider data={sampleMangaData} />
-        <Pressable onPress={() => navigation.navigate('SearchScreen' as never)}>
-          <Text style={GeneralStyles.h1}>Recommended</Text>
-        </Pressable>
-        <MangaSlider data={sampleMangaData} />
-        <Pressable onPress={() => navigation.navigate('SearchScreen' as never)}>
-          <Text style={GeneralStyles.h1}>Updated</Text>
-        </Pressable>
-        <MangaSlider data={sampleMangaData} />
-        <Pressable onPress={() => navigation.navigate('SearchScreen' as never)}>
-          <Text style={GeneralStyles.h1}>Action</Text>
-        </Pressable>
-        <MangaSlider data={sampleMangaData} />
-        <Pressable onPress={() => navigation.navigate('SearchScreen' as never)}>
-          <Text style={GeneralStyles.h1}>Comedy</Text>
-        </Pressable>
-        <MangaSlider data={sampleMangaData} />
-        <Pressable onPress={() => navigation.navigate('SearchScreen' as never)}>
-          <Text style={GeneralStyles.h1}>Fantasy</Text>
-        </Pressable>
-        <MangaSlider data={sampleMangaData} />
-        <Pressable onPress={() => navigation.navigate('SearchScreen' as never)}>
-          <Text style={GeneralStyles.h1}>Reincarnation</Text>
-        </Pressable>
-        <MangaSlider data={sampleMangaData} />
-        <Pressable onPress={() => navigation.navigate('SearchScreen' as never)}>
-          <Text style={GeneralStyles.h1}>Romance</Text>
-        </Pressable>
-        <MangaSlider data={sampleMangaData} />
-        <Pressable onPress={() => navigation.navigate('SearchScreen' as never)}>
-          <Text style={GeneralStyles.h1}>Si-Fi</Text>
-        </Pressable>
-        <MangaSlider data={sampleMangaData} />
-        <Pressable onPress={() => navigation.navigate('SearchScreen' as never)}>
-          <Text style={GeneralStyles.h1}>Slice of Life</Text>
-        </Pressable>
-        <MangaSlider data={sampleMangaData} />
+        <MangaSlider title="New Manga" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
+        <MangaSlider title="Popular Picks" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
+        <MangaSlider title="Recommended" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
+        <MangaSlider title="Updated" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
+        <MangaSlider title="Action" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
+        <MangaSlider title="Comedy" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
+        <MangaSlider title="Fantasy" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
+        <MangaSlider title="Reincarnation" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
+        <MangaSlider title="Romance" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
+        <MangaSlider title="Si-Fi" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
+        <MangaSlider title="Slice of Life" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
       </TrackedScrollView>
     </View>
 

@@ -1,6 +1,6 @@
 // React & React Native
 import React from 'react';
-import { View, TouchableOpacity, Text, Pressable } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 
 // Navigation
 import { useNavigation, NavigationProp } from '@react-navigation/native';
@@ -25,32 +25,27 @@ export default function LibraryScreen() {
     const HeaderContent = (
         <>
             <Header />
-            <View style={SearchScreenStyles.alignment}>
-                <TouchableOpacity style={SearchScreenStyles.order}>
+            <View style= {SearchScreenStyles.alignment}>
+                <Pressable style={SearchScreenStyles.order}>
                     <Text style={SearchScreenStyles.defaultColor}>☰</Text>
-                </TouchableOpacity>
+                </Pressable>
 
-                <TouchableOpacity style={SearchScreenStyles.searchBarIcon}>
+                <Pressable style={SearchScreenStyles.searchBarIcon}>
                     <Text>
                     <Feather name="search" size={16.7} color="#543C27" />
                     </Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={SearchScreenStyles.searchBar}>
+                </Pressable>
+                <Pressable style={SearchScreenStyles.searchBar}>
                     <Text style={SearchScreenStyles.defaultColor}>Search (text filter)</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={SearchScreenStyles.filter}>
+                </Pressable>
+                <Pressable style={SearchScreenStyles.filter}>
                     <Text>
                         <MaterialCommunityIcons name="filter-outline" size={16} color="#543C27" />
                     </Text>
-                </TouchableOpacity>
+                </Pressable>
             </View>
 
-            <View style={{ marginTop: 0 }}>
-                <Pressable onPress={() => navigation.navigate('SearchScreen' as never)}>
-                    <Text style={GeneralStyles.h1}>Updated</Text>
-                </Pressable>
-                <MangaSlider data={sampleMangaData} />
-            </View>
+            <MangaSlider title="Updated" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
 
             {/* Library header with view toggle */}
             <View style={[SearchScreenStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}> 
@@ -67,7 +62,7 @@ export default function LibraryScreen() {
     );
 
     return (
-        <View style={GeneralStyles.screen}>
+        <View style={GeneralStyles.container}>
             <CardView
                 data={sampleMangaData}
                 viewMode={viewMode}

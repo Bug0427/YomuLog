@@ -1,6 +1,6 @@
 // React & React Native
 import React from 'react';
-import { View, TouchableOpacity, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 
 // Navigation
 import { useNavigation, NavigationProp } from '@react-navigation/native';
@@ -25,48 +25,38 @@ export default function SearchScreen() {
   const HeaderContent = (
     <View style={GeneralStyles.section}>
       <Header />
-
-      {/* Search row */}
       <View style={SearchScreenStyles.alignment}>
-        <TouchableOpacity style={SearchScreenStyles.order}>
+        <Pressable style={SearchScreenStyles.order}>
           <Text style={SearchScreenStyles.defaultColor}>☰</Text>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity style={SearchScreenStyles.searchBarIcon}>
+        <Pressable style={SearchScreenStyles.searchBarIcon}>
           <Text>
             <Feather name="search" size={16.7} color="#543C27" />
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={SearchScreenStyles.searchBar}>
+        </Pressable>
+        <Pressable style={SearchScreenStyles.searchBar}>
           <Text style={SearchScreenStyles.defaultColor}>Search (text filter)</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={SearchScreenStyles.filter}>
+        </Pressable>
+        <Pressable style={SearchScreenStyles.filter}>
           <Text>
             <MaterialCommunityIcons name="filter-outline" size={16} color="#543C27" />
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
-      {/* Genre chips */}
       <View style={SearchScreenStyles.genreSlider}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {['Romance', 'Action', 'Fantasy', 'Comedy', 'Drama', 'Slice of Life', 'Mystery'].map((genre) => (
-            <TouchableOpacity key={genre} style={SearchScreenStyles.genrePill}>
+            <Pressable key={genre} style={SearchScreenStyles.genrePill}>
               <Text style={SearchScreenStyles.genreText}>{genre}</Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </ScrollView>
       </View>
 
-      {/* Recommended slider */}
-      <View>
-        <Pressable onPress={() => navigation.navigate('SearchScreen' as never)}>
-          <Text style={GeneralStyles.h1}>Recommended</Text>
-        </Pressable>
-        <MangaSlider data={sampleMangaData} />
-      </View>
+      <MangaSlider title="Recommended" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
 
-      {/* Results header + view toggle */}
       <View style={[SearchScreenStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}> 
         <Text style={GeneralStyles.h1}>Results</Text>
         <Pressable onPress={() => setViewMode(viewMode === 'grid' ? 'row' : 'grid')} accessibilityLabel="Toggle view">
@@ -81,7 +71,7 @@ export default function SearchScreen() {
   );
 
   return (
-    <View style={GeneralStyles.screen}>
+    <View style={GeneralStyles.container}>
       <CardView
         data={sampleMangaData}
         viewMode={viewMode}

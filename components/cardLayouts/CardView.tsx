@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
   ActivityIndicator,
   LayoutChangeEvent,
+  ViewStyle,
 } from 'react-native';
 import { CardViewStyles } from '../../styles/global';
 
@@ -98,12 +99,15 @@ const CardView: React.FC<Props> = ({
   const gridWidth = columns > 1 ? (columns * cardWidth + (columns - 1) * itemSpacing) : cardWidth;
   const sidePad = Math.max(contentPadding, Math.floor((available - gridWidth) / 2));
 
-  const renderItem = ({ item }: { item: CardItem }) => {
+  const renderItem = ({ item, index }: { item: CardItem; index: number }) => {
+    const isLastInRow = columns > 1 ? (index % columns) === columns - 1 : true;
+    const marginRight = columns > 1 && !isLastInRow ? itemSpacing : 0;
+
     if (viewMode === 'grid') {
       return (
         <Pressable
           onPress={() => onPressItem?.(item)}
-          style={[CardViewStyles.gridCard, { width: cardWidth, height: cardHeight, marginBottom: itemSpacing }]}
+          style={[CardViewStyles.gridCard, { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight }]}
         >
           {item.imageUrl ? (
             <Image source={{ uri: item.imageUrl }} style={CardViewStyles.gridImage} resizeMode="cover" />
@@ -118,7 +122,7 @@ const CardView: React.FC<Props> = ({
     return (
       <Pressable
         onPress={() => onPressItem?.(item)}
-        style={[CardViewStyles.rowCard, { width: cardWidth, minHeight: cardHeight, marginBottom: itemSpacing }]}
+        style={[CardViewStyles.rowCard, { width: cardWidth, minHeight: cardHeight, marginBottom: itemSpacing, marginRight }]}
       >
         {item.imageUrl ? (
           <Image source={{ uri: item.imageUrl }} style={CardViewStyles.rowImage} resizeMode="cover" />
@@ -168,23 +172,27 @@ const CardView: React.FC<Props> = ({
     );
   };
 
+  // Define list content container style
+  const listContentStyle: ViewStyle = { paddingHorizontal: sidePad, paddingBottom: contentPadding };
+
   return (
-    <FlatList
-      onLayout={onLayout}
-      data={safeData}
-      key={columns}
-      keyExtractor={(it) => String(it.id)}
-      numColumns={columns}
-      columnWrapperStyle={columns > 1 ? { gap: itemSpacing, justifyContent: 'flex-start' } : undefined}
-      contentContainerStyle={{ paddingHorizontal: sidePad, paddingBottom: contentPadding }}
-      renderItem={renderItem}
-      showsVerticalScrollIndicator={false}
-      onEndReached={() => { if (!isLoading && hasMore) onLoadMore?.(); }}
-      onEndReachedThreshold={0.5}
-      ListFooterComponent={Footer}
-      ListEmptyComponent={Empty}
-      ListHeaderComponent={headerComponent}
-    />
+    <View onLayout={onLayout}>
+      <FlatList<CardItem>
+        data={safeData}
+        key={columns}
+        keyExtractor={(it) => String(it.id)}
+        numColumns={columns}
+        columnWrapperStyle={columns > 1 ? { justifyContent: 'flex-start' } : undefined}
+        renderItem={renderItem}
+        showsVerticalScrollIndicator={false}
+        onEndReached={() => { if (!isLoading && hasMore) onLoadMore?.(); }}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={Footer}
+        ListEmptyComponent={Empty}
+        ListHeaderComponent={headerComponent}
+        {...({ contentContainerStyle: listContentStyle } as any)}
+      />
+    </View>
   );
 };
 

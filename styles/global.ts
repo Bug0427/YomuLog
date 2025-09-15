@@ -4,19 +4,15 @@ import { StyleSheet } from 'react-native';
 const GeneralStyles = StyleSheet.create({
     container: {
         backgroundColor: '#AFA6DD',
-        paddingTop: 60,
-        paddingHorizontal: 5,
+        paddingTop: 52,
+        paddingHorizontal: 7,
         flex: 1,
     },
     section: {
         backgroundColor: '#AFA6DD',
-        paddingHorizontal: 5,
-    },
-    screen: {
-        backgroundColor: '#AFA6DD',
+        paddingHorizontal: 0,
+        paddingBottom: 24,
         flex: 1,
-        paddingTop: 60,
-        paddingHorizontal: 5,
     },
     h1: {
         fontSize: 20,
