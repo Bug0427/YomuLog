@@ -47,8 +47,7 @@ export default function LibraryScreen() {
 
             <MangaSlider title="Updated" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
 
-            {/* Library header with view toggle */}
-            <View style={[SearchScreenStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}> 
+            <View style={[SearchScreenStyles.alignment, { justifyContent: 'space-between', marginTop: 10}]}> 
                 <Text style={GeneralStyles.h1}>Library</Text>
                 <Pressable onPress={() => setViewMode(viewMode === 'grid' ? 'row' : 'grid')} accessibilityLabel="Toggle view">
                     <MaterialCommunityIcons

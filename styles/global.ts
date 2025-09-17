@@ -42,7 +42,12 @@ const GeneralStyles = StyleSheet.create({
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 1,
     },
-    });
+    plainText:{
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#543C27',
+    },
+});
 
 const SearchScreenStyles = StyleSheet.create({
     searchBar: {
@@ -73,33 +78,14 @@ const SearchScreenStyles = StyleSheet.create({
     alignment: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 10,
+        paddingHorizontal: 0,
         paddingVertical: 8,
         textAlignVertical: 'center',
     },
     defaultColor: {
         color: '#543C27',
     },
-    genreSlider: {
-        paddingVertical: 5,
-        paddingLeft: 10,
-        alignItems:'center',
-    },
-    genrePill: {
-        backgroundColor: '#E3D3BD',
-        borderColor: '#543C27',
-        borderWidth: 2,
-        borderRadius: 20,
-        paddingHorizontal: 15,
-        paddingVertical: 6,
-        marginRight: 8,
-    },
-    genreText: {
-        color: '#543C27',
-        fontSize: 13,
-        fontWeight: '600',
-    },
-    });
+});
 
 const MangaSliderStyles = StyleSheet.create({
     sliderWrapper: {
@@ -134,7 +120,7 @@ const MangaSliderStyles = StyleSheet.create({
         fontSize: 14,
         textAlign: 'center',
     },
-    });
+});
 
 const NavBarStyles = StyleSheet.create({
     container: {
@@ -153,12 +139,7 @@ const NavBarStyles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    navText: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#543C27',
-    },
-    });
+});
 
 const IconStyles = StyleSheet.create({
     iconContainer: {
@@ -173,7 +154,7 @@ const IconStyles = StyleSheet.create({
         height: 40,
         borderRadius: 20,
     },
-    });
+});
 
 const AnchorStyles = StyleSheet.create({
     scrollButtonUp: {
@@ -201,7 +182,7 @@ const AnchorStyles = StyleSheet.create({
     scrollButtonColor: {
         color: '#463B54',
     },
-    });
+});
 
 const CardViewStyles = StyleSheet.create({
     gridCard: {
@@ -266,21 +247,37 @@ const CardViewStyles = StyleSheet.create({
         marginTop: 8,
         color: '#543C27',
     },
-    });
+});
 
 const SplashScreenStyles = StyleSheet.create({
-        container: {
-            flex: 1,
-            backgroundColor: '#fff8f0',
-            justifyContent: 'center',
-            alignItems: 'center',
-        },
-        text: {
-            fontSize: 24,
-            fontWeight: '600',
-            color: '#8e6e53',
-        },
-    });
+    container: {
+        flex: 1,
+        backgroundColor: '#fff8f0',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    text: {
+        fontSize: 24,
+        fontWeight: '600',
+        color: '#8e6e53',
+    },
+});
+
+const GenreSliderStyles = StyleSheet.create({
+    genrePill: {
+        backgroundColor: '#E3D3BD',
+        borderColor: '#543C27',
+        borderWidth: 2,
+        borderRadius: 20,
+        paddingHorizontal: 15,
+        paddingVertical: 6,
+        marginRight: 8,
+    },
+    genreSlider: {
+        alignItems:'flex-start',
+        paddingTop: 0,
+    },
+});
 export {
     GeneralStyles,
     MangaSliderStyles,
@@ -289,5 +286,6 @@ export {
     AnchorStyles,
     SearchScreenStyles,
     CardViewStyles,
-    SplashScreenStyles
+    SplashScreenStyles,
+    GenreSliderStyles
     };
