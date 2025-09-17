@@ -93,7 +93,11 @@ const CardView: React.FC<Props> = ({
     : Math.max(0, available - contentPadding * 2);
   const cardHeight = viewMode === 'grid'
     ? Math.round(cardWidth / aspectRatio)
-    : Math.max(88, Math.round(cardWidth / 3));
+    : Math.max(88, Math.round(cardWidth / 10));
+
+  // Size by height so it never exceeds the row's frame; width derives from aspect (w = 0.8 * h)
+  const rowThumbH = Math.max(56, Math.round(cardHeight * 0.9));
+  const rowThumbW = Math.round(rowThumbH * 0.75); // ensures h = w / 0.80
 
   // Center full rows by adjusting side padding, but keep row items left-aligned so the last row starts at column 1
   const gridWidth = columns > 1 ? (columns * cardWidth + (columns - 1) * itemSpacing) : cardWidth;
@@ -122,14 +126,21 @@ const CardView: React.FC<Props> = ({
     return (
       <Pressable
         onPress={() => onPressItem?.(item)}
-        style={[CardViewStyles.rowCard, { width: cardWidth, minHeight: cardHeight, marginBottom: itemSpacing, marginRight }]}
+        style={[
+          CardViewStyles.rowCard,
+          { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight, alignItems: 'center' }
+        ]}
       >
         {item.imageUrl ? (
-          <Image source={{ uri: item.imageUrl }} style={CardViewStyles.rowImage} resizeMode="cover" />
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={[CardViewStyles.rowImage, { width: rowThumbW, height: rowThumbH }]}
+            resizeMode="cover"
+          />
         ) : (
-          <View style={[CardViewStyles.placeholder, CardViewStyles.rowImage]} />
+          <View style={[CardViewStyles.placeholder, CardViewStyles.rowImage, { width: rowThumbW, height: rowThumbH }]} />
         )}
-        <View style={CardViewStyles.rowTextWrap}>
+        <View style={[CardViewStyles.rowTextWrap, { flex: 1, justifyContent: 'center' }]}>
           <Text style={CardViewStyles.rowTitle} numberOfLines={1}>{item.title}</Text>
         </View>
       </Pressable>

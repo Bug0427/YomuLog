@@ -220,12 +220,13 @@ const SearchScreenStyles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 10,
-        backgroundColor: '#543C27',
+        backgroundColor: '#E3D3BD',
     },
     rowImage: {
-        width: 20,
-        height: 40,
-        backgroundColor: '#E8E1D8',
+        width: 50,
+        height: 70,
+        backgroundColor: '#543C27',
+        borderColor: '#fff',
     },
     rowTextWrap: {
         flex: 1,
@@ -234,7 +235,7 @@ const SearchScreenStyles = StyleSheet.create({
     rowTitle: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#463B54',
+        color: '#543C27',
         marginBottom: 2,
     },
     placeholder: {

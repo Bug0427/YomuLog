@@ -18,6 +18,10 @@ interface MangaSliderProps {
 const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress }) => {
   const { width: screenWidth } = useWindowDimensions();
 
+  // Ensure a minimum horizontal gutter on all screen sizes
+  const MIN_HPAD = 12; // px
+  const availableWidth = Math.max(0, screenWidth - MIN_HPAD * 2);
+
   // Pull sizing hints from styles (fallbacks if not numeric)
   const cardWidth = (MangaSliderStyles.card?.width as number) || 120;
   const gap = Number((MangaSliderStyles.card as any)?.marginRight) || 0; // per-card spacing
@@ -46,7 +50,7 @@ const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress }) 
 
   // Container width includes wrapper padding + border only (exclude list internal padding); cap by screen width
   const containerWidth = Math.min(
-    screenWidth,
+    availableWidth,
     Math.ceil(desiredContentWidth)
   );
 
@@ -55,7 +59,7 @@ const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress }) 
     contentContainerStyle: [MangaSliderStyles.sliderContainer],
   } as any;
   return (
-    <View style={{ width: '100%', alignItems: 'center' }}>
+    <View style={{ width: '100%', alignItems: 'center', paddingHorizontal: MIN_HPAD }}>
       <View style={{ width: containerWidth }}>
         {title ? (
           <Pressable disabled={!onTitlePress} onPress={onTitlePress}>
