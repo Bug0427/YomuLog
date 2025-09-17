@@ -267,6 +267,19 @@ const SearchScreenStyles = StyleSheet.create({
     },
     });
 
+    const SplashScreenStyles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: '#fff8f0',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        text: {
+            fontSize: 24,
+            fontWeight: '600',
+            color: '#8e6e53',
+        },
+    });
     export {
     GeneralStyles,
     MangaSliderStyles,
@@ -275,4 +288,5 @@ const SearchScreenStyles = StyleSheet.create({
     AnchorStyles,
     SearchScreenStyles,
     CardViewStyles,
+    SplashScreenStyles
     };

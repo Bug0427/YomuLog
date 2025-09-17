@@ -63,7 +63,7 @@ export default function SearchScreen() {
           <MaterialCommunityIcons
             name={viewMode === 'grid' ? 'view-grid' : 'view-agenda'}
             size={24}
-            color="#543C27"
+            color="#463B54"
           />
         </Pressable>
       </View>

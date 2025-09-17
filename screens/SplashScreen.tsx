@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import{SplashScreenStyles} from '../styles/global';
 
 export default function SplashScreen({ navigation }: any) {
   useEffect(() => {
@@ -11,22 +12,8 @@ export default function SplashScreen({ navigation }: any) {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>YomuLog Loading... 🧸📚</Text>
+    <View style={SplashScreenStyles.container}>
+      <Text style={SplashScreenStyles.text}>YomuLog Loading... 🧸📚</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff8f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  text: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#8e6e53',
-  },
-});
