@@ -34,6 +34,7 @@ export default function SearchScreen() {
           <Text>
             <Feather name="search" size={16.7} color="#543C27" />
           </Text>
+          
         </Pressable>
         <Pressable style={SearchScreenStyles.searchBar}>
           <Text style={SearchScreenStyles.defaultColor}>Search (text filter)</Text>

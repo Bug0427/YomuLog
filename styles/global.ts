@@ -83,6 +83,7 @@ const SearchScreenStyles = StyleSheet.create({
     genreSlider: {
         paddingVertical: 5,
         paddingLeft: 10,
+        alignItems:'center',
     },
     genrePill: {
         backgroundColor: '#E3D3BD',
@@ -100,7 +101,7 @@ const SearchScreenStyles = StyleSheet.create({
     },
     });
 
-    const MangaSliderStyles = StyleSheet.create({
+const MangaSliderStyles = StyleSheet.create({
     sliderWrapper: {
         marginVertical: 3,
         padding: 7,
@@ -135,7 +136,7 @@ const SearchScreenStyles = StyleSheet.create({
     },
     });
 
-    const NavBarStyles = StyleSheet.create({
+const NavBarStyles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'stretch',
@@ -159,7 +160,7 @@ const SearchScreenStyles = StyleSheet.create({
     },
     });
 
-    const IconStyles = StyleSheet.create({
+const IconStyles = StyleSheet.create({
     iconContainer: {
         padding: 0,
         flexDirection: 'row',
@@ -174,7 +175,7 @@ const SearchScreenStyles = StyleSheet.create({
     },
     });
 
-    const AnchorStyles = StyleSheet.create({
+const AnchorStyles = StyleSheet.create({
     scrollButtonUp: {
         position: 'absolute',
         right: 10,
@@ -202,7 +203,7 @@ const SearchScreenStyles = StyleSheet.create({
     },
     });
 
-    const CardViewStyles = StyleSheet.create({
+const CardViewStyles = StyleSheet.create({
     gridCard: {
         overflow: 'hidden',
     },
@@ -267,7 +268,7 @@ const SearchScreenStyles = StyleSheet.create({
     },
     });
 
-    const SplashScreenStyles = StyleSheet.create({
+const SplashScreenStyles = StyleSheet.create({
         container: {
             flex: 1,
             backgroundColor: '#fff8f0',
@@ -280,7 +281,7 @@ const SearchScreenStyles = StyleSheet.create({
             color: '#8e6e53',
         },
     });
-    export {
+export {
     GeneralStyles,
     MangaSliderStyles,
     NavBarStyles,
