@@ -12,6 +12,11 @@ import SearchBar from '../components/layout/SearchBar';
 import MangaSlider from '../components/cardLayouts/MangaSlider';
 import CardView, { ViewMode } from '../components/cardLayouts/CardView';
 
+// Scroll
+import { useScrollTracker } from '../hooks/useScrollTracker';
+import Anchor from '../components/layout/Anchor';
+
+
 // Data & Styles
 import { sampleMangaData } from '../data/sampleMangaData';
 import { GeneralStyles } from '../styles/global';
@@ -22,15 +27,18 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 export default function LibraryScreen() {
     const navigation = useNavigation<NavigationProp<RootStackParamList>>();
     const [viewMode, setViewMode] = React.useState<ViewMode>('grid');
+    const {isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
+
+    const listRef = React.useRef<any>(null);
 
     const HeaderContent = (
         <>
             <Header />
             <SearchBar />
 
-            <MangaSlider title="Updated" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
+            <MangaSlider title="Updated" data={sampleMangaData} onTitlePress={() => navigation.navigate('RecentlyUpdated' as never)} />
 
-            <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10}]}> 
+            <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}> 
                 <Text style={GeneralStyles.h1}>Library</Text>
                 <Pressable onPress={() => setViewMode(viewMode === 'grid' ? 'row' : 'grid')} accessibilityLabel="Toggle view">
                     <MaterialCommunityIcons
@@ -45,13 +53,17 @@ export default function LibraryScreen() {
     );
 
     return (
-        <View style={GeneralStyles.container}>
-            <CardView
-                data={sampleMangaData}
-                viewMode={viewMode}
-                onPressItem={(item) => console.log('Open', item.id)}
-                headerComponent={HeaderContent}
-            />
-        </View>
+    <View style={GeneralStyles.container}>
+        <CardView
+        listRef={listRef}
+        data={sampleMangaData}
+        viewMode={viewMode}
+        onPressItem={(item) => console.log('Open', item.id)}
+        headerComponent={HeaderContent}
+        onScrollBeginDrag={handleScrollStart}
+        onMomentumScrollEnd={handleScrollEnd}
+        />
+        <Anchor scrollRef={listRef} isScrolling={isScrolling} />
+    </View>
     );
 }

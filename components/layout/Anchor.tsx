@@ -31,25 +31,31 @@ export default function Anchor({ scrollRef, isScrolling }: AnchorProps) {
             scrollTimeoutRef.current = setTimeout(() => {
                 Animated.timing(scrollOpacity, {
                     toValue: 1,
-                    duration: 20,
+                    duration: 10,
                     useNativeDriver: true,
                     easing: Easing.in(Easing.ease),
                 }).start();
-            }, 500);
+            }, 150);
         }
     }, [isScrolling]);
 
     return (
         <>
-        <Animated.View style={[AnchorStyles.scrollButtonUp, { opacity: scrollOpacity }]}>
+        <Animated.View
+          pointerEvents="box-none"
+          style={[AnchorStyles.scrollButtonUp, AnchorStyles.scrollButtonOverlay, { opacity: scrollOpacity }]}
+        >
             <Pressable onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}>
-            <Text style={AnchorStyles.scrollButtonColor}>↑</Text>
+            <Text style={[AnchorStyles.scrollButtonColor, AnchorStyles.scrollButtonIcon]}>↑</Text>
             </Pressable>
         </Animated.View>
 
-        <Animated.View style={[AnchorStyles.scrollButtonDown, { opacity: scrollOpacity }]}>
+        <Animated.View
+          pointerEvents="box-none"
+          style={[AnchorStyles.scrollButtonDown, AnchorStyles.scrollButtonOverlay, { opacity: scrollOpacity }]}
+        >
             <Pressable onPress={() => scrollRef.current?.scrollToEnd({ animated: true })}>
-            <Text style={AnchorStyles.scrollButtonColor}>↓</Text>
+            <Text style={[AnchorStyles.scrollButtonColor, AnchorStyles.scrollButtonIcon]}>↓</Text>
             </Pressable>
         </Animated.View>
         </>

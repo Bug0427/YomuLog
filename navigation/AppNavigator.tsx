@@ -8,6 +8,7 @@ import SearchScreen from '../screens/SearchScreen';
 import LibraryScreen from '../screens/LibraryScreen';
 import DownLoadsScreen from '../screens/DownLoadsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import RecentlyUpdated from '../screens/RecentlyUpdated'
 
 const Stack = createStackNavigator();
 
@@ -19,6 +20,7 @@ export default function AppNavigator() {
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="SearchScreen" component={SearchScreen} />
             <Stack.Screen name="LibraryScreen" component={LibraryScreen} />
+            <Stack.Screen name="RecentlyUpdated" component={RecentlyUpdated} />
             <Stack.Screen name="DownLoadsScreen" component={DownLoadsScreen} />
             <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
         </Stack.Navigator>

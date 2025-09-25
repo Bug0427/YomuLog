@@ -21,7 +21,7 @@ const GeneralStyles = StyleSheet.create({
         textShadowColor: '#D7D2EE',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 1,
-        paddingTop: 25,
+        paddingTop: 18,
     },
     scrollContainer: {
         backgroundColor: '#AFA6DD',
@@ -135,21 +135,31 @@ const AnchorStyles = StyleSheet.create({
         paddingHorizontal: 5,
         elevation: 3,
         borderWidth: 2,
-        borderColor: '#AFA6DD',
+        borderColor: '#463B54',
     },
     scrollButtonDown: {
         position: 'absolute',
         right: 10,
-        bottom: 70,
+        bottom: 65,
         zIndex: 10,
         padding: 3,
         paddingHorizontal: 5,
         elevation: 3,
         borderWidth: 2,
-        borderColor: '#AFA6DD',
+        borderColor: '#463B54',
     },
     scrollButtonColor: {
         color: '#463B54',
+    },
+    scrollButtonOverlay: {
+        zIndex: 9999,
+        elevation: 6,
+        backgroundColor: '#AFA6DD',
+        paddingHorizontal: 6,
+        paddingVertical: 4,
+    },
+    scrollButtonIcon: {
+        fontSize: 18,
     },
 });
 
@@ -274,6 +284,31 @@ const SearchBarStyles = StyleSheet.create({
         color: '#543C27',
     },
 })
+const UpdatedStyles = StyleSheet.create({
+    container: {
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        backgroundColor: '#AFA6DD',
+        width: '100%',
+        height: 55,
+        overflow: 'hidden',
+    },
+    navItem: {
+        flex: 1,
+        borderWidth: 2,
+        borderRightWidth: 0,
+        borderColor: '#543C27',
+        justifyContent: 'center',
+        alignItems: 'flex-end',
+        padding: 20,
+        paddingVertical: 13,
+    },
+    Text:{
+        fontSize: 20,
+        fontWeight: '500',
+        color: '#463B54',
+    },
+})
 
 export {
     GeneralStyles,
@@ -284,5 +319,6 @@ export {
     CardViewStyles,
     SplashScreenStyles,
     GenreSliderStyles,
-    SearchBarStyles
+    SearchBarStyles,
+    UpdatedStyles
     };

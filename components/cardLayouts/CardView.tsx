@@ -40,6 +40,10 @@ type Props = {
   hasMore?: boolean;
   onLoadMore?: () => void;
   emptyMessage?: string;
+  listRef?: React.Ref<any>;
+  onScrollBeginDrag?: (e: any) => void;
+  onScrollEndDrag?: (e: any) => void;
+  onMomentumScrollEnd?: (e: any) => void;
 };
 
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
@@ -58,6 +62,10 @@ const CardView: React.FC<Props> = ({
   hasMore = false,
   onLoadMore,
   emptyMessage = 'No items yet.',
+  listRef,
+  onScrollBeginDrag,
+  onScrollEndDrag,
+  onMomentumScrollEnd,
 }) => {
   const safeData = data ?? [];
   const windowWidth = useWindowWidth();
@@ -202,6 +210,11 @@ const CardView: React.FC<Props> = ({
         ListEmptyComponent={Empty}
         ListHeaderComponent={headerComponent}
         {...({ contentContainerStyle: listContentStyle } as any)}
+        ref={listRef as any}
+        onScrollBeginDrag={onScrollBeginDrag}
+        onScrollEndDrag={onScrollEndDrag}
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        scrollEventThrottle={16}
       />
     </View>
   );

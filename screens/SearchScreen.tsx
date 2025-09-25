@@ -12,6 +12,8 @@ import MangaSlider from '../components/cardLayouts/MangaSlider';
 import CardView, { ViewMode } from '../components/cardLayouts/CardView';
 import GenreSlider from '../components/layout/GenreSlider';
 import SearchBar from '../components/layout/SearchBar';
+import { useScrollTracker } from '../hooks/useScrollTracker';
+import Anchor from '../components/layout/Anchor';
 
 // Data & Styles
 import { GeneralStyles } from '../styles/global';
@@ -23,6 +25,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 export default function SearchScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [viewMode, setViewMode] = React.useState<ViewMode>('grid');
+
+  const { isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
+  const listRef = React.useRef<any>(null);
 
   const HeaderContent = (
     <>
@@ -58,11 +63,16 @@ export default function SearchScreen() {
   return (
     <View style={GeneralStyles.container}>
       <CardView
+        listRef={listRef}
         data={sampleMangaData}
         viewMode={viewMode}
         onPressItem={(item) => console.log('Open', item.id)}
         headerComponent={HeaderContent}
+        onScrollBeginDrag={handleScrollStart}
+        onScrollEndDrag={handleScrollEnd}
+        onMomentumScrollEnd={handleScrollEnd}
       />
+      <Anchor scrollRef={listRef} isScrolling={isScrolling} />
     </View>
   );
 }
