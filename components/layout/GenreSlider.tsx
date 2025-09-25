@@ -1,6 +1,7 @@
 import React, { FC, useState } from 'react';
-import { View, ScrollView, Pressable, Text, StyleProp, ViewStyle, useWindowDimensions } from 'react-native';
+import { View, ScrollView, Pressable, Text, StyleProp, ViewStyle } from 'react-native';
 import { GenreSliderStyles, GeneralStyles } from '../../styles/global';
+import { useWindowWidth } from '../../utils/findDimensions';
 
 type GenreSliderProps = {
     genres: string[];
@@ -10,7 +11,7 @@ type GenreSliderProps = {
 };
 
 const GenreSlider: FC<GenreSliderProps> = ({ genres, onGenrePress, containerStyle, contentContainerStyle }) => {
-const { width: screenWidth } = useWindowDimensions();
+const screenWidth = useWindowWidth();
 const [contentWidth, setContentWidth] = useState<number>(0);
 
 // Match MangaSlider’s outer gutter behavior

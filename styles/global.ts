@@ -47,43 +47,12 @@ const GeneralStyles = StyleSheet.create({
         fontWeight: '600',
         color: '#543C27',
     },
-});
-
-const SearchScreenStyles = StyleSheet.create({
-    searchBar: {
-        borderColor: '#543C27',
-        borderWidth: 2,
-        padding: 8,
-        paddingHorizontal: 50,
-    },
-    searchBarIcon: {
-        borderColor: '#543C27',
-        borderWidth: 2,
-        padding: 8,
-        borderRightWidth: 0,
-    },
-    filter: {
-        borderColor: '#543C27',
-        borderWidth: 2,
-        padding: 5,
-        marginLeft: 23,
-    },
-    order: {
-        borderColor: '#543C27',
-        borderWidth: 2,
-        borderRadius: 20,
-        padding: 8,
-        marginRight: 21,
-    },
     alignment: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 0,
         paddingVertical: 8,
         textAlignVertical: 'center',
-    },
-    defaultColor: {
-        color: '#543C27',
     },
 });
 
@@ -278,14 +247,42 @@ const GenreSliderStyles = StyleSheet.create({
         paddingTop: 0,
     },
 });
+
+const SearchBarStyles = StyleSheet.create({
+    searchBar: {
+            borderColor: '#543C27',
+            borderWidth: 2,
+            padding: 8,
+            paddingHorizontal: 50,
+    },
+    filter: {
+        borderColor: '#543C27',
+        borderWidth: 2,
+        padding: 5,
+        marginLeft: 23,
+    },
+    order: {
+        borderColor: '#543C27',
+        borderWidth: 2,
+        borderRadius: 20,
+        padding: 8,
+        marginRight: 21,
+    },
+    input: {
+        flex: 1,
+        fontSize: 16,
+        color: '#543C27',
+    },
+})
+
 export {
     GeneralStyles,
     MangaSliderStyles,
     NavBarStyles,
     IconStyles,
     AnchorStyles,
-    SearchScreenStyles,
     CardViewStyles,
     SplashScreenStyles,
-    GenreSliderStyles
+    GenreSliderStyles,
+    SearchBarStyles
     };

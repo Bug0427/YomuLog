@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, FlatList, Image, Pressable, useWindowDimensions } from 'react-native';
+import { View, Text, FlatList, Image, Pressable } from 'react-native';
 import { MangaSliderStyles, GeneralStyles } from '../../styles/global';
+import { useWindowWidth } from '../../utils/findDimensions';
 
 interface MangaItem {
   id: string;
@@ -16,7 +17,7 @@ interface MangaSliderProps {
 }
 
 const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress }) => {
-  const { width: screenWidth } = useWindowDimensions();
+  const screenWidth = useWindowWidth();
 
   // Ensure a minimum horizontal gutter on all screen sizes
   const MIN_HPAD = 12; // px

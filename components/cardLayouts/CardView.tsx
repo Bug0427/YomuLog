@@ -5,12 +5,12 @@ import {
   Text,
   Image,
   Pressable,
-  useWindowDimensions,
   ActivityIndicator,
   LayoutChangeEvent,
   ViewStyle,
 } from 'react-native';
 import { CardViewStyles } from '../../styles/global';
+import { useWindowWidth } from '../../utils/findDimensions';
 
 export type ViewMode = 'grid' | 'row';
 
@@ -60,7 +60,7 @@ const CardView: React.FC<Props> = ({
   emptyMessage = 'No items yet.',
 }) => {
   const safeData = data ?? [];
-  const { width: windowWidth } = useWindowDimensions();
+  const windowWidth = useWindowWidth();
   const [containerWidth, setContainerWidth] = React.useState<number | null>(null);
 
   // track available width (accounts for side padding and rotation)

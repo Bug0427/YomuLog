@@ -8,15 +8,16 @@ import { RootStackParamList } from '../navigation/navigation';
 
 // Components
 import Header from '../components/layout/Header';
+import SearchBar from '../components/layout/SearchBar';
 import MangaSlider from '../components/cardLayouts/MangaSlider';
 import CardView, { ViewMode } from '../components/cardLayouts/CardView';
 
 // Data & Styles
 import { sampleMangaData } from '../data/sampleMangaData';
-import { GeneralStyles, SearchScreenStyles } from '../styles/global';
+import { GeneralStyles } from '../styles/global';
 
 // Icons
-import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function LibraryScreen() {
     const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -25,29 +26,11 @@ export default function LibraryScreen() {
     const HeaderContent = (
         <>
             <Header />
-            <View style= {SearchScreenStyles.alignment}>
-                <Pressable style={SearchScreenStyles.order}>
-                    <Text style={SearchScreenStyles.defaultColor}>☰</Text>
-                </Pressable>
-
-                <Pressable style={SearchScreenStyles.searchBarIcon}>
-                    <Text>
-                    <Feather name="search" size={16.7} color="#543C27" />
-                    </Text>
-                </Pressable>
-                <Pressable style={SearchScreenStyles.searchBar}>
-                    <Text style={SearchScreenStyles.defaultColor}>Search (text filter)</Text>
-                </Pressable>
-                <Pressable style={SearchScreenStyles.filter}>
-                    <Text>
-                        <MaterialCommunityIcons name="filter-outline" size={16} color="#543C27" />
-                    </Text>
-                </Pressable>
-            </View>
+            <SearchBar />
 
             <MangaSlider title="Updated" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
 
-            <View style={[SearchScreenStyles.alignment, { justifyContent: 'space-between', marginTop: 10}]}> 
+            <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10}]}> 
                 <Text style={GeneralStyles.h1}>Library</Text>
                 <Pressable onPress={() => setViewMode(viewMode === 'grid' ? 'row' : 'grid')} accessibilityLabel="Toggle view">
                     <MaterialCommunityIcons
