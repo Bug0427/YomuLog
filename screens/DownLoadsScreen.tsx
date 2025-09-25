@@ -30,7 +30,7 @@ export default function DownLoadsScreen() {
             <Header />
             <SearchBar />
             <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}> 
-                <Text style={GeneralStyles.h1}>Library</Text>
+                <Text style={GeneralStyles.h1}>Downloads</Text>
                 <Pressable onPress={() => setViewMode(viewMode === 'grid' ? 'row' : 'grid')} accessibilityLabel="Toggle view">
                     <MaterialCommunityIcons
                     name={viewMode === 'grid' ? 'view-grid' : 'view-agenda'}

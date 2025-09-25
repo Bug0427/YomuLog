@@ -309,6 +309,48 @@ const UpdatedStyles = StyleSheet.create({
         color: '#463B54',
     },
 })
+const SettingButtonStyles = StyleSheet.create({
+    Grid: {
+      padding: 10,
+      borderColor: "#543C27",
+      backgroundColor: "#AFA6DD",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: 12,
+    },
+    Icon: {
+        fontSize: 35,
+        color: "#463B54",
+    },
+    Cell: {
+        width: '30%',
+        minWidth: 96,
+        alignItems: 'center',
+        marginBottom: 16,
+        gap: 8,
+    },
+    Button: {
+        width: '100%',
+        aspectRatio: 1,
+        borderWidth: 3,
+        borderColor: '#463B54',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#E3D3BD',
+    },
+    CellLabel: {
+        color: '#463B54',
+        fontWeight: '700',
+        textAlign: 'center',
+    },
+    Flag: {
+        fontSize: 35,
+        lineHeight: 30,
+    },
+    
+})
 
 export {
     GeneralStyles,
@@ -320,5 +362,6 @@ export {
     SplashScreenStyles,
     GenreSliderStyles,
     SearchBarStyles,
-    UpdatedStyles
+    UpdatedStyles,
+    SettingButtonStyles
     };
