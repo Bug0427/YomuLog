@@ -25,6 +25,8 @@ export default function HomeScreen() {
         onScrollBeginDrag={handleScrollStart}
         onScrollEndDrag={handleScrollEnd}
         onMomentumScrollEnd={handleScrollEnd}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
       >
         <View style={[GeneralStyles.container, { paddingHorizontal: 12 }]}>
           <Header />
