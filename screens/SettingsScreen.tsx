@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { View, ScrollView, Pressable, Text } from 'react-native';
 import { Feather } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 // Components
 import Header from '../components/layout/Header';
@@ -11,14 +12,17 @@ import Anchor from '../components/layout/Anchor';
 // Data & Styles
 import { GeneralStyles, SettingButtonStyles } from '../styles/global';
 
+// Screens
+import FeedBackHome from './feedback/FeedBackHome'
+
 export const buttonActions = {
     refreshMetadata: () => {console.log('🔄 Refresh metadata');},
     clearCache: () => {console.log('🗑️ Clear cache');},
     resetAIRecommendations: () => {console.log('🔄 Reset AI recommendations');},
     enableAISearch: () => {console.log('🤖 Enable AI search');},
     logOut: () => {console.log('🚪 Log out');},
-    openFeedback: () => {console.log('💬 Open feedback');},
-    openDownloads: () => {console.log('⬇️ Open downloads');},
+    openFeedback: (navigation?: any) => { console.log('💬 Open feedback'); navigation?.navigate('FeedBackHome'); },
+    openDownloads: (navigation?: any) => { console.log('⬇️ Open downloads'); navigation?.navigate('DownLoadsScreen'); },
     openAccountSettings: () => {console.log('🔒 Open account settings');},
 };
 
@@ -40,6 +44,7 @@ export default function SettingsScreen() {
     const [language, setLanguage] = useState<'en' | 'ja' | 'ko'>('en');
     const [alertsOn, setAlertsOn] = useState(true);
     const { scrollRef, isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
+    const navigation = useNavigation();
     return (
         <View style={GeneralStyles.section}>
         <ScrollView
@@ -61,10 +66,10 @@ export default function SettingsScreen() {
                 }
                 >
                 {directionMode === 'ltr' && (
-                    <Feather name="chevrons-right" style={[SettingButtonStyles.Icon, { fontSize: 26 }]} />
+                    <Feather name="chevrons-right" style={[SettingButtonStyles.Icon, { fontSize: 35 }]} />
                 )}
                 {directionMode === 'rtl' && (
-                    <Feather name="chevrons-left" style={[SettingButtonStyles.Icon, { fontSize: 26 }]} />
+                    <Feather name="chevrons-left" style={[SettingButtonStyles.Icon, { fontSize: 35 }]} />
                 )}
                 {directionMode === 'vertical' && (
                     <View style={{ alignItems: 'center' }}>
@@ -98,10 +103,10 @@ export default function SettingsScreen() {
                 <GridItem label="Enable AI search" onPress={buttonActions.enableAISearch}>
                 <Feather name="cpu" style={SettingButtonStyles.Icon} />
                 </GridItem>
-                <GridItem label="Manage downloads" onPress={buttonActions.openDownloads}>
+                <GridItem label="Manage downloads" onPress={() => buttonActions.openDownloads(navigation)}>
                 <Feather name="download" style={SettingButtonStyles.Icon} />
                 </GridItem>
-                <GridItem label="Feedback" onPress={buttonActions.openFeedback}>
+                <GridItem label="Feedback" onPress={() => buttonActions.openFeedback(navigation)}>
                 <Feather name="message-square" style={SettingButtonStyles.Icon} />
                 </GridItem>
                 <GridItem label="Change password/username" onPress={buttonActions.openAccountSettings}>

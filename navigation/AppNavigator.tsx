@@ -9,6 +9,7 @@ import LibraryScreen from '../screens/LibraryScreen';
 import DownLoadsScreen from '../screens/DownLoadsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import RecentlyUpdated from '../screens/RecentlyUpdated'
+import FeedBackHome from '../screens/feedback/FeedBackHome'
 
 const Stack = createStackNavigator();
 
@@ -23,6 +24,8 @@ export default function AppNavigator() {
             <Stack.Screen name="RecentlyUpdated" component={RecentlyUpdated} />
             <Stack.Screen name="DownLoadsScreen" component={DownLoadsScreen} />
             <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
+            <Stack.Screen name="FeedBackHome" component={FeedBackHome} />
+
         </Stack.Navigator>
         </NavigationContainer>
     );

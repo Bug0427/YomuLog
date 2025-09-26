@@ -7,6 +7,8 @@ export type RootStackParamList = {
     DownLoadsScreen: undefined;
     ReaderScreen: undefined;
     SettingsScreen: undefined;
+    FeedBackHome: undefined;
+    
   // Add more screens here as needed
 };
 

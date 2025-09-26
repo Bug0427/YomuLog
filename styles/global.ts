@@ -311,14 +311,14 @@ const UpdatedStyles = StyleSheet.create({
 })
 const SettingButtonStyles = StyleSheet.create({
     Grid: {
-      padding: 10,
-      borderColor: "#543C27",
-      backgroundColor: "#AFA6DD",
-      flexDirection: "row",
-      flexWrap: "wrap",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      gap: 12,
+        padding: 10,
+        borderColor: '#543C27',
+        backgroundColor: '#AFA6DD',
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        gap: 12,
     },
     Icon: {
         fontSize: 35,
@@ -351,6 +351,36 @@ const SettingButtonStyles = StyleSheet.create({
     },
     
 })
+const FeedBackStyles = StyleSheet.create({
+    Text:{
+        fontSize: 16, 
+        fontWeight: '600', 
+        color: '#463B54',
+        borderWidth: 2,
+        borderColor:'#463B54',
+        padding: 5,
+        marginTop: 13,
+        marginHorizontal: 10,
+    },
+    grid:{
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        alignSelf: 'center',
+        borderColor: '#543C27',
+        backgroundColor: '#AFA6DD',
+        flexWrap: 'wrap',
+        gap: 12,
+        marginTop: 90,
+    },
+    Button:{
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        marginBottom: 20
+    }
+
+})
+
 
 export {
     GeneralStyles,
@@ -363,5 +393,6 @@ export {
     GenreSliderStyles,
     SearchBarStyles,
     UpdatedStyles,
-    SettingButtonStyles
+    SettingButtonStyles,
+    FeedBackStyles,
     };
