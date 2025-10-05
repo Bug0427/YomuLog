@@ -387,7 +387,6 @@ const FeedBackStyles = StyleSheet.create({
         borderBottomWidth: 0,
         marginTop: 70,
     },
-
     actionBtnPlaceholder: {
         width: 72,
         height: 32,
@@ -411,6 +410,9 @@ const FeedBackStyles = StyleSheet.create({
         backgroundColor: '#E3D3BD',
         paddingVertical: 14,
         paddingHorizontal: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
     itemText: {
         color: '#543C27',
@@ -418,8 +420,41 @@ const FeedBackStyles = StyleSheet.create({
         fontWeight: '700',
         textAlign: 'center',
     },
+    caret: {
+        marginLeft: 12,
+        fontSize: 16,
+    },
+    dropdown: {
+        borderWidth: 1,
+        overflow: 'hidden',
+        marginTop: 8,
+    },
+    option: {
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+    },
+    optionPressed: {
+        opacity: 0.7,
+    },
+    helper: {
+        marginTop: 12,
+        opacity: 0.6,
+    },
 })
+const SubmitButtonStyles = StyleSheet.create({
+item: {
+        borderWidth: 2,
+        borderColor: '#543C27',
+        backgroundColor: '#E3D3BD',
+        paddingVertical: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: "center",
+        marginLeft: 130,
+        marginRight: 130,
+    },
 
+})
 
 export {
     GeneralStyles,
@@ -434,4 +469,5 @@ export {
     UpdatedStyles,
     SettingButtonStyles,
     FeedBackStyles,
+    SubmitButtonStyles
     };

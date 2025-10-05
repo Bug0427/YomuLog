@@ -10,7 +10,7 @@ import DownLoadsScreen from '../screens/DownLoadsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import RecentlyUpdated from '../screens/RecentlyUpdated'
 import FeedBackHome from '../screens/feedback/FeedBackHome'
-import IssueCategories from '../screens/feedback/IssueCategories'
+import FileReport from '../screens/feedback/FileReport'
 
 const Stack = createStackNavigator();
 
@@ -26,7 +26,7 @@ export default function AppNavigator() {
             <Stack.Screen name="DownLoadsScreen" component={DownLoadsScreen} />
             <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
             <Stack.Screen name="FeedBackHome" component={FeedBackHome} />
-            <Stack.Screen name="IssueCategories" component={IssueCategories} />
+            <Stack.Screen name="FileReport" component={FileReport} />
 
         </Stack.Navigator>
         </NavigationContainer>

@@ -1,1 +1,0 @@
-// shows issues for the chosen category

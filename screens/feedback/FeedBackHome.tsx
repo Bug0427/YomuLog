@@ -45,7 +45,7 @@ export default function FeedBackHome() {
                 </Pressable>
             </View>
             <View style={FeedBackStyles.grid}>
-                <GridItem label="Report a problem" onPress={() => (navigation as any).navigate('IssueCategories')}>
+                <GridItem label="Report a problem" onPress={() => (navigation as any).navigate('FileReport')}>
                     <Feather name="alert-triangle" style={SettingButtonStyles.Icon} />
                 </GridItem>
                 <GridItem label="Leave a Review" onPress={buttonActions.leaveReview}>
