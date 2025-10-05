@@ -114,11 +114,7 @@ export default function SettingsScreen() {
         >
             <View style={[GeneralStyles.container, { paddingHorizontal: 12 }]}>
             <Header />
-            {loading ? (
-            <Text style={SettingButtonStyles.CellLabel}>Checking login…</Text>
-            ) : securityLevel === null ? (
-            <Text style={SettingButtonStyles.CellLabel}>Access denied. Please log in.</Text>
-            ) : null}
+            {loading ? null : null}
             <View style={SettingButtonStyles.Grid}>
                 <GridItem label="Theme" onPress={() => setThemeOn(prev => !prev)}>
                 <Feather name={themeOn ? "moon" : "sun"} style={SettingButtonStyles.Icon} />

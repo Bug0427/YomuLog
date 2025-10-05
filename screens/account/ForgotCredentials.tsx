@@ -1,11 +1,11 @@
 import React from "react";
 import { View, Text } from "react-native";
 
-export default function LoginScreen() {
+export default function ForgotCredentials() {
 // Filler content; implement login UI later
 return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-    <Text style={{ fontSize: 24 }}>Login Screen (Coming Soon)</Text>
+    <Text style={{ fontSize: 24 }}> Forgot Credentials (Coming Soon)</Text>
     </View>
 );
 }

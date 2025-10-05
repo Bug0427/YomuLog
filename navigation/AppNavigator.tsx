@@ -12,8 +12,10 @@ import RecentlyUpdated from '../screens/RecentlyUpdated'
 import FeedBackHome from '../screens/feedback/FeedBackHome'
 import FileReport from '../screens/feedback/FileReport'
 import Admin from '../screens/Admin'
-import LoginScreen from '../screens/LoginScreen'
-
+import LoginScreen from '../screens/account/LoginScreen'
+import UserAccount from '../screens/UserAccount'
+import CreateAccount from '../screens/account/CreateAccount'
+import ForgotCredentials from '../screens/account/ForgotCredentials'
 
 const Stack = createStackNavigator();
 
@@ -32,6 +34,9 @@ export default function AppNavigator() {
             <Stack.Screen name="FileReport" component={FileReport} />
             <Stack.Screen name="Admin" component={Admin} />
             <Stack.Screen name="LoginScreen" component={LoginScreen} />
+            <Stack.Screen name="UserAccount" component={UserAccount} />
+            <Stack.Screen name="CreateAccount" component={CreateAccount} />
+            <Stack.Screen name="ForgotCredentials" component={ForgotCredentials} />
 
         </Stack.Navigator>
         </NavigationContainer>

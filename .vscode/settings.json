@@ -3,6 +3,7 @@
         "ACCOUNTID",
         "HPAD",
         "MAINCAT",
+        "paiduser",
         "Pressable",
         "PSWD",
         "SECURITYLVL",

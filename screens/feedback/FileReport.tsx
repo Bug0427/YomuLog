@@ -8,6 +8,16 @@ import TextBox from '../../components/layout/TextBox';
 import SubmitButton from '../../components/layout/SubmitButton';
 import { insertReport } from '../../services/feedbackRepo';
 
+type SessionUser = { ACCOUNTID: string; USERNM: string };
+
+// Temporary stub – replace with your real session management
+async function getSessionUser(): Promise<SessionUser> {
+  return {
+    ACCOUNTID: (globalThis as any).currentAccountId ?? 'DEV_ACCOUNT',
+    USERNM: (globalThis as any).currentUsername ?? 'DEV_USERNAME',
+  };
+}
+
 export default function FileReport() {
   const navigation = useNavigation<any>();
 
@@ -25,27 +35,32 @@ export default function FileReport() {
   // Temporary submit handler (screen-level). Replace with feedbackRepo insert later.
   const handleSubmit = async () => {
     if (!selectedCat || !selectedIssue) return;
+
+    // Assume user is logged in and get canonical IDs from profile
+    const { ACCOUNTID, USERNM } = await getSessionUser();
+
     const payload = {
-      accountId: 'TODO_ACCOUNT', // TODO: replace with real user id
-      userNm: 'TODO_USERNAME',   // TODO: replace with real username
+      accountId: ACCOUNTID,
+      userNm: USERNM,
       mainCat: selectedCat.id,
       subCat: selectedIssue,
       comments: commentText.trim().slice(0, 160),
     };
 
     try {
-  const submissionId = await insertReport(payload);
-  console.log('✅ Report saved with ID', submissionId);
+      const submissionId = await insertReport(payload);
+      console.log('✅ Report saved with ID', submissionId);
 
-  // Reset all state to a fresh screen
-  setCommentText('');
-  setSelectedIssue(null);
-  setIssueOpen(false);
-  setSelectedCat(null);
-  setCatOpen(false);
-} catch (e) {
-  console.error('❌ Failed to save report', e);
-}}
+      // Reset UI to fresh state
+      setCommentText('');
+      setSelectedIssue(null);
+      setIssueOpen(false);
+      setSelectedCat(null);
+      setCatOpen(false);
+    } catch (e) {
+      console.error('❌ Failed to save report', e);
+    }
+  };
 
   const onSelectCategory = (id: CategoryId, title: string) => {
     setSelectedCat({ id, title });
