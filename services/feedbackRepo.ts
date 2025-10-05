@@ -40,6 +40,15 @@ await db.runAsync(
     )`
 );
 
+await db.runAsync(
+    `CREATE TABLE IF NOT EXISTS users (
+    ACCOUNTID   TEXT PRIMARY KEY NOT NULL,
+    USERNM      TEXT UNIQUE NOT NULL,
+    PSWD        TEXT NOT NULL,
+    SECURITYLVL INTEGER NOT NULL CHECK (SECURITYLVL IN (1,2,3))
+    )`
+);
+
 console.log('✅ Database initialized');
 }
 
@@ -92,4 +101,68 @@ await db.runAsync(
     [submissionId, row.accountId, row.userNm, row.rating]
 );
 return submissionId;
+}
+
+// --- Users helpers ----------------------------------------------------------
+export enum SecurityLevel {
+Admin = 1,
+Paid = 2,
+Regular = 3,
+}
+
+export type UserRow = {
+accountId: string;
+userNm: string;
+pswd: string; // NOTE: store hashed in production
+securityLvl: SecurityLevel; // 1=admin,2=paid,3=regular
+};
+
+export async function createUser(row: UserRow) {
+await db.runAsync(
+    `INSERT INTO users (ACCOUNTID, USERNM, PSWD, SECURITYLVL)
+    VALUES (?, ?, ?, ?)`,
+    [row.accountId, row.userNm, row.pswd, row.securityLvl]
+);
+return row.accountId;
+}
+
+export async function upsertUser(row: UserRow) {
+// Try update first; if no row changed, insert
+const res = await db.runAsync(
+    `UPDATE users SET USERNM = ?, PSWD = ?, SECURITYLVL = ? WHERE ACCOUNTID = ?`,
+    [row.userNm, row.pswd, row.securityLvl, row.accountId]
+);
+// @ts-ignore rowsAffected exists on result for runAsync
+if (!res?.rowsAffected) {
+    await db.runAsync(
+    `INSERT INTO users (ACCOUNTID, USERNM, PSWD, SECURITYLVL) VALUES (?,?,?,?)`,
+    [row.accountId, row.userNm, row.pswd, row.securityLvl]
+    );
+}
+return row.accountId;
+}
+
+export async function getUserByUsername(userNm: string) {
+const rs = await db.runAsync(
+    `SELECT ACCOUNTID, USERNM, PSWD, SECURITYLVL FROM users WHERE USERNM = ? LIMIT 1`,
+    [userNm]
+);
+// @ts-ignore _array present on rows
+return rs?.rows?._array?.[0] ?? null;
+}
+
+export async function setUserSecurityLevel(accountId: string, level: SecurityLevel) {
+await db.runAsync(
+    `UPDATE users SET SECURITYLVL = ? WHERE ACCOUNTID = ?`,
+    [level, accountId]
+);
+}
+
+export async function verifyUser(userNm: string, pswd: string) {
+const rs = await db.runAsync(
+    `SELECT ACCOUNTID, USERNM, SECURITYLVL FROM users WHERE USERNM = ? AND PSWD = ? LIMIT 1`,
+    [userNm, pswd]
+);
+// @ts-ignore _array present on rows
+return rs?.rows?._array?.[0] ?? null;
 }

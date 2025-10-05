@@ -4,6 +4,8 @@
         "HPAD",
         "MAINCAT",
         "Pressable",
+        "PSWD",
+        "SECURITYLVL",
         "SUBCAT",
         "SUBMISSIONID",
         "Supabase",
