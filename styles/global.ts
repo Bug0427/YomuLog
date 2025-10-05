@@ -377,8 +377,47 @@ const FeedBackStyles = StyleSheet.create({
         flexDirection: 'row', 
         alignItems: 'center', 
         marginBottom: 20
-    }
+    },
+    wrapper: {
+        paddingHorizontal: 12,
+        paddingTop: 10,
+        paddingBottom: 8,
+        backgroundColor: '#AFA6DD',
+        borderColor: '#543C27',
+        borderBottomWidth: 0,
+        marginTop: 70,
+    },
 
+    actionBtnPlaceholder: {
+        width: 72,
+        height: 32,
+    },
+    divider: {
+        marginTop: 8,
+        height: 2,
+        backgroundColor: '#543C27',
+    },
+    screen: {
+        flex: 1,
+        backgroundColor: '#AFA6DD',
+    },
+    body: {
+        padding: 16,
+        gap: 12,
+    },
+    item: {
+        borderWidth: 2,
+        borderColor: '#543C27',
+        backgroundColor: '#E3D3BD',
+        paddingVertical: 14,
+        paddingHorizontal: 12,
+    },
+    itemText: {
+        color: '#543C27',
+        fontSize: 16,
+        fontWeight: '700',
+        textAlign: 'center',
+    },
 })
 
 
