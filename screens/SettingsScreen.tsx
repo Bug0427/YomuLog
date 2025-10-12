@@ -8,6 +8,8 @@ import { useNavigation } from "@react-navigation/native";
 import Header from '../components/layout/Header';
 import { useScrollTracker } from '../hooks/useScrollTracker';
 import Anchor from '../components/layout/Anchor';
+import { useConfirm } from '../components/admin/confirmation';
+import { resetDatabase } from '../services/devResetDB';
 
 // Data & Styles
 import { GeneralStyles, SettingButtonStyles } from '../styles/global';
@@ -48,6 +50,19 @@ export default function SettingsScreen() {
     const [alertsOn, setAlertsOn] = useState(true);
     const { scrollRef, isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
     const navigation = useNavigation();
+    const confirm = useConfirm();
+    const handleRefreshMetadata = async () => {
+        const ok = await confirm({
+            danger: true
+        });
+        if (!ok) return;
+        try {
+            await resetDatabase();
+            console.log('🔄 Database reset via Refresh metadata');
+        } catch (e) {
+            console.warn('Reset DB failed', e);
+        }
+    };
     // ---------------------------------------------------------------------
     // Provisional login + verification logic (no Login screen yet)
     // If you later add a real Login, replace the savedUsername/password
@@ -61,6 +76,7 @@ export default function SettingsScreen() {
 
             const savedUsername: string | undefined = (globalThis as any).currentUsername;
             const savedPassword: string | undefined = (globalThis as any).currentPassword;
+            console.log('👤 Saved creds seen by Settings:', { savedUsername, hasPassword: !!savedPassword });
 
             if (!savedUsername || !savedPassword) {
                 // Not logged in → no privileged controls
@@ -87,24 +103,50 @@ export default function SettingsScreen() {
     }, []);
 
     // Helpers to route based on login state
-    const goFeedback = () => {
-        if (securityLevel === null) {
-            // Not logged in → send to Login/Signup (placeholder route name)
-            // If you don't have this route yet, this will no-op except for the log.
-            console.log('🔐 Not logged in → navigate to LoginSignup');
+    const goFeedback = async () => {
+        // Attempt to (re)verify on demand so the button doesn't jump to profile when state isn't ready
+        const savedUsername: string | undefined = (globalThis as any).currentUsername;
+        const savedPassword: string | undefined = (globalThis as any).currentPassword;
+
+        try {
+            let level: SecurityLevel | null = securityLevel;
+
+            // If we don't yet know the level but we have creds, verify now (handles race with useEffect)
+            if (!level && savedUsername && savedPassword) {
+                setLoading(true);
+                const row = (await verifyUser(savedUsername, savedPassword)) as VerifyRow;
+                level = row ? (row.SECURITYLVL as SecurityLevel) : null;
+                setSecurityLevel(level);
+            }
+
+            if (!level) {
+                console.log('🔐 Not logged in → navigate to LoginSignup');
+                // @ts-ignore
+                navigation.navigate?.('LoginScreen');
+                return;
+            }
+
+            // Logged in → open feedback home, pass along basic user context so reports can attach account
+            // @ts-ignore
+            navigation.navigate?.('FeedBackHome', { username: savedUsername, securityLevel: level });
+        } catch (e) {
+            console.warn('goFeedback verify-on-press failed', e);
             // @ts-ignore
             navigation.navigate?.('LoginScreen');
-            return;
+        } finally {
+            setLoading(false);
         }
-        // Logged in → open feedback home
-        // @ts-ignore
-        navigation.navigate?.('FeedBackHome');
     };
 
     const goAdmin = () => {
         // @ts-ignore
         navigation.navigate?.('AdminHome');
     };
+
+
+    useEffect(() => {
+        console.log('🔎 SettingsScreen securityLevel:', securityLevel);
+    }, [securityLevel]);
 
     return (
         <View style={GeneralStyles.section}>
@@ -153,7 +195,7 @@ export default function SettingsScreen() {
                 <GridItem label="Chapter alerts" onPress={() => setAlertsOn(prev => !prev)}>
                 <Feather name={alertsOn ? "bell" : "bell-off"} style={SettingButtonStyles.Icon} />
                 </GridItem>
-                <GridItem label="Refresh metadata" onPress={buttonActions.refreshMetadata}>
+                <GridItem label="Refresh metadata" onPress={handleRefreshMetadata}>
                 <Feather name="refresh-ccw" style={SettingButtonStyles.Icon} />
                 </GridItem>
                 <GridItem label="Clear cache" onPress={buttonActions.clearCache}>

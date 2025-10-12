@@ -455,6 +455,21 @@ item: {
     },
 
 })
+const confirmationStyles = StyleSheet.create({
+    backdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    card: {
+        backgroundColor: '#bfb9deff',
+        padding: 16,
+        width: '86%',
+        borderWidth:2,
+        borderColor: '#463B54',
+    },
+})
 
 export {
     GeneralStyles,
@@ -469,5 +484,6 @@ export {
     UpdatedStyles,
     SettingButtonStyles,
     FeedBackStyles,
-    SubmitButtonStyles
+    SubmitButtonStyles,
+    confirmationStyles
     };

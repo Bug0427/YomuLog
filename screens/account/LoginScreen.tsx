@@ -39,6 +39,13 @@ const onSubmit = async () => {
       }
       (globalThis as any).currentAccountId = row.ACCOUNTID;
       (globalThis as any).currentUsername = row.USERNM;
+      (globalThis as any).currentPassword = pwd;
+      (globalThis as any).currentSecurityLevel = row.SECURITYLVL;
+      console.log('🔐 Session set from Login:', {
+        user: row.USERNM,
+        hasPassword: !!pwd,
+        level: row.SECURITYLVL,
+      });
 
       // Return to previous screen if possible; otherwise go somewhere safe
       if (typeof navigation.canGoBack === 'function' && navigation.canGoBack()) {

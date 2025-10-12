@@ -415,7 +415,7 @@ export default function UserAccount() {
 
             <Modal visible={showVerify} transparent animationType="fade" onRequestClose={() => setShowVerify(false)}>
             <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ backgroundColor: '#463B54', padding: 16, borderRadius: 8, width: '86%' }}>
+                <View style={{ backgroundColor: '#D7D2EE', padding: 16, borderRadius: 8, width: '86%' }}>
                 <Text style={[FeedBackStyles.itemText, { marginBottom: 8 }]}>Verify your identity</Text>
                 <TextInput
                     style={[FeedBackStyles.item, { marginBottom: 8, minHeight: 44 }]}

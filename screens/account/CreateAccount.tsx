@@ -2,8 +2,12 @@
     import { View, Text, TextInput, Pressable, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, ScrollView } from 'react-native';
     import { useNavigation } from '@react-navigation/native';
     import { FeedBackStyles, SubmitButtonStyles } from '../../styles/global';
-    import { createUser, runAsync, SecurityLevel } from '../../services/feedbackRepo';
-    import { makeId } from '../../utils/idGenerator';
+import { createUser, runAsync, SecurityLevel } from '../../services/feedbackRepo';
+import { makeId } from '../../utils/idGenerator';
+
+// Ensure default security level mapping even if enum values shift
+// Expected mapping: 1 = Admin, 2 = Purchase, 3 = Regular
+const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
 
     function validatePassword(pw: string): string | null {
     if (pw.length < 8) return 'Password must be at least 8 characters.';
@@ -83,8 +87,9 @@
             userNm: user,
             email: em, // already lowercased
             pswd: pw, // NOTE: hash in production
-            securityLvl: SecurityLevel.Regular,
+            securityLvl: REGULAR_LVL,
         });
+        console.log('✅ Created user with security level:', REGULAR_LVL);
         } catch (err: any) {
         const msg = String(err?.message || err);
         if (msg.includes('users.EMAIL')) {
