@@ -13,9 +13,11 @@ import FeedBackHome from '../screens/feedback/FeedBackHome'
 import FileReport from '../screens/feedback/FileReport'
 import Admin from '../screens/Admin'
 import LoginScreen from '../screens/account/LoginScreen'
-import UserAccount from '../screens/UserAccount'
+import UserAccount from '../screens/account/UserAccount'
 import CreateAccount from '../screens/account/CreateAccount'
 import ForgotCredentials from '../screens/account/ForgotCredentials'
+import ChooseProfileIcon from '../screens/account/ChooseProfileIcon'
+
 
 const Stack = createStackNavigator();
 
@@ -37,6 +39,7 @@ export default function AppNavigator() {
             <Stack.Screen name="UserAccount" component={UserAccount} />
             <Stack.Screen name="CreateAccount" component={CreateAccount} />
             <Stack.Screen name="ForgotCredentials" component={ForgotCredentials} />
+            <Stack.Screen name="ChooseProfileIcon" component={ChooseProfileIcon} />
 
         </Stack.Navigator>
         </NavigationContainer>

@@ -14,7 +14,7 @@ import Anchor from '../components/layout/Anchor';
 
 // Data & Styles
 import { sampleMangaData } from '../data/sampleMangaData';
-import { GeneralStyles } from '../styles/global';
+import { GeneralStyles, CardViewStyles } from '../styles/global';
 
 // Icons
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -46,15 +46,17 @@ export default function DownLoadsScreen() {
     return (
     <View style={GeneralStyles.container}>
         <CardView
-        listRef={listRef}
-        data={sampleMangaData}
-        viewMode={viewMode}
-        onPressItem={(item) => console.log('Open', item.id)}
-        headerComponent={HeaderContent}
-        onScrollBeginDrag={handleScrollStart}
-        onMomentumScrollEnd={handleScrollEnd}
+            listRef={listRef}
+            data={sampleMangaData}
+            viewMode={viewMode}
+            onPressItem={(item) => console.log('Open', item.id)}
+            headerComponent={HeaderContent}
+            onScrollBeginDrag={handleScrollStart}
+            onScrollEndDrag={handleScrollEnd}
+            onMomentumScrollEnd={handleScrollEnd}
+            itemStyle={() => (CardViewStyles.placeholder)}
         />
         <Anchor scrollRef={listRef} isScrolling={isScrolling} />
     </View>
-    );
+  );
 }

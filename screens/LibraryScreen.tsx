@@ -19,7 +19,7 @@ import Anchor from '../components/layout/Anchor';
 
 // Data & Styles
 import { sampleMangaData } from '../data/sampleMangaData';
-import { GeneralStyles } from '../styles/global';
+import { GeneralStyles, CardViewStyles } from '../styles/global';
 
 // Icons
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -60,6 +60,7 @@ export default function LibraryScreen() {
         viewMode={viewMode}
         onPressItem={(item) => console.log('Open', item.id)}
         headerComponent={HeaderContent}
+        itemStyle={() => (CardViewStyles.placeholder)}
         onScrollBeginDrag={handleScrollStart}
         onMomentumScrollEnd={handleScrollEnd}
         />

@@ -13,8 +13,10 @@ import Anchor from '../components/layout/Anchor';
 import { GeneralStyles, SettingButtonStyles } from '../styles/global';
 
 // Screens
-import FeedBackHome from './feedback/FeedBackHome'
 import { SecurityLevel, verifyUser } from '../services/feedbackRepo';
+
+// Local typing for verifyUser result shape
+type VerifyRow = { SECURITYLVL: SecurityLevel } | null;
 
 export const buttonActions = {
     refreshMetadata: () => {console.log('🔄 Refresh metadata');},
@@ -70,9 +72,9 @@ export default function SettingsScreen() {
             }
 
             try {
-                const row = await verifyUser(savedUsername, savedPassword);
+                const row = (await verifyUser(savedUsername, savedPassword)) as VerifyRow;
                 if (isMounted) {
-                    setSecurityLevel((row?.SECURITYLVL as SecurityLevel) ?? null);
+                    setSecurityLevel(row ? (row.SECURITYLVL as SecurityLevel) : null);
                 }
             } catch (e) {
                 console.warn('verifyUser failed', e);

@@ -90,7 +90,8 @@ await db.runAsync(
     USERNM      TEXT UNIQUE NOT NULL,
     EMAIL       TEXT UNIQUE NOT NULL,
     PSWD        TEXT NOT NULL,
-    SECURITYLVL INTEGER NOT NULL CHECK (SECURITYLVL IN (1,2,3))
+    SECURITYLVL INTEGER NOT NULL CHECK (SECURITYLVL IN (1,2,3)),
+    PROFILEICON TEXT
     )`
 );
 
@@ -114,6 +115,23 @@ if (/duplicate column name: EMAIL/i.test(msg)) {
 }
 }
 
+// --- Backward-compat: add PROFILEICON if it doesn't exist
+try {
+  const cols2: any[] = await db.getAllAsync(`PRAGMA table_info(users)`);
+  const hasProfileIcon = Array.isArray(cols2) && cols2.some((c: any) => String(c?.name).toUpperCase() === 'PROFILEICON');
+  if (!hasProfileIcon) {
+    await db.execAsync(`ALTER TABLE users ADD COLUMN PROFILEICON TEXT`);
+    console.log('ℹ︎ Added users.PROFILEICON via migration');
+  }
+} catch (e) {
+  const msg2 = String((e as any)?.message || e);
+  if (/duplicate column name: PROFILEICON/i.test(msg2)) {
+    // already exists — ignore
+  } else {
+    console.warn('PROFILEICON migration check failed', e);
+  }
+}
+
 // --- Optional dev reset -----------------------------------------------------
 try {
 // also allow toggling via globalThis.RESET_DB_ON_START = true at runtime
@@ -123,6 +141,16 @@ if (RESET_DB_ON_START || (globalThis as any)?.RESET_DB_ON_START === true) {
 }
 } catch (e) {
 console.warn('DB reset failed', e);
+}
+try {
+  const row = await db.getFirstAsync<{ c: number }>(`SELECT COUNT(*) as c FROM users`);
+  if (!row || !row.c) {
+    await seedDefaultUsers();
+    const check = await db.getFirstAsync<{ c: number }>(`SELECT COUNT(*) as c FROM users`);
+    console.log(`🌱 Auto-seeded users because table was empty. Count now: ${check?.c ?? 0}`);
+  }
+} catch (e) {
+  console.warn('Auto-seed check failed', e);
 }
 
 console.log('✅ Database initialized');
@@ -237,6 +265,13 @@ export async function verifyUser(userNm: string, pswd: string) {
   return await db.getFirstAsync(
     `SELECT ACCOUNTID, USERNM, SECURITYLVL FROM users WHERE USERNM = ? AND PSWD = ? LIMIT 1`,
     [userNm, pswd]
+  );
+}
+
+export async function updateProfileIcon(accountId: string, iconId: string) {
+  await db.runAsync(
+    `UPDATE users SET PROFILEICON = ? WHERE ACCOUNTID = ?`,
+    [iconId, accountId]
   );
 }
 

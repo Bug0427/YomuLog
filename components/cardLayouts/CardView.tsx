@@ -1,3 +1,7 @@
+function toRNImageSource(img: any): any {
+  if (!img) return undefined;
+  return typeof img === 'string' ? { uri: img } : img;
+}
 import React from 'react';
 import {
   FlatList,
@@ -17,6 +21,8 @@ export type ViewMode = 'grid' | 'row';
 export type CardItem = {
   id: string | number;
   title: string;
+  // Support either a bundled local image (require(...)) or a remote URL
+  image?: any;
   imageUrl?: string;
 };
 
@@ -44,6 +50,12 @@ type Props = {
   onScrollBeginDrag?: (e: any) => void;
   onScrollEndDrag?: (e: any) => void;
   onMomentumScrollEnd?: (e: any) => void;
+
+  /** Optional per-item container style (e.g., for selection highlight) */
+  itemStyle?: (item: CardItem) => any;
+
+  /** Optional per-media (thumbnail) style applied to image wrapper only */
+  mediaStyle?: (item: CardItem) => any;
 };
 
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
@@ -66,6 +78,8 @@ const CardView: React.FC<Props> = ({
   onScrollBeginDrag,
   onScrollEndDrag,
   onMomentumScrollEnd,
+  itemStyle,
+  mediaStyle,
 }) => {
   const safeData = data ?? [];
   const windowWidth = useWindowWidth();
@@ -119,14 +133,26 @@ const CardView: React.FC<Props> = ({
       return (
         <Pressable
           onPress={() => onPressItem?.(item)}
-          style={[CardViewStyles.gridCard, { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight }]}
+          style={[
+            CardViewStyles.gridCard,
+            { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight, alignItems: 'center', justifyContent: 'center' },
+            itemStyle ? itemStyle(item) : undefined,
+          ]}
         >
-          {item.imageUrl ? (
-            <Image source={{ uri: item.imageUrl }} style={CardViewStyles.gridImage} resizeMode="cover" />
-          ) : (
-            <View style={[CardViewStyles.placeholder, CardViewStyles.gridImage]} />
-          )}
-          <Text style={CardViewStyles.gridTitle} numberOfLines={1}>{item.title}</Text>
+          <View style={[{ width: '92%', height: '86%', alignItems: 'center', justifyContent: 'center', borderRadius: 8 }, mediaStyle ? mediaStyle(item) : undefined]}>
+            {(item.image || item.imageUrl) ? (
+              <Image
+                source={toRNImageSource(item.image ?? item.imageUrl)}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="contain"
+              />
+            ) : (
+              <View style={[CardViewStyles.placeholder, { width: '100%', height: '100%' }]} />
+            )}
+          </View>
+          {item.title ? (
+            <Text style={CardViewStyles.gridTitle} numberOfLines={1}>{item.title}</Text>
+          ) : null}
         </Pressable>
       );
     }
@@ -136,19 +162,22 @@ const CardView: React.FC<Props> = ({
         onPress={() => onPressItem?.(item)}
         style={[
           CardViewStyles.rowCard,
-          { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight, alignItems: 'center' }
+          { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight, alignItems: 'center' },
+          itemStyle ? itemStyle(item) : undefined,
         ]}
       >
-        {item.imageUrl ? (
-          <Image
-            source={{ uri: item.imageUrl }}
-            style={[CardViewStyles.rowImage, { width: rowThumbW, height: rowThumbH }]}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={[CardViewStyles.placeholder, CardViewStyles.rowImage, { width: rowThumbW, height: rowThumbH }]} />
-        )}
-        <View style={[CardViewStyles.rowTextWrap, { flex: 1, justifyContent: 'center' }]}>
+        <View style={[{ width: rowThumbW, height: rowThumbH, alignItems: 'center', justifyContent: 'center', borderRadius: 8 }, mediaStyle ? mediaStyle(item) : undefined]}>
+          {(item.image || item.imageUrl) ? (
+            <Image
+              source={toRNImageSource(item.image ?? item.imageUrl)}
+              style={[CardViewStyles.rowImage, { width: '100%', height: '100%' }]}
+              resizeMode="contain"
+            />
+          ) : (
+            <View style={[CardViewStyles.placeholder, { width: '100%', height: '100%' }]} />
+          )}
+        </View>
+        <View style={[CardViewStyles.rowTextWrap, { flex: 1, justifyContent: 'center' }]}> 
           <Text style={CardViewStyles.rowTitle} numberOfLines={1}>{item.title}</Text>
         </View>
       </Pressable>

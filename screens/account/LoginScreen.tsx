@@ -30,26 +30,25 @@ const onSubmit = async () => {
     }
 
     try {
-    setErrorMsg(null);
-    const row: any = await verifyUser(id, pwd);
-    if (row) {
-        (globalThis as any).currentAccountId = row.ACCOUNTID;
-        (globalThis as any).currentUsername = row.USERNM;
-        console.log('✅ Logged in as', row.USERNM, 'lvl', row.SECURITYLVL);
-        // @ts-ignore
-        navigation.goBack?.();
-    } else {
+      setErrorMsg(null);
+      const uname = id.trim();
+      const row: any = await verifyUser(uname, pwd);
+      if (!row) {
         setErrorMsg('Invalid username or password.');
-        setUsername('');
-        setPassword('');
-        Keyboard.dismiss();
-    }
+        return;
+      }
+      (globalThis as any).currentAccountId = row.ACCOUNTID;
+      (globalThis as any).currentUsername = row.USERNM;
+
+      // Return to previous screen if possible; otherwise go somewhere safe
+      if (typeof navigation.canGoBack === 'function' && navigation.canGoBack()) {
+        navigation.goBack();
+      } else {
+        navigation.navigate('Settings' as never);
+      }
     } catch (e) {
-    setErrorMsg('Login failed. Please try again.');
-    console.error('❌ Login failed', e);
-    setUsername('');
-    setPassword('');
-    Keyboard.dismiss();
+      console.error('Login failed', e);
+      setErrorMsg('Login failed.');
     }
 };
 

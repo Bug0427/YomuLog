@@ -5,11 +5,13 @@
         "MAINCAT",
         "paiduser",
         "Pressable",
+        "PROFILEICON",
         "PSWD",
         "SECURITYLVL",
         "SUBCAT",
         "SUBMISSIONID",
         "Supabase",
+        "unsub",
         "USERNM",
         "worklets",
         "yomulog"

@@ -16,7 +16,7 @@ import { useScrollTracker } from '../hooks/useScrollTracker';
 import Anchor from '../components/layout/Anchor';
 
 // Data & Styles
-import { GeneralStyles } from '../styles/global';
+import { GeneralStyles, CardViewStyles } from '../styles/global';
 import { sampleMangaData } from '../data/sampleMangaData';
 
 // Icons
@@ -71,6 +71,7 @@ export default function SearchScreen() {
         onScrollBeginDrag={handleScrollStart}
         onScrollEndDrag={handleScrollEnd}
         onMomentumScrollEnd={handleScrollEnd}
+        itemStyle={() => (CardViewStyles.placeholder)}
       />
       <Anchor scrollRef={listRef} isScrolling={isScrolling} />
     </View>
