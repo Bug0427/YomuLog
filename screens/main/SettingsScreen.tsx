@@ -5,17 +5,17 @@ import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 // Components
-import Header from '../components/layout/Header';
-import { useScrollTracker } from '../hooks/useScrollTracker';
-import Anchor from '../components/layout/Anchor';
-import { useConfirm } from '../components/admin/confirmation';
-import { resetDatabase } from '../services/devResetDB';
+import Header from '../../components/layout/Header';
+import { useScrollTracker } from '../../hooks/useScrollTracker';
+import Anchor from '../../components/layout/Anchor';
+import { useConfirm } from '../../components/admin/confirmation';
+import { resetDatabase } from '../../services/devResetDB';
 
 // Data & Styles
-import { GeneralStyles, SettingButtonStyles } from '../styles/global';
+import { GeneralStyles, SettingButtonStyles } from '../../styles/global';
 
 // Screens
-import { SecurityLevel, verifyUser } from '../services/feedbackRepo';
+import { SecurityLevel, verifyUser } from '../../services/feedbackRepo';
 
 // Local typing for verifyUser result shape
 type VerifyRow = { SECURITYLVL: SecurityLevel } | null;

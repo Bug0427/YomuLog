@@ -2,16 +2,16 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 
-import SplashScreen from '../screens/SplashScreen';
-import HomeScreen from '../screens/HomeScreen';
-import SearchScreen from '../screens/SearchScreen';
-import LibraryScreen from '../screens/LibraryScreen';
-import DownLoadsScreen from '../screens/DownLoadsScreen';
-import SettingsScreen from '../screens/SettingsScreen';
-import RecentlyUpdated from '../screens/RecentlyUpdated'
+import SplashScreen from '../screens/main/SplashScreen';
+import HomeScreen from '../screens/main/HomeScreen';
+import SearchScreen from '../screens/main/SearchScreen';
+import LibraryScreen from '../screens/main/LibraryScreen';
+import DownLoadsScreen from '../screens/main/DownLoadsScreen';
+import SettingsScreen from '../screens/main/SettingsScreen';
+import RecentlyUpdated from '../screens/main/RecentlyUpdated'
 import FeedBackHome from '../screens/feedback/FeedBackHome'
 import FileReport from '../screens/feedback/FileReport'
-import Admin from '../screens/Admin'
+import Admin from '../screens/main/Admin'
 import LoginScreen from '../screens/account/LoginScreen'
 import UserAccount from '../screens/account/UserAccount'
 import CreateAccount from '../screens/account/CreateAccount'
