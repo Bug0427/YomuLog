@@ -470,6 +470,127 @@ const confirmationStyles = StyleSheet.create({
         borderColor: '#463B54',
     },
 })
+const changeLoginStyle = StyleSheet.create({
+    button:{
+        paddingVertical: 10, 
+        paddingHorizontal: 16, 
+        marginRight: 12, 
+        backgroundColor: '#E3D3BD',
+        borderWidth: 2, 
+        borderColor:'543C27' ,
+        alignItems: 'center',
+        borderBlockColor: '#543C27'
+    },
+    typed:{
+        color: '#543C27', 
+        paddingHorizontal: 12, 
+        paddingVertical: 12, 
+        fontSize: 16
+    },
+    typeBox:{
+        backgroundColor: '#E3D3BD', 
+        borderWidth: 2, 
+        borderColor: '#543C27', 
+        marginBottom: 10
+    },
+    text:{
+        color: '#543C27', 
+        fontSize: 16, 
+        fontWeight: '600'
+    },
+
+})
+const adminTabStyles = StyleSheet.create({
+    header:{
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        marginTop: 60, 
+        paddingBottom: 7, 
+        borderBottomWidth: 3, 
+        borderColor: '#412d5cff'
+    },
+    button:{
+        paddingVertical: 10, 
+        paddingHorizontal: 16, 
+        marginHorizontal: 12, 
+        backgroundColor: '#412d5cff',
+        borderWidth: 2, 
+        borderColor:'543C27' ,
+        alignItems: 'center',
+        width: 70,
+    },
+    tabsWrap: {
+        position: 'relative',
+        height: 50,
+        borderBottomWidth: 3,
+        borderBottomColor: '#412d5cff',
+        overflow: 'hidden',
+        backgroundColor: '#AFA6DD',
+    },
+    activeHalf: {
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        width: '50%',
+        backgroundColor: '#412d5cff',
+        zIndex: 0,
+    },
+    diagonalRight: {
+        position: 'absolute',
+        top: 0,
+        width: 0,
+        height: 0,
+        borderTopWidth: 48,
+        borderTopColor: '#412d5cff',
+        borderRightWidth: 20,
+        borderRightColor: 'transparent',
+        zIndex: 1,
+    },
+    tabHit: {
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        paddingHorizontal: 15,
+        zIndex: 2,
+    },
+    tabLeft: 
+    { 
+        left: 0, 
+        width: '45%', 
+        alignItems: 'center',
+    },
+    tabRight:{ 
+        right: 0, 
+        width: '50%', 
+        alignItems: 'center',
+    },
+    text:
+    {
+        fontSize: 16,
+        color: '#412d5cff',
+        fontWeight: '700',
+}
+
+})
+const adminCommonStyles = StyleSheet.create({
+    dataRow: {
+        flexDirection: 'row',
+        borderLeftWidth: 1,
+        borderRightWidth: 1,
+        borderColor: '#412d5cff',
+        borderTopWidth: 1,
+
+    },
+    dataCell: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRightWidth: 1,
+        borderRightColor: '#412d5cff',
+    },
+
+})
+
 
 export {
     GeneralStyles,
@@ -485,5 +606,8 @@ export {
     SettingButtonStyles,
     FeedBackStyles,
     SubmitButtonStyles,
-    confirmationStyles
+    confirmationStyles,
+    changeLoginStyle, 
+    adminTabStyles,
+    adminCommonStyles
     };

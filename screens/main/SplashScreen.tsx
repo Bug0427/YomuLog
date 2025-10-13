@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text } from 'react-native';
-import{SplashScreenStyles} from '../styles/global';
+import{SplashScreenStyles} from '../../styles/global';
 
 export default function SplashScreen({ navigation }: any) {
   useEffect(() => {

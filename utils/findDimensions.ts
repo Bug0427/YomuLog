@@ -22,4 +22,3 @@ export const useBreakpoint = (): BreakpointKey => {
   const width = useWindowWidth();
   return getBreakpoint(width);
 };
-

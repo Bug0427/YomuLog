@@ -1,57 +1,87 @@
-// components/TrackedScrollView.tsx
-import React from 'react';
-import { ScrollView, ScrollViewProps, StyleSheet, StyleProp, ViewStyle, Platform } from 'react-native';
+// components/layout/TrackedScrollView.tsx
+import React, { useMemo, forwardRef, useImperativeHandle, useEffect } from 'react';
+import { ScrollView, ScrollViewProps, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
 
-type Props = ScrollViewProps & { children: React.ReactNode };
+type Props = ScrollViewProps & {
+  children: React.ReactNode;
+  // keep supporting an external ref prop if other components rely on it
+  scrollRef?: React.RefObject<ScrollView>;
+};
 
-export function TrackedScrollView(props: Props) {
-  const { children, style, contentContainerStyle, ...rest } = props;
-  const { scrollRef, handleScrollStart, handleScrollEnd } = useScrollTracker();
-
-  // Normalize incoming style so any horizontal padding goes to contentContainerStyle
-  const flat: ViewStyle = StyleSheet.flatten(style) || {};
+export const TrackedScrollView = forwardRef<ScrollView, Props>((props, ref) => {
   const {
-    paddingHorizontal,
-    paddingLeft,
-    paddingRight,
-    paddingTop,
-    paddingBottom,
-    // keep background/borders/etc. on the ScrollView itself
-    ...restContainerStyle
-  } = flat;
+    children,
+    style,
+    contentContainerStyle,
+    scrollRef: externalRef,
+    onScrollBeginDrag,
+    onScrollEndDrag,
+    ...rest
+  } = props;
 
-  // Compute final paddings for content only (so the scrollbar hugs the right edge)
+  const { scrollRef: internalRef, handleScrollStart, handleScrollEnd } = useScrollTracker();
+  const refToUse = externalRef ?? internalRef;
+
+  // 👇 Expose the full ScrollView instance so the type matches exactly (fixes TS2740)
+  useImperativeHandle(ref, () => refToUse.current!, [refToUse]);
+
+  // Also mirror to externalRef if parent passed one (so both refs work)
+  useEffect(() => {
+    if (!externalRef) return;
+    // Assign only when we have a concrete instance; works for both RefObject and MutableRefObject
+    if (refToUse.current) {
+      (externalRef as React.MutableRefObject<ScrollView>).current = refToUse.current;
+    }
+  }, [externalRef, refToUse]);
+
+  // ---- style normalization (unchanged) ----
+  const flat: ViewStyle = StyleSheet.flatten(style) || {};
+  const { paddingHorizontal, paddingLeft, paddingRight, paddingTop, paddingBottom, ...restContainerStyle } = flat;
+
   const ccPaddingLeft = paddingLeft ?? (typeof paddingHorizontal === 'number' ? paddingHorizontal : undefined);
   const ccPaddingRight = paddingRight ?? (typeof paddingHorizontal === 'number' ? paddingHorizontal : undefined);
-  const ccPaddingTop = paddingTop; // leave vertical padding on content if provided
-  const ccPaddingBottom = paddingBottom ?? 24; // ensure a bottom cushion by default
+  const ccPaddingTop = paddingTop;
+  const ccPaddingBottom = paddingBottom ?? 24;
 
   const normalizedContainerStyle: StyleProp<ViewStyle> = [
-    // remove all paddings from the ScrollView so indicators are not inset
     { flex: 1, paddingLeft: 0, paddingRight: 0, paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0 },
     restContainerStyle,
   ];
 
   const normalizedContentStyle: StyleProp<ViewStyle> = [
-    { paddingBottom: 24 }, // base default
+    { paddingBottom: 24 },
     contentContainerStyle,
-    // apply user-provided paddings to the content instead of the container
     ccPaddingTop != null ? { paddingTop: ccPaddingTop } : null,
     ccPaddingLeft != null ? { paddingLeft: ccPaddingLeft } : null,
     ccPaddingRight != null ? { paddingRight: ccPaddingRight } : null,
     ccPaddingBottom != null ? { paddingBottom: ccPaddingBottom } : null,
   ];
 
-  // indicatorInsets and scrollIndicatorInsets are removed; always hide vertical indicator
+  const handleBegin = useMemo(
+    () => (e: any) => {
+      handleScrollStart();
+      onScrollBeginDrag?.(e);
+    },
+    [handleScrollStart, onScrollBeginDrag]
+  );
+
+  const handleEnd = useMemo(
+    () => (e: any) => {
+      handleScrollEnd();
+      onScrollEndDrag?.(e);
+    },
+    [handleScrollEnd, onScrollEndDrag]
+  );
+
   return (
     <ScrollView
-      ref={scrollRef}
+      ref={refToUse}
       style={normalizedContainerStyle}
       contentContainerStyle={normalizedContentStyle}
       scrollEventThrottle={16}
-      onScrollBeginDrag={handleScrollStart}
-      onScrollEndDrag={handleScrollEnd}
+      onScrollBeginDrag={handleBegin}
+      onScrollEndDrag={handleEnd}
       keyboardDismissMode="on-drag"
       keyboardShouldPersistTaps="handled"
       contentInsetAdjustmentBehavior="automatic"
@@ -63,4 +93,4 @@ export function TrackedScrollView(props: Props) {
       {children}
     </ScrollView>
   );
-}
+});

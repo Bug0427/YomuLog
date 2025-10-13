@@ -10,6 +10,8 @@ import { useScrollTracker } from '../../hooks/useScrollTracker';
 import Anchor from '../../components/layout/Anchor';
 import { useConfirm } from '../../components/admin/confirmation';
 import { resetDatabase } from '../../services/devResetDB';
+import { logout } from '../../data/SettingsButtonActions/Logout';
+import ChangeLoginModal from '../../components/admin/ChangeLoginModal';
 
 // Data & Styles
 import { GeneralStyles, SettingButtonStyles } from '../../styles/global';
@@ -20,12 +22,15 @@ import { SecurityLevel, verifyUser } from '../../services/feedbackRepo';
 // Local typing for verifyUser result shape
 type VerifyRow = { SECURITYLVL: SecurityLevel } | null;
 
+// Robust admin check to handle enum/number/string values from DB
+const isAdminLevel = (lvl: any) => lvl === SecurityLevel?.Admin || lvl === 1 || lvl === 'Admin';
+
 export const buttonActions = {
     refreshMetadata: () => {console.log('🔄 Refresh metadata');},
     clearCache: () => {console.log('🗑️ Clear cache');},
     resetAIRecommendations: () => {console.log('🔄 Reset AI recommendations');},
-    enableAISearch: () => {console.log('🤖 Enable AI search');},
-    logOut: () => {console.log('🚪 Log out');},
+    enableAISearch: () => { console.log('🤖 Enable AI search');},
+    logOut: (navigation?: any) => { logout(navigation); },
     openFeedback: (navigation?: any) => { console.log('💬 Open feedback'); navigation?.navigate('FeedBackHome'); },
     openDownloads: (navigation?: any) => { console.log('⬇️ Open downloads'); navigation?.navigate('DownLoadsScreen'); },
     openAccountSettings: () => {console.log('🔒 Open account settings');},
@@ -69,6 +74,7 @@ export default function SettingsScreen() {
     // with values from AsyncStorage or your auth store.
     const [securityLevel, setSecurityLevel] = useState<SecurityLevel | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
+    const [showChangeLogin, setShowChangeLogin] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -138,15 +144,51 @@ export default function SettingsScreen() {
         }
     };
 
+    const goChangeLogin = async () => {
+        const savedUsername: string | undefined = (globalThis as any).currentUsername;
+        const savedPassword: string | undefined = (globalThis as any).currentPassword;
+
+        try {
+            let level: SecurityLevel | null = securityLevel;
+
+            // If we don't yet know the level but we have creds, verify now (handles race with useEffect)
+            if (!level && savedUsername && savedPassword) {
+                setLoading(true);
+                const row = (await verifyUser(savedUsername, savedPassword)) as VerifyRow;
+                level = row ? (row.SECURITYLVL as SecurityLevel) : null;
+                setSecurityLevel(level);
+            }
+
+            if (!level) {
+                console.log('🔐 Not logged in → navigate to LoginSignup');
+                // @ts-ignore
+                navigation.navigate?.('LoginScreen');
+                return;
+            }
+
+            // Logged in → open the change login popup
+            setShowChangeLogin(true);
+        } catch (e) {
+            console.warn('goChangeLogin verify-on-press failed', e);
+            // @ts-ignore
+            navigation.navigate?.('LoginScreen');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const goAdmin = () => {
+        // Navigate to the Admin screen defined in screens/main/Admin.tsx
         // @ts-ignore
-        navigation.navigate?.('AdminHome');
+        navigation.navigate?.('AdminScreen');
     };
 
 
     useEffect(() => {
         console.log('🔎 SettingsScreen securityLevel:', securityLevel);
     }, [securityLevel]);
+
+    const isAdmin = isAdminLevel(securityLevel);
 
     return (
         <View style={GeneralStyles.section}>
@@ -210,24 +252,32 @@ export default function SettingsScreen() {
                 <GridItem label="Manage downloads" onPress={() => buttonActions.openDownloads(navigation)}>
                 <Feather name="download" style={SettingButtonStyles.Icon} />
                 </GridItem>
-                {securityLevel === SecurityLevel.Admin ? (
-                <GridItem label="Admin" onPress={goAdmin}>
-                <Feather name="shield" style={SettingButtonStyles.Icon} />
-                </GridItem>
+                {isAdmin ? (
+                  <GridItem label="Admin" onPress={goAdmin}>
+                    <Feather name="shield" style={SettingButtonStyles.Icon} />
+                  </GridItem>
                 ) : (
-                <GridItem label="Feedback" onPress={goFeedback}>
-                <Feather name="message-square" style={SettingButtonStyles.Icon} />
-                </GridItem>
+                  <GridItem label="Feedback" onPress={goFeedback}>
+                    <Feather name="message-square" style={SettingButtonStyles.Icon} />
+                  </GridItem>
                 )}
-                <GridItem label="Change password/username" onPress={buttonActions.openAccountSettings}>
-                <Feather name="lock" style={SettingButtonStyles.Icon} />
+
+                <GridItem label="Change password/username" onPress={goChangeLogin}>
+                  <Feather name="lock" style={SettingButtonStyles.Icon} />
                 </GridItem>
-                <GridItem label="Log out" onPress={buttonActions.logOut}>
+                <GridItem label="Log out" onPress={() => buttonActions.logOut(navigation)}>
                 <Feather name="log-out" style={SettingButtonStyles.Icon} />
                 </GridItem>
             </View>
             </View>
         </ScrollView>
+        <ChangeLoginModal
+          visible={showChangeLogin}
+          onClose={() => setShowChangeLogin(false)}
+          accountId={(globalThis as any).currentAccountId}
+          // @ts-ignore
+          navigation={navigation}
+        />
         <Anchor scrollRef={scrollRef} isScrolling={isScrolling} />
         </View>
     );

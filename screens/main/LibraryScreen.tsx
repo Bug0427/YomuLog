@@ -4,22 +4,22 @@ import { View, Text, Pressable } from 'react-native';
 
 // Navigation
 import { useNavigation, NavigationProp } from '@react-navigation/native';
-import { RootStackParamList } from '../navigation/navigation';
+import { RootStackParamList } from '../../navigation/navigation';
 
 // Components
-import Header from '../components/layout/Header';
-import SearchBar from '../components/layout/SearchBar';
-import MangaSlider from '../components/cardLayouts/MangaSlider';
-import CardView, { ViewMode } from '../components/cardLayouts/CardView';
+import Header from '../../components/layout/Header';
+import SearchBar from '../../components/layout/SearchBar';
+import MangaSlider from '../../components/cardLayouts/MangaSlider';
+import CardView, { ViewMode } from '../../components/cardLayouts/CardView';
 
 // Scroll
-import { useScrollTracker } from '../hooks/useScrollTracker';
-import Anchor from '../components/layout/Anchor';
+import { useScrollTracker } from '../../hooks/useScrollTracker';
+import Anchor from '../../components/layout/Anchor';
 
 
 // Data & Styles
-import { sampleMangaData } from '../data/sampleMangaData';
-import { GeneralStyles, CardViewStyles } from '../styles/global';
+import { sampleMangaData } from '../../data/sampleMangaData';
+import { GeneralStyles, CardViewStyles } from '../../styles/global';
 
 // Icons
 import { MaterialCommunityIcons } from '@expo/vector-icons';

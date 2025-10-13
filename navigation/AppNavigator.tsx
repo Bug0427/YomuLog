@@ -11,7 +11,7 @@ import SettingsScreen from '../screens/main/SettingsScreen';
 import RecentlyUpdated from '../screens/main/RecentlyUpdated'
 import FeedBackHome from '../screens/feedback/FeedBackHome'
 import FileReport from '../screens/feedback/FileReport'
-import Admin from '../screens/main/Admin'
+import AdminScreen from '../screens/admin/AdminScreen'
 import LoginScreen from '../screens/account/LoginScreen'
 import UserAccount from '../screens/account/UserAccount'
 import CreateAccount from '../screens/account/CreateAccount'
@@ -34,7 +34,7 @@ export default function AppNavigator() {
             <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
             <Stack.Screen name="FeedBackHome" component={FeedBackHome} />
             <Stack.Screen name="FileReport" component={FileReport} />
-            <Stack.Screen name="Admin" component={Admin} />
+            <Stack.Screen name="AdminScreen" component={AdminScreen} />
             <Stack.Screen name="LoginScreen" component={LoginScreen} />
             <Stack.Screen name="UserAccount" component={UserAccount} />
             <Stack.Screen name="CreateAccount" component={CreateAccount} />

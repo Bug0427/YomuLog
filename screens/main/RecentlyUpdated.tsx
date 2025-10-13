@@ -4,16 +4,16 @@ import { View, Text, Pressable } from 'react-native';
 
 // Navigation
 import { useNavigation, NavigationProp } from '@react-navigation/native';
-import { RootStackParamList } from '../navigation/navigation';
+import { RootStackParamList } from '../../navigation/navigation';
 
 // Components
-import { useScrollTracker } from '../hooks/useScrollTracker';
-import Anchor from '../components/layout/Anchor';
-import CardView, { ViewMode } from '../components/cardLayouts/CardView';
+import { useScrollTracker } from '../../hooks/useScrollTracker';
+import Anchor from '../../components/layout/Anchor';
+import CardView, { ViewMode } from '../../components/cardLayouts/CardView';
 
 // Data & Styles
-import { sampleMangaData } from '../data/sampleMangaData';
-import { GeneralStyles, UpdatedStyles } from '../styles/global';
+import { sampleMangaData } from '../../data/sampleMangaData';
+import { GeneralStyles, UpdatedStyles } from '../../styles/global';
 
 // Icons
 import { MaterialCommunityIcons } from '@expo/vector-icons';

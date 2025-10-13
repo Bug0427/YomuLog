@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { FeedBackStyles, SubmitButtonStyles } from '../../styles/global';
-import { verifyUser, deleteDbFile, queryAll, queryFirst, seedDefaultUsers, initDb } from '../../services/feedbackRepo';
+import { verifyUser } from '../../services/feedbackRepo';
 
 
 export default function LoginScreen() {

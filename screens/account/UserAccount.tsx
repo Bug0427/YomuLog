@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TextInput, Pressable, Alert, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ActivityIndicator, Modal, Image } from 'react-native';
-import { useNavigation, CommonActions, StackActions } from '@react-navigation/native';
-import { FeedBackStyles } from '../../styles/global';
+import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ActivityIndicator, Modal, Image } from 'react-native';
+import { useNavigation, StackActions } from '@react-navigation/native';
+import { FeedBackStyles, GeneralStyles } from '../../styles/global';
 import { queryFirst, runAsync, getUserByUsername, verifyUser } from '../../services/feedbackRepo';
 import { Ionicons } from '@expo/vector-icons';
 import { profileIcons } from '../../data/profileIcons';
+import { deleteAccount } from '../../services/deleteAccount';
+import { logout } from '../../data/SettingsButtonActions/Logout';
 
-// Password policy
 function validatePassword(pw: string): string | null {
     if (pw.length < 8) return 'Password must be at least 8 characters.';
     if (!/[A-Z]/.test(pw)) return 'Password needs an uppercase letter.';
@@ -19,21 +20,17 @@ function resolveIconSrc(iconId?: string | null): any | null {
     if (!iconId) return null;
     const all = [...profileIcons.animals, ...profileIcons.female, ...profileIcons.male];
     const found = all.find(i => i.name === iconId);
-    return found?.path ?? null; // require(...) module from data sheet
+    return found?.path ?? null; 
 }
 
 export default function UserAccount() {
     const navigation = useNavigation<any>();
 
-    // Ensure navigator paints the same background during transitions
     useEffect(() => {
-      try {
-        // For @react-navigation/native-stack
-        navigation.setOptions?.({ contentStyle: { backgroundColor: '#AFA6DD' } });
-        // Fallback for stack (legacy):
-        // @ts-ignore
-        navigation.setOptions?.({ cardStyle: { backgroundColor: '#AFA6DD' } });
-      } catch {}
+        try {
+            navigation.setOptions?.({ contentStyle: { backgroundColor: '#AFA6DD' } });
+            navigation.setOptions?.({ cardStyle: { backgroundColor: '#AFA6DD' } });
+        } catch {}
     }, [navigation]);
 
     const usernameRef = useRef<TextInput>(null);
@@ -41,7 +38,7 @@ export default function UserAccount() {
     const emailRef = useRef<TextInput>(null);
 
     function handleBack() {
-      try {
+    try {
         const state = navigation.getState?.();
         const routes = (state as any)?.routes ?? [];
         const idx = (state as any)?.index ?? -1;
@@ -49,18 +46,18 @@ export default function UserAccount() {
 
         // If the previous route is the picker, pop two to skip it
         if (prev && prev.name === 'ChooseProfileIcon') {
-          navigation.dispatch(StackActions.pop(2));
-          return;
+        navigation.dispatch(StackActions.pop(2));
+        return;
         }
 
         if (typeof navigation.canGoBack === 'function' && navigation.canGoBack()) {
-          navigation.goBack();
+        navigation.goBack();
         } else {
-          navigation.navigate('Settings' as never);
-        }
-      } catch {
         navigation.navigate('Settings' as never);
-      }
+        }
+    } catch {
+        navigation.navigate('Settings' as never);
+    }
     }
 
     // Pull the current session values (set on login)
@@ -125,7 +122,6 @@ export default function UserAccount() {
             setPwLen((row.PSWD?.length ?? 0) || 8);
             setProfileIconId(row.PROFILEICON ?? null);
             (globalThis as any).currentProfileIconId = row.PROFILEICON ?? null;
-            // If PROFILEICON not returned by the first path, fetch by ACCOUNTID
             if (!row.PROFILEICON && row.ACCOUNTID) {
             try {
                 const r2 = await queryFirst<any>(
@@ -182,7 +178,6 @@ export default function UserAccount() {
         setVerifyError('Invalid credentials.');
         return;
         }
-        // Success → unlock the requested field and focus it
         if (editingField === 'username') {
         setCanEditUsername(true);
         setTimeout(() => usernameRef.current?.focus(), 50);
@@ -205,7 +200,6 @@ export default function UserAccount() {
         const u = newUsername.trim();
         if (!u) return setError('Username cannot be empty.');
         if (u === username) return setError('That is already your username.');
-        // Ensure unique username (case-sensitive uniqueness in your schema via UNIQUE)
         const existing = await queryFirst<{ USERNM: string }>(
         `SELECT USERNM FROM users WHERE USERNM = ? AND ACCOUNTID <> ? LIMIT 1`,
         [u, accountId]
@@ -213,7 +207,6 @@ export default function UserAccount() {
         if (existing) return setError('Username already taken.');
 
         try {
-        // Only update USERNM; do not touch EMAIL or PSWD here to avoid UNIQUE/NOT NULL conflicts
         await runAsync(`UPDATE users SET USERNM = ? WHERE ACCOUNTID = ?`, [u, accountId]);
 
         setUsername(u);
@@ -266,26 +259,6 @@ export default function UserAccount() {
     setShowDeleteConfirm(true);
     }
 
-    async function executeDeleteAccount() {
-    try {
-        await runAsync('BEGIN');
-        await runAsync('DELETE FROM ratings WHERE ACCOUNTID = ?', [accountId]);
-        await runAsync('DELETE FROM comments WHERE ACCOUNTID = ?', [accountId]);
-        await runAsync('DELETE FROM reports WHERE ACCOUNTID = ?', [accountId]);
-        await runAsync('DELETE FROM users WHERE ACCOUNTID = ?', [accountId]);
-        await runAsync('COMMIT');
-    } catch (e) {
-        await runAsync('ROLLBACK');
-        console.error('Delete account failed', e);
-        setError('Failed to delete account.');
-        return;
-    }
-    setShowDeleteConfirm(false);
-    (globalThis as any).currentAccountId = undefined;
-    (globalThis as any).currentUsername = undefined;
-    // @ts-ignore
-    navigation.replace?.('LoginScreen');
-    }
 
     if (loading) {
         return (
@@ -301,9 +274,16 @@ export default function UserAccount() {
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <View style={{ flex: 1, padding: 16, backgroundColor: '#AFA6DD' }}>
             {/* Back */}
-            <Pressable onPress={handleBack} style={[FeedBackStyles.item, { width: 70, marginTop: 50 }]}>   
-                <Text style={FeedBackStyles.itemText}>{'back'} </Text>
-            </Pressable>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 50 }}>
+                <Pressable
+                    onPress={handleBack}
+                    style={[FeedBackStyles.item, { width: 67, marginTop: 0, marginRight: 12 }]}
+                >
+                    <Text style={[FeedBackStyles.itemText, {paddingLeft: 1}]}>back</Text>
+                </Pressable>
+
+                <Text style={GeneralStyles.title}> Account Profile</Text>
+            </View>
 
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
                 {/* Profile picture / icon selector */}
@@ -397,12 +377,7 @@ export default function UserAccount() {
             {/* Logout */}
             <Pressable
             accessibilityRole="button"
-            onPress={() => {
-                (globalThis as any).currentAccountId = undefined;
-                (globalThis as any).currentUsername = undefined;
-                // @ts-ignore
-                navigation.replace?.('LoginScreen');
-            }}
+            onPress={() => logout(navigation)}
             style={[FeedBackStyles.item, { marginTop: 20, paddingHorizontal: 140 }]}
             >
             <Text style={FeedBackStyles.itemText}>Log Out</Text>
@@ -454,7 +429,7 @@ export default function UserAccount() {
                     <Pressable onPress={() => setShowDeleteConfirm(false)} style={[FeedBackStyles.item, { paddingHorizontal: 16 }]}>
                     <Text style={FeedBackStyles.itemText}>Cancel</Text>
                     </Pressable>
-                    <Pressable onPress={executeDeleteAccount} style={[FeedBackStyles.item, { paddingHorizontal: 16, marginRight:60 }]}>
+                    <Pressable onPress={() => deleteAccount(accountId, navigation, setError, setShowDeleteConfirm)} style={[FeedBackStyles.item, { paddingHorizontal: 16, marginRight:60 }]}>
                     <Text style={[FeedBackStyles.itemText]}>Delete</Text>
                     </Pressable>
                 </View>

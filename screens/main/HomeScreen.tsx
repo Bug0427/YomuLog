@@ -4,17 +4,17 @@ import { View, ScrollView } from 'react-native';
 
 // Navigation
 import { useNavigation, NavigationProp } from '@react-navigation/native';
-import { RootStackParamList } from '../navigation/navigation';
+import { RootStackParamList } from '../../navigation/navigation';
 
 // Components
-import Header from '../components/layout/Header';
-import MangaSlider from '../components/cardLayouts/MangaSlider';
-import { useScrollTracker } from '../hooks/useScrollTracker';
-import Anchor from '../components/layout/Anchor';
+import Header from '../../components/layout/Header';
+import MangaSlider from '../../components/cardLayouts/MangaSlider';
+import { useScrollTracker } from '../../hooks/useScrollTracker';
+import Anchor from '../../components/layout/Anchor';
 
 // Data & Styles
-import { sampleMangaData } from '../data/sampleMangaData';
-import {GeneralStyles } from '../styles/global';
+import { sampleMangaData } from '../../data/sampleMangaData';
+import {GeneralStyles } from '../../styles/global';
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { scrollRef, isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
