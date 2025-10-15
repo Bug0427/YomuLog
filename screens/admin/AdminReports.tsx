@@ -1,76 +1,314 @@
 // screens/admin/AdminReports.tsx
-import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, Pressable, ScrollView } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
 import GridView, { Column } from '../../components/adminView/GridView';
+import AdminSearchBar from '../../components/adminView/searchbar';
 import { queryAll } from '../../services/feedbackRepo';
 import usePagedTable from '../../hooks/admin/UsePagedTable';
+import{AdminSearchBarStyles} from '../../styles/global'
+
+type CategoryType = typeof CATEGORY_OPTIONS[number];
+const CATEGORY_OPTIONS = ['Reported Issues','Reviews','Ratings'] as const;
 
 type ReportRow = {
-  id: string;          // SUBMISSIONID
-  username: string;    // USERNM
-  category: string;    // MAINCAT
-  subcategory: string; // SUBCAT
-  rating?: number;     // (not present on reports; kept for future)
+  sid?: string;          // submission id ("#")
+  id?: string;           // account/user id
+  username: string;
+  category?: string;
+  subcategory?: string;
+  rating?: number;
+  comments?: string;
 };
 
-const columns: Column<ReportRow>[] = [
-  { key: 'id', title: 'ID', width: 120, align: 'center' },
-  { key: 'username', title: 'Username', width: 160, align: 'center' },
-  { key: 'category', title: 'Main Cat', width: 160, align: 'center' },
-  { key: 'subcategory', title: 'Sub Cat', width: 160, align: 'center' },
-];
-
 export default function AdminReports() {
+  const [category, setCategory] = useState<CategoryType | null>(null);
+  const [catOpen, setCatOpen] = useState(false);
+  const [catValue, setCatValue] = useState<CategoryType | null>(null);
+  const [catItems, setCatItems] = useState(
+    CATEGORY_OPTIONS.map((label) => ({ label, value: label as CategoryType }))
+  );
+
+  useEffect(() => { setCategory(catValue); }, [catValue]);
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const [query, setQuery] = useState('');
+  const [selectedFields, setSelectedFields] = useState<string[]>([]);
+  const [priority, setPriority] = useState<string>('');
+  const [activeField, setActiveField] = useState<string>('all');
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailText, setDetailText] = useState('');
+  const tapRef = React.useRef<{ lastTs: number; count: number }>({ lastTs: 0, count: 0 });
+
+  const handleRowPress = (row: ReportRow) => {
+    const now = Date.now();
+    const dt = now - tapRef.current.lastTs;
+    tapRef.current.lastTs = now;
+    tapRef.current.count = dt < 450 ? tapRef.current.count + 1 : 1;
+    if (tapRef.current.count >= 3) {
+      tapRef.current.count = 0;
+      if (row.comments && row.comments.trim()) {
+        setDetailText(row.comments);
+        setDetailOpen(true);
+      }
+    }
+  };
+
+  const fields = useMemo(() => {
+    if (category === 'Reported Issues') {
+      return [
+        { key: 'sid', label: 'SID' },
+        { key: 'id', label: 'ID' },
+        { key: 'username', label: 'Username' },
+        { key: 'category', label: 'Main Cat' },
+        { key: 'subcategory', label: 'Sub Cat' },
+        // comments are viewed via triple-tap, not a selectable field
+      ];
+    }
+    if (category === 'Reviews') {
+      return [
+        { key: 'sid', label: 'SID' },
+        { key: 'id', label: 'ID' },
+        { key: 'username', label: 'Username' },
+        // comments via triple-tap
+      ];
+    }
+    if (category === 'Ratings') {
+      return [
+        { key: 'sid', label: 'SID' },
+        { key: 'id', label: 'ID' },
+        { key: 'username', label: 'Username' },
+        { key: 'rating', label: 'Rating' },
+      ];
+    }
+    // Default before a category is chosen
+    return [
+      { key: 'sid', label: 'SID' },
+      { key: 'id', label: 'ID' },
+      { key: 'username', label: 'Username' },
+    ];
+  }, [category]);
+
+  useEffect(() => {
+    const allKeys = fields.map(f => f.key);
+    // Default: all filters checked when category/fields change
+    setSelectedFields(allKeys);
+    // Default: no organizer selected unless current priority is valid for this category
+    if (!allKeys.includes(priority)) {
+      setPriority('');
+    }
+  }, [category, fields]);
+
+  // Dynamic columns depending on category
+  const [columns, setColumns] = useState<Column<ReportRow>[]>([]);
+
+  // Set columns when category changes
+  useEffect(() => {
+    if (category === 'Reported Issues') {
+      setColumns([
+        { key: 'sid', title: 'SID', width: 100, align: 'center' },
+        { key: 'id', title: 'ID', width: 120, align: 'center' },
+        { key: 'username', title: 'Username', width: 160, align: 'center' },
+        { key: 'category', title: 'Main Cat', width: 160, align: 'center' },
+        { key: 'subcategory', title: 'Sub Cat', width: 160, align: 'center' },
+        // comments are shown via triple‑tap, not a column
+      ]);
+    } else if (category === 'Reviews') {
+      setColumns([
+        { key: 'sid', title: 'SID', width: 100, align: 'center' },
+        { key: 'id', title: 'ID', width: 120, align: 'center' },
+        { key: 'username', title: 'Username', width: 160, align: 'center' },
+        // comments via triple‑tap
+      ]);
+    } else if (category === 'Ratings') {
+      setColumns([
+        { key: 'sid', title: 'SID', width: 100, align: 'center' },
+        { key: 'id', title: 'ID', width: 120, align: 'center' },
+        { key: 'username', title: 'Username', width: 160, align: 'center' },
+        { key: 'rating', title: 'Rating', width: 120, align: 'center' },
+      ]);
+    } else {
+      setColumns([]);
+    }
+  }, [category]);
+
+  // Data fetching depending on category & query
   useEffect(() => {
     let mounted = true;
-    (async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        const dbRows = await queryAll<{
-          SUBMISSIONID: string;
-          USERNM: string;
-          MAINCAT: string;
-          SUBCAT: string;
-        }>(
-          `SELECT SUBMISSIONID, USERNM, MAINCAT, SUBCAT FROM reports ORDER BY SUBMISSIONID DESC`
-        );
-        if (!mounted) return;
-        const mapped: ReportRow[] = (dbRows || []).map((r) => ({
-          id: r.SUBMISSIONID,
-          username: r.USERNM,
-          category: r.MAINCAT,
-          subcategory: r.SUBCAT,
-        }));
-        setRows(mapped);
+        if (category === 'Reported Issues') {
+          try {
+            const dbRows = await queryAll<{
+              SID: string;
+              ACCOUNTID?: string;
+              USERNM: string;
+              MAINCAT: string;
+              SUBCAT: string;
+              COMMENTS?: string;
+            }>(
+              `SELECT SID, ACCOUNTID, USERNM, MAINCAT, SUBCAT, COMMENTS FROM reports ORDER BY SID DESC`
+            );
+            if (!mounted) return;
+            const mapped: ReportRow[] = (dbRows || []).map((r) => ({
+              sid: (r as any).SID,
+              id: r.ACCOUNTID ?? '',
+              username: r.USERNM,
+              category: r.MAINCAT,
+              subcategory: r.SUBCAT,
+              comments: r.COMMENTS ?? '',
+            }));
+            setRows(mapped);
+          } catch (err) {
+            setRows([]);
+          }
+        } else if (category === 'Reviews') {
+          try {
+            const dbRows = await queryAll<{
+              SID?: string;
+              ID?: string; // account id
+              USERNM: string;
+              COMMENTS?: string;
+            }>(
+              `SELECT SID, ID, USERNM, COMMENTS FROM comments ORDER BY SID DESC`
+            );
+            if (!mounted) return;
+            const mapped: ReportRow[] = (dbRows || []).map((r) => ({
+              sid: (r as any).SID ?? (r as any).ID ?? '',
+              id: r.ID ?? '',
+              username: r.USERNM,
+              comments: r.COMMENTS ?? '',
+            }));
+            setRows(mapped);
+          } catch (err) {
+            setRows([]);
+          }
+        } else if (category === 'Ratings') {
+          try {
+            const dbRows = await queryAll<{
+              SID?: string;
+              ID?: string; // account id
+              USERNM: string;
+              RATING: number;
+            }>(
+              `SELECT SID, ID, USERNM, RATING FROM ratings ORDER BY SID DESC`
+            );
+            if (!mounted) return;
+            const mapped: ReportRow[] = (dbRows || []).map((r) => ({
+              sid: (r as any).SID ?? (r as any).ID ?? '',
+              id: r.ID ?? '',
+              username: r.USERNM,
+              rating: r.RATING,
+            }));
+            setRows(mapped);
+          } catch (err) {
+            setRows([]);
+          }
+        } else {
+          setRows([]);
+        }
       } finally {
         if (mounted) setLoading(false);
       }
-    })();
-    return () => {
-      mounted = false;
     };
-  }, []);
+    if (category) fetchData();
+    else setRows([]);
+    return () => { mounted = false; };
+  }, [category, query]);
 
   // Client-side paging (sorting preserved by SQL, but we keep a stable key extractor)
   const { rows: pageRows, onEndReached, keyExtractor } = usePagedTable<ReportRow>(rows, {
     pageSize: 50,
-    keyExtractor: (r) => r.id,
-    // If you want client-side sort instead of SQL, uncomment:
-    // sortCompare: (a: ReportRow, b: ReportRow) => b.id.localeCompare(a.id),
+    filter: (r: ReportRow) => {
+      const q = query.trim().toLowerCase();
+      if (!q) return true;
+      const keys = activeField === 'all' ? selectedFields : [activeField];
+      for (const key of keys) {
+        const v = String((r as any)[key] ?? '').toLowerCase();
+        if (v.includes(q)) return true;
+      }
+      return false;
+    },
+    sortCompare: (a: ReportRow, b: ReportRow) => {
+      if (!priority) return 0; // no organizer selected: keep order
+      const k = priority as keyof ReportRow;
+      const av = (a[k] ?? '') as any;
+      const bv = (b[k] ?? '') as any;
+      if (typeof av === 'number' && typeof bv === 'number') return av - bv;
+      return String(av).localeCompare(String(bv), undefined, { numeric: true });
+    },
+    keyExtractor: (r) => r.id || r.sid || '',
   });
+
+  let visibleColumns: Column<ReportRow>[] = columns.filter(c => selectedFields.includes(String(c.key)));
+  if (visibleColumns.length === 0) visibleColumns = columns; // fallback so user can recover
 
   return (
     <View style={[{ flex: 1 }]}>
+      <AdminSearchBar
+        fields={fields as any}
+        selectedFields={selectedFields}
+        onChangeFields={setSelectedFields}
+        priority={priority}
+        onChangePriority={setPriority}
+        query={query}
+        onChangeQuery={setQuery}
+        activeField={activeField}
+        onChangeActiveField={setActiveField}
+      />
+      {/* Category Picker Row */}
+      <View style={{ marginHorizontal: 24, marginTop: 12, marginBottom: 8, zIndex: 500, borderRadius: 0 }}>
+        <DropDownPicker
+          open={catOpen}
+          value={catValue}
+          items={catItems}
+          setOpen={setCatOpen}
+          setValue={setCatValue as any}
+          setItems={setCatItems}
+          placeholder="Select an option"
+          searchable={false}
+          listMode="SCROLLVIEW"
+          zIndex={500}
+          zIndexInverse={400}
+          // Style to match your search bar colors
+          style={[AdminSearchBarStyles.dropdown, { minHeight: 36,}]}
+          dropDownContainerStyle={AdminSearchBarStyles.dropdown}
+          textStyle={{ color: '#412d5cff', fontWeight: '600' }}
+          placeholderStyle={{ color: '#595360' }}
+          selectedItemLabelStyle={{ fontWeight: '900', }}
+          closeAfterSelecting
+        />
+      </View>
       <GridView<ReportRow>
-        columns={columns}
-        data={rows}
+        columns={visibleColumns}
+        data={pageRows}
         isLoading={loading}
         onEndReached={onEndReached}
         keyExtractor={keyExtractor}
       />
+      {/* Comments detail modal */}
+      {detailOpen && (
+        <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)' }} />
+          <View style={{ width: '82%', maxHeight: '70%', backgroundColor: '#bfb9deff', borderColor: '#412d5cff', borderWidth: 1, padding: 12 }}>
+            <View style={{ marginBottom: 8 }}>
+              <View style={{ height: 1, backgroundColor: '#412d5cff' }} />
+            </View>
+            <View style={{ maxHeight: 320 }}>
+              <ScrollView>
+                <View style={{ paddingVertical: 8 }}>
+                  <Text style={{ color: '#412d5cff' }}>{detailText}</Text>
+                </View>
+              </ScrollView>
+            </View>
+            <View style={{ marginTop: 10 }}>
+              <Pressable onPress={() => setDetailOpen(false)}><Text style={{color:'#412d5cff', fontWeight:'bold', textAlign:'center'}}>Close</Text></Pressable>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }

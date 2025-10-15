@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { charsThatFit } from '../../utils/gridUtils';
 import{adminCommonStyles, adminTabStyles} from '../../styles/global'
 
@@ -21,6 +21,8 @@ colWidths,
 rowHeight,
 totalWidth,
 expandedKey,
+allFit,
+collapsedKeys,
 onPress,
 }: {
 item: T;
@@ -30,6 +32,8 @@ colWidths: number[];
 rowHeight: number;
 totalWidth: number;
 expandedKey?: string;
+allFit?: boolean;
+collapsedKeys?: string[];
 onPress: (index: number, item: T) => void;
 }) {
 return (
@@ -43,7 +47,7 @@ return (
             content = col.render(item, index);
         } else {
             const value = String(item[col.key as keyof T] ?? '');
-            const isExpandedCol = expandedKey === keyStr;
+            const isExpandedCol = allFit ? !((collapsedKeys ?? []).includes(keyStr)) : expandedKey === keyStr;
             if (isExpandedCol) {
             content = <Text style={[adminTabStyles.text, {fontWeight: '400'}]}>{value}</Text>;
             } else {

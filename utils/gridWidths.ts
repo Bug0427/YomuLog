@@ -21,7 +21,7 @@ export const abbrevForKey = (key: string, fullTitle: string) => {
   if (k === 'username' || k === 'usernm' || k === 'user_name') return 'userNm';
   if (k === 'password' || k === 'pswd' || k === 'pass') return 'PSWD';
   if (k === 'email' || k === 'e-mail' || k === 'mail') return 'E-M';
-  if (k === 'level' || k === 'lvl' || k === 'securitylvl') return 'Lvl';
+  if (k === 'level' || k === 'lvl' || k === 'securitylvl') return 'LVL';
   return fullTitle;
 };
 
@@ -35,6 +35,18 @@ export function calcExpandedWidth<T>(columns: ColumnAny<T>[], data: T[], colInde
   const longestLen = Math.max(String(col.title ?? '').length, ...values.map((s) => s.length));
   const estPx = Math.ceil(CHAR_PX * (longestLen + PAD_CH * 2));
   return Math.min(estPx, Math.ceil(available * 0.9));
+}
+
+export function willAllFit<T>(columns: ColumnAny<T>[], data: T[], screenWidth: number) {
+  const padding = 0;
+  const available = Math.max(320, screenWidth - padding);
+  const naturalPx = columns.map((c) => {
+    const values = data.map((r) => String((r as any)[c.key] ?? ''));
+    const longest = Math.max(String(c.title ?? '').length, ...values.map((s) => s.length));
+    return Math.ceil(CHAR_PX * (longest + PAD_CH * 2));
+  });
+  const sumNatural = naturalPx.reduce((a, b) => a + b, 0);
+  return sumNatural <= available;
 }
 
 export function computeColumnWidths<T>(
@@ -61,10 +73,22 @@ export function computeColumnWidths<T>(
     return Math.ceil(CHAR_PX * (String(short).length + 4));
   });
 
-  // Start from exact collapsed minima
-  let widths = [...minCollapsedPx];
+  // If all natural widths fit, default to expanded: use natural widths and spread any leftover evenly
+  const sumNatural = naturalPx.reduce((a, b) => a + b, 0);
+  if (!expandedKey && sumNatural <= available) {
+    let widths = [...naturalPx];
+    let leftover = available - sumNatural;
+    if (leftover > 0) {
+      const base = Math.floor(leftover / n);
+      if (base > 0) widths = widths.map((w) => w + base);
+      let rem = leftover - base * n;
+      for (let i = 0; i < n && rem > 0; i++) { widths[i] += 1; rem -= 1; }
+    }
+    return widths;
+  }
 
-  // Extra pixels to distribute to columns with the biggest need
+  // Otherwise: start from collapsed minima and distribute toward natural widths by need
+  let widths = [...minCollapsedPx];
   const sumMin = widths.reduce((a, b) => a + b, 0);
   let distribution = available - sumMin;
 

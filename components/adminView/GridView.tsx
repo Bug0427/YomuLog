@@ -4,6 +4,7 @@ import { useWindowWidth } from '../../utils/findDimensions';
 import useTripleTap from '../../hooks/admin/useTripleTap';
 import useDoubleTap from '../../hooks/admin/useDoubleTap';
 import { abbrevForKey } from '../../utils/gridUtils';
+import { CHAR_PX, PAD_CH } from '../../utils/gridUtils';
 import { computeColumnWidths } from '../../utils/gridWidths';
 import { LoadingRows } from './LoadingRow';
 import CommentModal from './CommentModal';
@@ -29,6 +30,8 @@ export type GridViewProps<T> = {
   onEndReached?: () => void;
   isLoading?: boolean;
   commentKey?: keyof T | string;
+  /** Optional: prioritized column key; moves this column to position 1 and rotates others */
+  priority?: string;
 };
 
 
@@ -43,6 +46,25 @@ function getCellAlign(align?: Align) {
   }
 }
 
+function reorderColumns<T>(cols: Column<T>[], priorityKey?: string): Column<T>[] {
+  if (!priorityKey) return cols;
+  const idx = cols.findIndex(c => String(c.key) === String(priorityKey));
+  if (idx < 0) return cols;
+  const left = cols.slice(0, idx);      // move to end in-order
+  const chosen = cols[idx];
+  const right = cols.slice(idx + 1);    // slides left
+  return [chosen, ...right, ...left];
+}
+
+function computeNaturalWidths<T>(columns: Column<T>[], data: T[]): number[] {
+  return columns.map((c) => {
+    const titleLen = String(c.title ?? '').length;
+    const values = data.map((r) => String((r as any)[c.key] ?? ''));
+    const longest = Math.max(titleLen, ...values.map((s) => s.length));
+    return Math.ceil(CHAR_PX * (longest + PAD_CH * 2));
+  });
+}
+
 export default function GridView<T extends Record<string, any>>({
   columns,
   data,
@@ -52,15 +74,29 @@ export default function GridView<T extends Record<string, any>>({
   onEndReached,
   isLoading,
   commentKey,
+  priority,
 }: GridViewProps<T>) {
   const screenWidth = useWindowWidth();
   const [expandedKey, setExpandedKey] = useState<string | undefined>(undefined);
+  // When all visible columns naturally fit, default to expanded and allow collapsing per column
+  const [collapsedSet, setCollapsedSet] = useState<Set<string>>(new Set());
+  const orderedColumns = useMemo(() => reorderColumns(columns, priority), [columns, priority]);
+  const naturalWidths = useMemo(() => computeNaturalWidths(orderedColumns as any, data as any), [orderedColumns, data]);
+  const allFit = useMemo(() => naturalWidths.reduce((a, b) => a + b, 0) <= Math.max(320, screenWidth), [naturalWidths, screenWidth]);
   const onHeaderDoubleTap = useDoubleTap<string>((key) => {
-    setExpandedKey((prev) => (prev === key ? undefined : key));
+    if (allFit) {
+      setCollapsedSet((prev) => {
+        const next = new Set(prev);
+        if (next.has(key)) next.delete(key); else next.add(key);
+        return next;
+      });
+    } else {
+      setExpandedKey((prev) => (prev === key ? undefined : key));
+    }
   }, 300);
   const colWidths = useMemo(
-    () => computeColumnWidths(columns as any, data as any, screenWidth, expandedKey),
-    [columns, data, screenWidth, expandedKey]
+    () => computeColumnWidths(orderedColumns as any, data as any, screenWidth, expandedKey),
+    [orderedColumns, data, screenWidth, expandedKey]
   );
   const totalWidth = useMemo(() => {
     const padding = 0;
@@ -75,11 +111,11 @@ export default function GridView<T extends Record<string, any>>({
   const [modal, setModal] = useState<{ visible: boolean; text: string }>({ visible: false, text: '' });
   const _keyExtractor = keyExtractor ?? ((item: T, i: number) => String((item as any).id ?? i));
   const renderHeader = () => (
-    <View style={[adminCommonStyles.dataRow, { height: headerHeight, width: totalWidth, borderBottomWidth: 2, backgroundColor: '#745996ff', }]}> 
-      {columns.map((col, i) => {
+    <View style={[adminCommonStyles.dataRow, { height: headerHeight, width: totalWidth, borderBottomWidth: 2, backgroundColor: '#412d5cff', }]}> 
+      {orderedColumns.map((col, i) => {
         const keyStr = String(col.key);
         let displayTitle = col.title;
-        const isExpandedCol = expandedKey === keyStr;
+        const isExpandedCol = allFit ? !collapsedSet.has(keyStr) : expandedKey === keyStr;
         if (!isExpandedCol) displayTitle = abbrevForKey(keyStr, col.title);
         return (
           <Pressable
@@ -106,11 +142,13 @@ export default function GridView<T extends Record<string, any>>({
               <RowView
                 item={item}
                 index={index}
-                columns={columns}
+                columns={orderedColumns}
                 colWidths={colWidths}
                 rowHeight={rowHeight}
                 totalWidth={totalWidth}
                 expandedKey={expandedKey}
+                allFit={allFit}
+                collapsedKeys={Array.from(collapsedSet)}
                 onPress={handleRowPress}
               />
             )}

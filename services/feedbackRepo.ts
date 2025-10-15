@@ -56,7 +56,7 @@ await db.execAsync('PRAGMA foreign_keys = ON;');
 
 await db.runAsync(
     `CREATE TABLE IF NOT EXISTS ratings (
-    SUBMISSIONID TEXT PRIMARY KEY NOT NULL,
+    SID TEXT PRIMARY KEY NOT NULL,
     ACCOUNTID TEXT NOT NULL,
     USERNM TEXT NOT NULL,
     RATING INTEGER NOT NULL CHECK (RATING BETWEEN 1 AND 5)
@@ -65,7 +65,7 @@ await db.runAsync(
 
 await db.runAsync(
     `CREATE TABLE IF NOT EXISTS comments (
-    SUBMISSIONID TEXT PRIMARY KEY NOT NULL,
+    SID TEXT PRIMARY KEY NOT NULL,
     ACCOUNTID TEXT NOT NULL,
     USERNM TEXT NOT NULL,
     COMMENTS TEXT NOT NULL CHECK (length(COMMENTS) <= 160)
@@ -74,7 +74,7 @@ await db.runAsync(
 
 await db.runAsync(
     `CREATE TABLE IF NOT EXISTS reports (
-    SUBMISSIONID TEXT PRIMARY KEY NOT NULL,
+    SID TEXT PRIMARY KEY NOT NULL,
     ACCOUNTID TEXT NOT NULL,
     USERNM TEXT NOT NULL,
     MAINCAT TEXT NOT NULL,
@@ -171,7 +171,7 @@ comments: string;
 const submissionId = genSubmissionId('RPT');
 const capped = (row.comments ?? '').slice(0, 160);
 await db.runAsync(
-    `INSERT INTO reports (SUBMISSIONID, ACCOUNTID, USERNM, MAINCAT, SUBCAT, COMMENTS)
+    `INSERT INTO reports (SID, ACCOUNTID, USERNM, MAINCAT, SUBCAT, COMMENTS)
     VALUES (?, ?, ?, ?, ?, ?)`,
     [submissionId, row.accountId, row.userNm, row.mainCat, row.subCat, capped]
 );
@@ -186,7 +186,7 @@ comments: string;
 const submissionId = genSubmissionId('CMT');
 const capped = (row.comments ?? '').slice(0, 160);
 await db.runAsync(
-    `INSERT INTO comments (SUBMISSIONID, ACCOUNTID, USERNM, COMMENTS)
+    `INSERT INTO comments (SID, ACCOUNTID, USERNM, COMMENTS)
     VALUES (?, ?, ?, ?)`,
     [submissionId, row.accountId, row.userNm, capped]
 );
@@ -200,7 +200,7 @@ rating: number; // 1..5
 }) {
 const submissionId = genSubmissionId('RTG');
 await db.runAsync(
-    `INSERT INTO ratings (SUBMISSIONID, ACCOUNTID, USERNM, RATING)
+    `INSERT INTO ratings (SID, ACCOUNTID, USERNM, RATING)
     VALUES (?, ?, ?, ?)`,
     [submissionId, row.accountId, row.userNm, row.rating]
 );

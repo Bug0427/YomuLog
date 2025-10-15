@@ -590,6 +590,49 @@ const adminCommonStyles = StyleSheet.create({
     },
 
 })
+const AdminSearchBarStyles = StyleSheet.create({
+    wrap: {
+        paddingHorizontal: 12,
+        paddingTop: 8,
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#412d5cff',
+        backgroundColor: '#AFA6DD',
+        position: 'relative',
+    },
+    hLine: {
+        width: 18,
+        height: 2,
+        backgroundColor: '#412d5cff',
+        marginVertical: 1.5,
+    },
+    queryBox: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: '#412d5cff',
+        backgroundColor: '#bfb9deff',
+    },
+    iconBtn: {
+        width: 34,
+        height: 34,
+        borderWidth: 1,
+        borderColor: '#412d5cff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#bfb9deff',
+    },
+    checkText: {
+        color: '#412d5cff',
+        fontSize: 18,
+        fontWeight: '800',
+    },
+    dropdown:{
+        borderColor: '#412d5cff', 
+        backgroundColor: '#bfb9deff', 
+        borderRadius: 0
+
+    }
+});
 
 
 export {
@@ -609,5 +652,6 @@ export {
     confirmationStyles,
     changeLoginStyle, 
     adminTabStyles,
-    adminCommonStyles
+    adminCommonStyles,
+    AdminSearchBarStyles
     };
