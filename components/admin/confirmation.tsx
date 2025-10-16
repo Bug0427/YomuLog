@@ -15,17 +15,43 @@ export type ConfirmOptions = {
 
 const ConfirmCtx = createContext<null | ((opts: ConfirmOptions) => Promise<boolean>)>(null);
 
-export const ConfirmProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+type ConfirmProviderProps = { children?: React.ReactNode };
+export function ConfirmProvider({ children }: ConfirmProviderProps) {
   const [visible, setVisible] = useState(false);
   const [opts, setOpts] = useState<ConfirmOptions>({});
   const resolver = useRef<((val: boolean) => void) | null>(null);
+  const isShowing = useRef(false);
+  const pendingPromise = useRef<Promise<boolean> | null>(null);
+  const openTimer = useRef<NodeJS.Timeout | null>(null);
 
   const confirm = useCallback((options: ConfirmOptions) => {
-    setOpts(options ?? {});
-    setVisible(true);
-    return new Promise<boolean>((resolve) => {
-      resolver.current = resolve;
-    });
+    // If already showing, just return the existing promise
+    if (isShowing.current && pendingPromise.current) {
+      return pendingPromise.current;
+    }
+
+    // Create or reuse a single in-flight promise for this request
+    if (!pendingPromise.current) {
+      pendingPromise.current = new Promise<boolean>((resolve) => {
+        resolver.current = resolve;
+      });
+    }
+
+    // Mark showing *immediately* to avoid re-entrant opens in the same render pass
+    isShowing.current = true;
+
+    // Avoid scheduling multiple timers
+    if (openTimer.current) {
+      return pendingPromise.current;
+    }
+
+    openTimer.current = setTimeout(() => {
+      openTimer.current = null;
+      setOpts(options ?? {});
+      setVisible(true);
+    }, 0);
+
+    return pendingPromise.current;
   }, []);
 
   const onCancel = useCallback((e: GestureResponderEvent) => {
@@ -33,6 +59,9 @@ export const ConfirmProvider: React.FC<React.PropsWithChildren> = ({ children })
     setVisible(false);
     resolver.current?.(false);
     resolver.current = null;
+    isShowing.current = false;
+    pendingPromise.current = null;
+    if (openTimer.current) { clearTimeout(openTimer.current); openTimer.current = null; }
   }, [opts]);
 
   const onConfirm = useCallback((e: GestureResponderEvent) => {
@@ -40,6 +69,9 @@ export const ConfirmProvider: React.FC<React.PropsWithChildren> = ({ children })
     setVisible(false);
     resolver.current?.(true);
     resolver.current = null;
+    isShowing.current = false;
+    pendingPromise.current = null;
+    if (openTimer.current) { clearTimeout(openTimer.current); openTimer.current = null; }
   }, [opts]);
 
   const value = useMemo(() => confirm, [confirm]);
@@ -52,7 +84,7 @@ export const ConfirmProvider: React.FC<React.PropsWithChildren> = ({ children })
   return (
     <ConfirmCtx.Provider value={value}>
       {children}
-      <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+      <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onCancel}>
         <View style={confirmationStyles.backdrop}>
           <View style={confirmationStyles.card}>
             <Pressable onPress={onCancel} style={[{alignItems:'flex-end'}]}>
@@ -70,7 +102,7 @@ export const ConfirmProvider: React.FC<React.PropsWithChildren> = ({ children })
       </Modal>
     </ConfirmCtx.Provider>
   );
-};
+}
 
 export function useConfirm() {
   const ctx = useContext(ConfirmCtx);

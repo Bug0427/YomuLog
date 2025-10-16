@@ -3,7 +3,7 @@
     import { useNavigation } from '@react-navigation/native';
     import { FeedBackStyles, SubmitButtonStyles } from '../../styles/global';
 import { createUser, runAsync, SecurityLevel } from '../../services/feedbackRepo';
-import { makeId } from '../../utils/idGenerator';
+import { makeUserIdSafe, UserLevel } from '../../utils/idGenerator';
 
 // Ensure default security level mapping even if enum values shift
 // Expected mapping: 1 = Admin, 2 = Purchase, 3 = Regular
@@ -83,7 +83,7 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
         // Create account
         try {
         await createUser({
-            accountId: makeId('USR'),
+            accountId: await makeUserIdSafe((REGULAR_LVL as UserLevel), user),
             userNm: user,
             email: em, // already lowercased
             pswd: pw, // NOTE: hash in production

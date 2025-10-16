@@ -6,17 +6,6 @@ import { categories, issuesByCategory, type CategoryId } from '../../data/feedba
 import { FeedBackStyles } from '../../styles/global';
 import SubmitButton from '../../components/layout/SubmitButton';
 import { insertReport, initDb } from '../../services/feedbackRepo';
-import { makeId } from '../../utils/idGenerator';
-
-type SessionUser = { ACCOUNTID: string; USERNM: string };
-
-// Temporary stub – replace with your real session management
-async function getSessionUser(): Promise<SessionUser> {
-  return {
-    ACCOUNTID: (globalThis as any).currentAccountId ?? 'DEV_ACCOUNT',
-    USERNM: (globalThis as any).currentUsername ?? 'DEV_USERNAME',
-  };
-}
 
 export default function FileReport() {
   React.useEffect(() => {
@@ -56,20 +45,19 @@ export default function FileReport() {
     // For free-text categories, user must type a subject; for normal ones, selectedIssue must exist
     if ((isFreeTextSub && !subject) || (!isFreeTextSub && !selectedIssue) || !cleanComment) return;
 
-    // Assume user is logged in and get canonical IDs from profile
-    const { ACCOUNTID, USERNM } = await getSessionUser();
+    // Get accountId directly from globalThis.currentAccountId (same as securityLevel)
+    const accountId = (globalThis as any).currentAccountId;
 
-    const datePart = new Date().toISOString().slice(0,10).replace(/-/g,'');
-    const submissionId = makeId(`RPT_${datePart}`);
+    console.log('🔍 FileReport resolved accountId:', accountId);
 
     const payload = {
-      submissionId,
-      accountId: ACCOUNTID,
-      userNm: USERNM,
+      accountId: accountId,
       mainCat: selectedCat.id,
       subCat: subject ? subject : (selectedIssue ?? ''),
       comments: cleanComment.slice(0, 360),
     };
+
+    console.log('Submitting report payload:', payload);
 
     try {
       await insertReport(payload);
@@ -137,7 +125,7 @@ export default function FileReport() {
               {catOpen && (
                 <View style={FeedBackStyles.dropdown}>
                   {categories.map((c, idx) => (
-                    <View key={c.id}>
+                    <View key={`${c.id}_${idx}`}>
                       <Pressable
                         accessibilityRole="button"
                         style={({ pressed }) => [FeedBackStyles.option, pressed && FeedBackStyles.optionPressed]}
@@ -178,7 +166,7 @@ export default function FileReport() {
                     {issueOpen && (
                       <View style={FeedBackStyles.dropdown}>
                         {currentIssues.map((issue, idx) => (
-                          <View key={issue}>
+                          <View key={`${issue}_${idx}`}>
                             <Pressable
                               accessibilityRole="button"
                               style={({ pressed }) => [FeedBackStyles.option, pressed && FeedBackStyles.optionPressed]}

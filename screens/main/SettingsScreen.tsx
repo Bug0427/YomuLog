@@ -1,6 +1,6 @@
 // React & React Native
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, Pressable, Text } from 'react-native';
+import { View, ScrollView, Pressable, Text, Alert } from 'react-native';
 import { Feather } from "@expo/vector-icons";
 import { useNavigation, CommonActions, useFocusEffect } from "@react-navigation/native";
 
@@ -8,7 +8,6 @@ import { useNavigation, CommonActions, useFocusEffect } from "@react-navigation/
 import Header from '../../components/layout/Header';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
 import Anchor from '../../components/layout/Anchor';
-import { useConfirm } from '../../components/admin/confirmation';
 import { resetDatabase } from '../../services/devResetDB';
 import { logout } from '../../data/SettingsButtonActions/Logout';
 import ChangeLoginModal from '../../components/admin/ChangeLoginModal';
@@ -58,18 +57,27 @@ export default function SettingsScreen() {
     const [alertsOn, setAlertsOn] = useState(true);
     const { scrollRef, isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
     const navigation = useNavigation();
-    const confirm = useConfirm();
-    const handleRefreshMetadata = async () => {
-        const ok = await confirm({
-            danger: true
-        });
-        if (!ok) return;
-        try {
-            await resetDatabase();
-            console.log('🔄 Database reset via Refresh metadata');
-        } catch (e) {
-            console.warn('Reset DB failed', e);
-        }
+    const [accountId, setAccountId] = useState<string | null>(null);
+    const handleRefreshMetadata = () => {
+        Alert.alert(
+            "Refresh Metadata",
+            "Are you sure you want to refresh metadata? This will reset the database.",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "OK",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await resetDatabase();
+                            console.log('🔄 Database reset via Refresh metadata');
+                        } catch (e) {
+                            console.warn('Reset DB failed', e);
+                        }
+                    }
+                }
+            ]
+        );
     };
     // ---------------------------------------------------------------------
     // Provisional login + verification logic (no Login screen yet)
@@ -85,6 +93,7 @@ export default function SettingsScreen() {
 
             const savedUsername: string | undefined = (globalThis as any).currentUsername;
             const savedPassword: string | undefined = (globalThis as any).currentPassword;
+            const savedAccountId: string | undefined = (globalThis as any).currentAccountId;
             console.log('👤 Saved creds seen by Settings:', { savedUsername, hasPassword: !!savedPassword });
 
             if (!savedUsername || !savedPassword) {
@@ -92,6 +101,7 @@ export default function SettingsScreen() {
                 if (isMounted) {
                     setSecurityLevel(null);
                     setLoading(false);
+                    setAccountId(null);
                 }
                 return;
             }
@@ -100,10 +110,14 @@ export default function SettingsScreen() {
                 const row = (await verifyUser(savedUsername, savedPassword)) as VerifyRow;
                 if (isMounted) {
                     setSecurityLevel(row ? (row.SECURITYLVL as SecurityLevel) : null);
+                    setAccountId(savedAccountId ?? null);
                 }
             } catch (e) {
                 console.warn('verifyUser failed', e);
-                if (isMounted) setSecurityLevel(null);
+                if (isMounted) {
+                    setSecurityLevel(null);
+                    setAccountId(null);
+                }
             } finally {
                 if (isMounted) setLoading(false);
             }
@@ -115,14 +129,15 @@ export default function SettingsScreen() {
       useCallback(() => {
         // Re-read session on focus so UI updates after login
         const lvl = (globalThis as any).currentSecurityLevel ?? null;
+        const accId = (globalThis as any).currentAccountId ?? null;
         setSecurityLevel(lvl as any);
+        setAccountId(accId);
         return () => {};
       }, [])
     );
 
     // Helpers to route based on login state
     const goFeedback = () => {
-      const accountId: string | undefined = (globalThis as any).currentAccountId;
       const level: any = (globalThis as any).currentSecurityLevel;
 
       if (!accountId) {
@@ -185,7 +200,8 @@ export default function SettingsScreen() {
 
     useEffect(() => {
         console.log('🔎 SettingsScreen securityLevel:', securityLevel);
-    }, [securityLevel]);
+        console.log('🔎 SettingsScreen accountId:', accountId);
+    }, [securityLevel, accountId]);
 
     const isAdmin = isAdminLevel(securityLevel);
 
@@ -271,11 +287,10 @@ export default function SettingsScreen() {
             </View>
         </ScrollView>
         <ChangeLoginModal
-          visible={showChangeLogin}
-          onClose={() => setShowChangeLogin(false)}
-          accountId={(globalThis as any).currentAccountId}
-          // @ts-ignore
-          navigation={navigation}
+            visible={showChangeLogin}
+            onClose={() => setShowChangeLogin(false)}
+            accountId={accountId ?? undefined}
+            navigation={navigation}
         />
         <Anchor scrollRef={scrollRef} isScrolling={isScrolling} />
         </View>

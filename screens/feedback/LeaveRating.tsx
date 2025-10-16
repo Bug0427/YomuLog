@@ -11,11 +11,34 @@ export default function LeaveRating() {
     const [rating, setRating] = React.useState<number>(0); // 0 = none selected
     const [submitting, setSubmitting] = React.useState(false);
 
-    const handleSubmit = () => {
+    React.useEffect(() => {
+        const unsub = (navigation as any).addListener?.('focus', () => {
+            console.log('👤 activeUser (LeaveRating focus):', (globalThis as any).__activeUser);
+            console.log('🛠 LeaveRating state:', { rating, submitting });
+        });
+        return () => { if (typeof unsub === 'function') unsub(); };
+    }, [navigation, rating, submitting]);
+
+    const handleSubmit = async () => {
         if (!rating || submitting) return;
         setSubmitting(true);
         try {
-            console.log('⭐ Submitted rating:', rating);
+            // Get accountId directly from globalThis.currentAccountId (same as FileReport)
+            const accountId = (globalThis as any).currentAccountId;
+            console.log('🔍 LeaveRating resolved accountId:', accountId);
+            const payload = {
+                accountId,
+                rating,
+            };
+            console.log('Submitting rating payload:', payload);
+
+            const repo = await import('../../services/feedbackRepo');
+            if (typeof repo.insertRating !== 'function') {
+                throw new Error('insertRating not exported from feedbackRepo');
+            }
+            const saved = await repo.insertRating(payload);
+            console.log('✅ insertRating result:', saved);
+
             console.log('🟢 Setting success flash and leaving LeaveRating');
             (globalThis as any).__feedbackFlash = {
                 message: 'Rating submitted successfully!',
@@ -23,7 +46,11 @@ export default function LeaveRating() {
                 ms: 3000,
             };
             navigation.goBack();
-        } finally {}
+        } catch (e) {
+            console.warn('❌ Failed to save rating (screen):', e);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const Heart = ({ index }: { index: number }) => {
@@ -52,6 +79,7 @@ return (
             onBack={() => navigation.goBack()}
             onSubmit={handleSubmit}
             submitLabel="Submit"
+            disabled={!rating || submitting}
         />
 
     {/* Card container */}

@@ -7,15 +7,14 @@
 //   2) DB maintenance (reset, hard delete)
 //   3) Schema initialization & migrations (initDb)
 //   4) Seeding (seedDefaultUsers)
-//   5) Submission ID generation
-//   6) Inserts (reports, comments, ratings)
-//   7) Users: types, CRUD, auth, profile
-//   8) Typed query helpers
+//   5) Inserts (reports, comments, ratings)
+//   6) Users: types, CRUD, auth, profile
+//   7) Typed query helpers
 // =============================================================================
 
 // 0) Imports & constants ------------------------------------------------------
 import * as SQLite from 'expo-sqlite';
-import { makeId } from '../utils/idGenerator';
+import { makeIdSafe } from '../utils/idGenerator';
 
 // Dev toggle: set true to clear all tables on app start (useful while iterating)
 const RESET_DB_ON_START = false; // flip to true temporarily when you want a clean slate
@@ -78,7 +77,6 @@ export async function initDb() {
     `CREATE TABLE IF NOT EXISTS ratings (
     SID TEXT PRIMARY KEY NOT NULL,
     ACCOUNTID TEXT NOT NULL,
-    USERNM TEXT NOT NULL,
     RATING INTEGER NOT NULL CHECK (RATING BETWEEN 1 AND 5)
     )`
   );
@@ -87,7 +85,6 @@ export async function initDb() {
     `CREATE TABLE IF NOT EXISTS comments (
     SID TEXT PRIMARY KEY NOT NULL,
     ACCOUNTID TEXT NOT NULL,
-    USERNM TEXT NOT NULL,
     COMMENTS TEXT NOT NULL CHECK (length(COMMENTS) <= 160)
     )`
   );
@@ -96,7 +93,6 @@ export async function initDb() {
     `CREATE TABLE IF NOT EXISTS reports (
     SID TEXT PRIMARY KEY NOT NULL,
     ACCOUNTID TEXT NOT NULL,
-    USERNM TEXT NOT NULL,
     MAINCAT TEXT NOT NULL,
     SUBCAT TEXT NOT NULL,
     COMMENTS TEXT NOT NULL CHECK (length(COMMENTS) <= 160)
@@ -189,85 +185,73 @@ export async function seedDefaultUsers() {
   );
   await runAsync(
     `INSERT OR IGNORE INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL) VALUES (?,?,?,?,?)`,
-    ['USR_regular', 'regular', 'regular@yomulog.test', 'RegPass1!', 3]
+    ['mainAccount', 'buggy', 'regular@yomulog.test', 'P@22w0rd', 3]
   );
   const rs = await runAsync(`SELECT ACCOUNTID, USERNM, EMAIL, SECURITYLVL FROM users ORDER BY USERNM`);
   // @ts-ignore
   console.log('🌱 After seed, users:', rs?.rows?._array ?? []);
 }
-
-// 5) Submission ID generation -------------------------------------------------
-function genSubmissionId(prefix: string = 'SUB') {
-  // Include date in YYYYMMDD format for more complex IDs
-  const datePart = new Date().toISOString().slice(0,10).replace(/-/g,'');
-  return makeId(`${prefix}_${datePart}`);
-}
-
-// 6) Inserts (reports, comments, ratings) ------------------------------------
+// 5) Inserts (reports, comments, ratings) ------------------------------------
 export async function insertReport(row: {
-  submissionId?: string; // optional: allow caller to pass in
   accountId: string;
-  userNm: string;
   mainCat: string; // CategoryId
   subCat: string;
   comments: string;
 }) {
-  const submissionId = row.submissionId ?? genSubmissionId('RPT');
-  const capped = (row.comments ?? '').slice(0, 160);
+  const sid = await makeIdSafe('RPT'); // unique row id
+  const capped = (row.comments ?? '').slice(0, 360);
 
-  // First try: schemas that have SUBMISSIONID (NOT NULL)
-  try {
-    await db.runAsync(
-      `INSERT INTO reports (SUBMISSIONID, SID, ACCOUNTID, USERNM, MAINCAT, SUBCAT, COMMENTS)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [submissionId, submissionId, row.accountId, row.userNm, row.mainCat, row.subCat, capped]
-    );
-  } catch (e) {
-    const msg = String((e as any)?.message || e);
-    // Fallback for older DBs that don't have SUBMISSIONID column
-    if (/no such column:\s*SUBMISSIONID/i.test(msg) || /unknown column\s*SUBMISSIONID/i.test(msg)) {
-      await db.runAsync(
-        `INSERT INTO reports (SID, ACCOUNTID, USERNM, MAINCAT, SUBCAT, COMMENTS)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [submissionId, row.accountId, row.userNm, row.mainCat, row.subCat, capped]
-      );
-    } else {
-      throw e;
-    }
-  }
-  return submissionId;
+  await db.runAsync(
+    `INSERT INTO reports (SID, ACCOUNTID, MAINCAT, SUBCAT, COMMENTS)
+     VALUES (?, ?, ?, ?, ?)`,
+    [sid, row.accountId, row.mainCat, row.subCat, capped]
+  );
+
+  return { sid };
 }
 
 export async function insertComment(row: {
   accountId: string;
-  userNm: string;
   comments: string;
 }) {
-  const submissionId = genSubmissionId('CMT');
+  const sid = await makeIdSafe('CMT');
   const capped = (row.comments ?? '').slice(0, 160);
   await db.runAsync(
-    `INSERT INTO comments (SID, ACCOUNTID, USERNM, COMMENTS)
-    VALUES (?, ?, ?, ?)`,
-    [submissionId, row.accountId, row.userNm, capped]
+    `INSERT INTO comments (SID, ACCOUNTID, COMMENTS)
+     VALUES (?, ?, ?)`,
+    [sid, row.accountId, capped]
   );
-  return submissionId;
+  return { sid };
 }
 
 export async function insertRating(row: {
   accountId: string;
-  userNm: string;
   rating: number; // 1..5
 }) {
-  const submissionId = genSubmissionId('RTG');
+  const sid = await makeIdSafe('RAT');
   await db.runAsync(
-    `INSERT INTO ratings (SID, ACCOUNTID, USERNM, RATING)
-    VALUES (?, ?, ?, ?)`,
-    [submissionId, row.accountId, row.userNm, row.rating]
+    `INSERT INTO ratings (SID, ACCOUNTID, RATING)
+     VALUES (?, ?, ?)`,
+    [sid, row.accountId, row.rating]
   );
-  return submissionId;
+  return { sid };
 }
 
-// 7) Users: types, CRUD, auth, profile --------------------------------------
+export async function insertReview(row: {
+  accountId: string;
+  comments: string;
+}) {
+  const sid = await makeIdSafe('REV');
+  const capped = (row.comments ?? '').slice(0, 360);
+  await db.runAsync(
+    `INSERT INTO comments (SID, ACCOUNTID, COMMENTS)
+     VALUES (?, ?, ?)`,
+    [sid, row.accountId, capped]
+  );
+  return { sid };
+}
+
+// 6) Users: types, CRUD, auth, profile --------------------------------------
 export enum SecurityLevel {
   Admin = 1,
   Paid = 2,
@@ -335,6 +319,6 @@ export async function updateProfileIcon(accountId: string, iconId: string) {
   );
 }
 
-// 8) Typed query helpers ------------------------------------------------------
+// 7) Typed query helpers ------------------------------------------------------
 export const queryAll = <T = any>(sql: string, params: any[] = []) => db.getAllAsync<T>(sql, params);
 export const queryFirst = <T = any>(sql: string, params: any[] = []) => db.getFirstAsync<T>(sql, params);

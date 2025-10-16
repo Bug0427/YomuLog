@@ -60,7 +60,6 @@ export default function AdminReports() {
       return [
         { key: 'sid', label: 'SID' },
         { key: 'id', label: 'ID' },
-        { key: 'username', label: 'Username' },
         { key: 'category', label: 'Main Cat' },
         { key: 'subcategory', label: 'Sub Cat' },
         // comments are viewed via triple-tap, not a selectable field
@@ -70,7 +69,6 @@ export default function AdminReports() {
       return [
         { key: 'sid', label: 'SID' },
         { key: 'id', label: 'ID' },
-        { key: 'username', label: 'Username' },
         // comments via triple-tap
       ];
     }
@@ -78,7 +76,6 @@ export default function AdminReports() {
       return [
         { key: 'sid', label: 'SID' },
         { key: 'id', label: 'ID' },
-        { key: 'username', label: 'Username' },
         { key: 'rating', label: 'Rating' },
       ];
     }
@@ -86,7 +83,6 @@ export default function AdminReports() {
     return [
       { key: 'sid', label: 'SID' },
       { key: 'id', label: 'ID' },
-      { key: 'username', label: 'Username' },
     ];
   }, [category]);
 
@@ -109,7 +105,6 @@ export default function AdminReports() {
       setColumns([
         { key: 'sid', title: 'SID', width: 100, align: 'center' },
         { key: 'id', title: 'ID', width: 120, align: 'center' },
-        { key: 'username', title: 'Username', width: 160, align: 'center' },
         { key: 'category', title: 'Main Cat', width: 160, align: 'center' },
         { key: 'subcategory', title: 'Sub Cat', width: 160, align: 'center' },
         // comments are shown via triple‑tap, not a column
@@ -118,14 +113,12 @@ export default function AdminReports() {
       setColumns([
         { key: 'sid', title: 'SID', width: 100, align: 'center' },
         { key: 'id', title: 'ID', width: 120, align: 'center' },
-        { key: 'username', title: 'Username', width: 160, align: 'center' },
         // comments via triple‑tap
       ]);
     } else if (category === 'Ratings') {
       setColumns([
         { key: 'sid', title: 'SID', width: 100, align: 'center' },
         { key: 'id', title: 'ID', width: 120, align: 'center' },
-        { key: 'username', title: 'Username', width: 160, align: 'center' },
         { key: 'rating', title: 'Rating', width: 120, align: 'center' },
       ]);
     } else {
@@ -144,18 +137,17 @@ export default function AdminReports() {
             const dbRows = await queryAll<{
               SID: string;
               ACCOUNTID?: string;
-              USERNM: string;
               MAINCAT: string;
               SUBCAT: string;
               COMMENTS?: string;
             }>(
-              `SELECT SID, ACCOUNTID, USERNM, MAINCAT, SUBCAT, COMMENTS FROM reports ORDER BY SID DESC`
+              `SELECT SID, ACCOUNTID, MAINCAT, SUBCAT, COMMENTS FROM reports ORDER BY SID DESC`
             );
             if (!mounted) return;
             const mapped: ReportRow[] = (dbRows || []).map((r) => ({
               sid: (r as any).SID,
               id: r.ACCOUNTID ?? '',
-              username: r.USERNM,
+              username: '',
               category: r.MAINCAT,
               subcategory: r.SUBCAT,
               comments: r.COMMENTS ?? '',
@@ -167,43 +159,43 @@ export default function AdminReports() {
         } else if (category === 'Reviews') {
           try {
             const dbRows = await queryAll<{
-              SID?: string;
-              ID?: string; // account id
-              USERNM: string;
+              SID: string;
+              ACCOUNTID?: string;
               COMMENTS?: string;
             }>(
-              `SELECT SID, ID, USERNM, COMMENTS FROM comments ORDER BY SID DESC`
+              `SELECT SID, ACCOUNTID, COMMENTS FROM comments ORDER BY SID DESC`
             );
             if (!mounted) return;
             const mapped: ReportRow[] = (dbRows || []).map((r) => ({
-              sid: (r as any).SID ?? (r as any).ID ?? '',
-              id: r.ID ?? '',
-              username: r.USERNM,
+              sid: r.SID,
+              id: r.ACCOUNTID ?? '',
+              username: '',
               comments: r.COMMENTS ?? '',
             }));
             setRows(mapped);
           } catch (err) {
+            console.warn('AdminReports Reviews query failed:', err);
             setRows([]);
           }
         } else if (category === 'Ratings') {
           try {
             const dbRows = await queryAll<{
-              SID?: string;
-              ID?: string; // account id
-              USERNM: string;
+              SID: string;
+              ACCOUNTID?: string;
               RATING: number;
             }>(
-              `SELECT SID, ID, USERNM, RATING FROM ratings ORDER BY SID DESC`
+              `SELECT SID, ACCOUNTID, RATING FROM ratings ORDER BY SID DESC`
             );
             if (!mounted) return;
             const mapped: ReportRow[] = (dbRows || []).map((r) => ({
-              sid: (r as any).SID ?? (r as any).ID ?? '',
-              id: r.ID ?? '',
-              username: r.USERNM,
+              sid: r.SID,
+              id: r.ACCOUNTID ?? '',
+              username: '',
               rating: r.RATING,
             }));
             setRows(mapped);
           } catch (err) {
+            console.warn('AdminReports Ratings query failed:', err);
             setRows([]);
           }
         } else {
@@ -239,7 +231,7 @@ export default function AdminReports() {
       if (typeof av === 'number' && typeof bv === 'number') return av - bv;
       return String(av).localeCompare(String(bv), undefined, { numeric: true });
     },
-    keyExtractor: (r) => r.id || r.sid || '',
+    keyExtractor: (r) => `${r.sid ?? ''}-${r.id ?? ''}`,
   });
 
   let visibleColumns: Column<ReportRow>[] = columns.filter(c => selectedFields.includes(String(c.key)));

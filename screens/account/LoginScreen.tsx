@@ -38,11 +38,10 @@ const onSubmit = async () => {
         return;
       }
       (globalThis as any).currentAccountId = row.ACCOUNTID;
-      (globalThis as any).currentUsername = row.USERNM;
-      (globalThis as any).currentPassword = pwd;
       (globalThis as any).currentSecurityLevel = row.SECURITYLVL;
+
       console.log('🔐 Session set from Login:', {
-        user: row.USERNM,
+        accountId: row.ACCOUNTID,
         hasPassword: !!pwd,
         level: row.SECURITYLVL,
       });

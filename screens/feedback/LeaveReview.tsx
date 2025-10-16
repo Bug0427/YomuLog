@@ -18,11 +18,31 @@ export default function LeaveReview() {
   const MIN_CHARS = 5;
   const isDisabled = text.trim().length < MIN_CHARS || submitting;
 
-  const handleSubmit = () => {
-    if (!text.trim() || submitting || isDisabled) return;
+  const handleSubmit = async () => {
+    const clean = text.trim();
+    if (!clean || submitting || isDisabled) return;
     setSubmitting(true);
     try {
-      console.log('💬 Submitted review:', text.trim());
+      // Get accountId directly from globalThis.currentAccountId
+      const accountId = (globalThis as any).currentAccountId;
+
+      console.log('🔍 LeaveReview resolved accountId:', accountId);
+
+      const payload = {
+        accountId,
+        comments: clean,
+      };
+
+      console.log('Submitting review payload:', payload);
+
+      // Dynamically import repo to avoid compile errors if not yet defined
+      const repo = await import('../../services/feedbackRepo');
+      if (typeof repo.insertReview !== 'function') {
+        throw new Error('insertReview not exported from feedbackRepo');
+      }
+      const saved = await repo.insertReview(payload);
+      console.log('✅ insertReview result:', saved);
+
       // surface success on previous screen
       (globalThis as any).__feedbackFlash = {
         message: 'Review submitted successfully!',
@@ -30,8 +50,10 @@ export default function LeaveReview() {
         ms: 3000,
       };
       navigation.goBack();
+    } catch (e) {
+      console.warn('❌ Failed to save review (screen):', e);
     } finally {
-      // screen will leave immediately; keep submitting true to block double taps
+      setSubmitting(false);
     }
   };
 
