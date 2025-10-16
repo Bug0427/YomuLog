@@ -1,8 +1,8 @@
 // React & React Native
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, Pressable, Text } from 'react-native';
 import { Feather } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, CommonActions, useFocusEffect } from "@react-navigation/native";
 
 // Components
 import Header from '../../components/layout/Header';
@@ -23,7 +23,10 @@ import { SecurityLevel, verifyUser } from '../../services/feedbackRepo';
 type VerifyRow = { SECURITYLVL: SecurityLevel } | null;
 
 // Robust admin check to handle enum/number/string values from DB
-const isAdminLevel = (lvl: any) => lvl === SecurityLevel?.Admin || lvl === 1 || lvl === 'Admin';
+const isAdminLevel = (lvl: any) => lvl === SecurityLevel?.Admin || lvl === 1 || lvl === '1' || lvl === 'Admin';
+
+// Only allow feedback for levels 2 & 3 (robust across enum/number/string)
+const isFeedbackAllowed = (lvl: any) => lvl === 2 || lvl === 3 || lvl === '2' || lvl === '3' || lvl === (SecurityLevel as any)?.Level2 || lvl === (SecurityLevel as any)?.Level3;
 
 export const buttonActions = {
     refreshMetadata: () => {console.log('🔄 Refresh metadata');},
@@ -108,40 +111,36 @@ export default function SettingsScreen() {
         return () => { isMounted = false; };
     }, []);
 
+    useFocusEffect(
+      useCallback(() => {
+        // Re-read session on focus so UI updates after login
+        const lvl = (globalThis as any).currentSecurityLevel ?? null;
+        setSecurityLevel(lvl as any);
+        return () => {};
+      }, [])
+    );
+
     // Helpers to route based on login state
-    const goFeedback = async () => {
-        // Attempt to (re)verify on demand so the button doesn't jump to profile when state isn't ready
-        const savedUsername: string | undefined = (globalThis as any).currentUsername;
-        const savedPassword: string | undefined = (globalThis as any).currentPassword;
+    const goFeedback = () => {
+      const accountId: string | undefined = (globalThis as any).currentAccountId;
+      const level: any = (globalThis as any).currentSecurityLevel;
 
-        try {
-            let level: SecurityLevel | null = securityLevel;
+      if (!accountId) {
+        // Not logged in → go to Login and come back here after
+        // @ts-ignore
+        navigation.navigate('LoginScreen', { redirectTo: { name: 'FeedBackHome' } });
+        return;
+      }
 
-            // If we don't yet know the level but we have creds, verify now (handles race with useEffect)
-            if (!level && savedUsername && savedPassword) {
-                setLoading(true);
-                const row = (await verifyUser(savedUsername, savedPassword)) as VerifyRow;
-                level = row ? (row.SECURITYLVL as SecurityLevel) : null;
-                setSecurityLevel(level);
-            }
+      if (isFeedbackAllowed(level)) {
+        // Allowed levels 2 & 3
+        // @ts-ignore
+        navigation.navigate('FeedBackHome');
+        return;
+      }
 
-            if (!level) {
-                console.log('🔐 Not logged in → navigate to LoginSignup');
-                // @ts-ignore
-                navigation.navigate?.('LoginScreen');
-                return;
-            }
-
-            // Logged in → open feedback home, pass along basic user context so reports can attach account
-            // @ts-ignore
-            navigation.navigate?.('FeedBackHome', { username: savedUsername, securityLevel: level });
-        } catch (e) {
-            console.warn('goFeedback verify-on-press failed', e);
-            // @ts-ignore
-            navigation.navigate?.('LoginScreen');
-        } finally {
-            setLoading(false);
-        }
+      // Logged in but not allowed – block gently (no redirect loop)
+      console.log('Feedback restricted to levels 2 & 3. Current level:', level);
     };
 
     const goChangeLogin = async () => {
@@ -253,17 +252,17 @@ export default function SettingsScreen() {
                 <Feather name="download" style={SettingButtonStyles.Icon} />
                 </GridItem>
                 {isAdmin ? (
-                  <GridItem label="Admin" onPress={goAdmin}>
-                    <Feather name="shield" style={SettingButtonStyles.Icon} />
-                  </GridItem>
+                    <GridItem label="Admin" onPress={goAdmin}>
+                        <Feather name="shield" style={SettingButtonStyles.Icon} />
+                    </GridItem>
                 ) : (
-                  <GridItem label="Feedback" onPress={goFeedback}>
-                    <Feather name="message-square" style={SettingButtonStyles.Icon} />
-                  </GridItem>
+                    <GridItem label="Feedback" onPress={goFeedback}>
+                        <Feather name="message-square" style={SettingButtonStyles.Icon} />
+                    </GridItem>
                 )}
 
                 <GridItem label="Change password/username" onPress={goChangeLogin}>
-                  <Feather name="lock" style={SettingButtonStyles.Icon} />
+                    <Feather name="lock" style={SettingButtonStyles.Icon} />
                 </GridItem>
                 <GridItem label="Log out" onPress={() => buttonActions.logOut(navigation)}>
                 <Feather name="log-out" style={SettingButtonStyles.Icon} />

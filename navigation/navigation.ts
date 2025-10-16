@@ -1,4 +1,3 @@
-
 export type RootStackParamList = {
     HomeScreen: undefined;
     MangaInfoScreen: undefined;
@@ -7,9 +6,9 @@ export type RootStackParamList = {
     DownLoadsScreen: undefined;
     ReaderScreen: undefined;
     SettingsScreen: undefined;
-    FeedBackHome: undefined;
-    IssueCategories: undefined;
+    FeedBackHome: { username?: string; securityLevel?: number } | undefined;
+    FileReport:undefined;
+    LoginScreen: undefined;
     
   // Add more screens here as needed
 };
-

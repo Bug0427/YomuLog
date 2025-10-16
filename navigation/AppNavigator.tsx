@@ -17,6 +17,9 @@ import UserAccount from '../screens/account/UserAccount'
 import CreateAccount from '../screens/account/CreateAccount'
 import ForgotCredentials from '../screens/account/ForgotCredentials'
 import ChooseProfileIcon from '../screens/account/ChooseProfileIcon'
+import LeaveRating from '../screens/feedback/LeaveRating';
+import LeaveReview from '../screens/feedback/LeaveReview';
+
 
 
 const Stack = createStackNavigator();
@@ -26,7 +29,7 @@ export default function AppNavigator() {
         <NavigationContainer>
         <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Splash" component={SplashScreen} />
-            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="HomeScreen" component={HomeScreen} />
             <Stack.Screen name="SearchScreen" component={SearchScreen} />
             <Stack.Screen name="LibraryScreen" component={LibraryScreen} />
             <Stack.Screen name="RecentlyUpdated" component={RecentlyUpdated} />
@@ -40,6 +43,8 @@ export default function AppNavigator() {
             <Stack.Screen name="CreateAccount" component={CreateAccount} />
             <Stack.Screen name="ForgotCredentials" component={ForgotCredentials} />
             <Stack.Screen name="ChooseProfileIcon" component={ChooseProfileIcon} />
+            <Stack.Screen name="LeaveRating" component={LeaveRating} />
+            <Stack.Screen name="LeaveReview" component={LeaveReview} />
 
         </Stack.Navigator>
         </NavigationContainer>

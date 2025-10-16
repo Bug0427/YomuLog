@@ -1,30 +1,48 @@
+// =============================================================================
+// feedbackRepo.ts
+// Purpose: SQLite storage for feedback (ratings, comments, reports) and users
+// Organization:
+//   0) Imports & constants
+//   1) DB open & low-level helpers
+//   2) DB maintenance (reset, hard delete)
+//   3) Schema initialization & migrations (initDb)
+//   4) Seeding (seedDefaultUsers)
+//   5) Submission ID generation
+//   6) Inserts (reports, comments, ratings)
+//   7) Users: types, CRUD, auth, profile
+//   8) Typed query helpers
+// =============================================================================
+
+// 0) Imports & constants ------------------------------------------------------
 import * as SQLite from 'expo-sqlite';
 import { makeId } from '../utils/idGenerator';
 
-// --- Dev toggle: set true to clear all tables on app start (useful while iterating)
+// Dev toggle: set true to clear all tables on app start (useful while iterating)
 const RESET_DB_ON_START = false; // flip to true temporarily when you want a clean slate
 
+// 1) DB open & low-level helpers ---------------------------------------------
 // Use the new typed API (SDK 51+): openDatabaseSync provides runAsync/execAsync helpers
 export const db = SQLite.openDatabaseSync('yomulog.db');
 
 // Convenience wrapper – keep signature compatible with previous calls
 export const runAsync = (sql: string, params: any[] = []) => db.runAsync(sql, params);
 
+// 2) DB maintenance (reset, hard delete) -------------------------------------
 // Wipe all application tables (children first), then VACUUM to reclaim space
 export async function resetDb() {
-await db.execAsync('BEGIN;');
-try {
+  await db.execAsync('BEGIN;');
+  try {
     await db.execAsync('DELETE FROM ratings;');
     await db.execAsync('DELETE FROM comments;');
     await db.execAsync('DELETE FROM reports;');
     await db.execAsync('DELETE FROM users;');
     await db.execAsync('COMMIT;');
-} catch (e) {
+  } catch (e) {
     await db.execAsync('ROLLBACK;');
     throw e;
-}
-// Reclaim pages after large deletes
-await db.execAsync('VACUUM;');
+  }
+  // Reclaim pages after large deletes
+  await db.execAsync('VACUUM;');
 }
 
 // Hard reset: delete the DB file completely; fallback to soft reset if API not available
@@ -50,29 +68,31 @@ export const hardResetDb = deleteDbFile;
 export const resetDatabaseFile = deleteDbFile;
 export const deleteDatabase = deleteDbFile;
 
+// 3) Schema initialization & migrations --------------------------------------
 export async function initDb() {
-// Optional: ensure pragmas you care about
-await db.execAsync('PRAGMA foreign_keys = ON;');
+  // Optional: ensure pragmas you care about
+  await db.execAsync('PRAGMA foreign_keys = ON;');
 
-await db.runAsync(
+  // Core tables
+  await db.runAsync(
     `CREATE TABLE IF NOT EXISTS ratings (
     SID TEXT PRIMARY KEY NOT NULL,
     ACCOUNTID TEXT NOT NULL,
     USERNM TEXT NOT NULL,
     RATING INTEGER NOT NULL CHECK (RATING BETWEEN 1 AND 5)
     )`
-);
+  );
 
-await db.runAsync(
+  await db.runAsync(
     `CREATE TABLE IF NOT EXISTS comments (
     SID TEXT PRIMARY KEY NOT NULL,
     ACCOUNTID TEXT NOT NULL,
     USERNM TEXT NOT NULL,
     COMMENTS TEXT NOT NULL CHECK (length(COMMENTS) <= 160)
     )`
-);
+  );
 
-await db.runAsync(
+  await db.runAsync(
     `CREATE TABLE IF NOT EXISTS reports (
     SID TEXT PRIMARY KEY NOT NULL,
     ACCOUNTID TEXT NOT NULL,
@@ -81,10 +101,9 @@ await db.runAsync(
     SUBCAT TEXT NOT NULL,
     COMMENTS TEXT NOT NULL CHECK (length(COMMENTS) <= 160)
     )`
-);
+  );
 
-
-await db.runAsync(
+  await db.runAsync(
     `CREATE TABLE IF NOT EXISTS users (
     ACCOUNTID   TEXT PRIMARY KEY NOT NULL,
     USERNM      TEXT UNIQUE NOT NULL,
@@ -93,188 +112,72 @@ await db.runAsync(
     SECURITYLVL INTEGER NOT NULL CHECK (SECURITYLVL IN (1,2,3)),
     PROFILEICON TEXT
     )`
-);
-
-// --- Backward-compat: older DBs may not have EMAIL column yet
-try {
-// Use getAllAsync so we get a plain array result from PRAGMA
-const cols: any[] = await db.getAllAsync(`PRAGMA table_info(users)`);
-const hasEmail = Array.isArray(cols) && cols.some((c: any) => String(c?.name).toUpperCase() === 'EMAIL');
-if (!hasEmail) {
-    await db.execAsync(`ALTER TABLE users ADD COLUMN EMAIL TEXT`);
-    console.log('ℹ︎ Added users.EMAIL via migration');
-}
-// Ensure unique index exists (idempotent)
-await db.execAsync(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(EMAIL)`);
-} catch (e) {
-const msg = String((e as any)?.message || e);
-if (/duplicate column name: EMAIL/i.test(msg)) {
-    // Column already exists — ignore silently
-} else {
-    console.warn('User table migration check failed', e);
-}
-}
-
-// --- Backward-compat: add PROFILEICON if it doesn't exist
-try {
-  const cols2: any[] = await db.getAllAsync(`PRAGMA table_info(users)`);
-  const hasProfileIcon = Array.isArray(cols2) && cols2.some((c: any) => String(c?.name).toUpperCase() === 'PROFILEICON');
-  if (!hasProfileIcon) {
-    await db.execAsync(`ALTER TABLE users ADD COLUMN PROFILEICON TEXT`);
-    console.log('ℹ︎ Added users.PROFILEICON via migration');
-  }
-} catch (e) {
-  const msg2 = String((e as any)?.message || e);
-  if (/duplicate column name: PROFILEICON/i.test(msg2)) {
-    // already exists — ignore
-  } else {
-    console.warn('PROFILEICON migration check failed', e);
-  }
-}
-
-// --- Optional dev reset -----------------------------------------------------
-try {
-// also allow toggling via globalThis.RESET_DB_ON_START = true at runtime
-if (RESET_DB_ON_START || (globalThis as any)?.RESET_DB_ON_START === true) {
-    console.log('⚠️  RESET_DB_ON_START is true → wiping all tables');
-    await resetDb();
-}
-} catch (e) {
-console.warn('DB reset failed', e);
-}
-try {
-  const row = await db.getFirstAsync<{ c: number }>(`SELECT COUNT(*) as c FROM users`);
-  if (!row || !row.c) {
-    await seedDefaultUsers();
-    const check = await db.getFirstAsync<{ c: number }>(`SELECT COUNT(*) as c FROM users`);
-    console.log(`🌱 Auto-seeded users because table was empty. Count now: ${check?.c ?? 0}`);
-  }
-} catch (e) {
-  console.warn('Auto-seed check failed', e);
-}
-
-console.log('✅ Database initialized');
-}
-
-// --- Insert helpers ---------------------------------------------------------
-function genSubmissionId(prefix: string = 'SUB') {
-return makeId(prefix);
-}
-
-export async function insertReport(row: {
-accountId: string;
-userNm: string;
-mainCat: string; // CategoryId
-subCat: string;
-comments: string;
-}) {
-const submissionId = genSubmissionId('RPT');
-const capped = (row.comments ?? '').slice(0, 160);
-await db.runAsync(
-    `INSERT INTO reports (SID, ACCOUNTID, USERNM, MAINCAT, SUBCAT, COMMENTS)
-    VALUES (?, ?, ?, ?, ?, ?)`,
-    [submissionId, row.accountId, row.userNm, row.mainCat, row.subCat, capped]
-);
-return submissionId;
-}
-
-export async function insertComment(row: {
-accountId: string;
-userNm: string;
-comments: string;
-}) {
-const submissionId = genSubmissionId('CMT');
-const capped = (row.comments ?? '').slice(0, 160);
-await db.runAsync(
-    `INSERT INTO comments (SID, ACCOUNTID, USERNM, COMMENTS)
-    VALUES (?, ?, ?, ?)`,
-    [submissionId, row.accountId, row.userNm, capped]
-);
-return submissionId;
-}
-
-export async function insertRating(row: {
-accountId: string;
-userNm: string;
-rating: number; // 1..5
-}) {
-const submissionId = genSubmissionId('RTG');
-await db.runAsync(
-    `INSERT INTO ratings (SID, ACCOUNTID, USERNM, RATING)
-    VALUES (?, ?, ?, ?)`,
-    [submissionId, row.accountId, row.userNm, row.rating]
-);
-return submissionId;
-}
-
-// --- Users helpers ----------------------------------------------------------
-export enum SecurityLevel {
-Admin = 1,
-Paid = 2,
-Regular = 3,
-}
-
-export type UserRow = {
-accountId: string;
-userNm: string;
-email: string;
-pswd: string; // NOTE: store hashed in production
-securityLvl: SecurityLevel; // 1=admin,2=paid,3=regular
-};
-
-export async function createUser(row: UserRow) {
-await db.runAsync(
-    `INSERT INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL)
-    VALUES (?, ?, ?, ?, ?)`,
-    [row.accountId, row.userNm, row.email, row.pswd, row.securityLvl]
-);
-return row.accountId;
-}
-
-export async function upsertUser(row: UserRow) {
-// Try update first; if no row changed, insert
-const res = await db.runAsync(
-    `UPDATE users SET USERNM = ?, EMAIL = ?, PSWD = ?, SECURITYLVL = ? WHERE ACCOUNTID = ?`,
-    [row.userNm, row.email, row.pswd, row.securityLvl, row.accountId]
-);
-// @ts-ignore rowsAffected exists on result for runAsync
-if (!res?.rowsAffected) {
-    await db.runAsync(
-    `INSERT INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL) VALUES (?,?,?,?,?)`,
-    [row.accountId, row.userNm, row.email, row.pswd, row.securityLvl]
-    );
-}
-return row.accountId;
-}
-
-export async function getUserByUsername(userNm: string) {
-  return await db.getFirstAsync(
-    `SELECT ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL FROM users WHERE USERNM = ? LIMIT 1`,
-    [userNm]
   );
+
+  // --- Migrations: EMAIL column & index ------------------------------------
+  try {
+    // Use getAllAsync so we get a plain array result from PRAGMA
+    const cols: any[] = await db.getAllAsync(`PRAGMA table_info(users)`);
+    const hasEmail = Array.isArray(cols) && cols.some((c: any) => String(c?.name).toUpperCase() === 'EMAIL');
+    if (!hasEmail) {
+      await db.execAsync(`ALTER TABLE users ADD COLUMN EMAIL TEXT`);
+      console.log('ℹ︎ Added users.EMAIL via migration');
+    }
+    // Ensure unique index exists (idempotent)
+    await db.execAsync(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(EMAIL)`);
+  } catch (e) {
+    const msg = String((e as any)?.message || e);
+    if (/duplicate column name: EMAIL/i.test(msg)) {
+      // Column already exists — ignore silently
+    } else {
+      console.warn('User table migration check failed', e);
+    }
+  }
+
+  // --- Migrations: PROFILEICON column --------------------------------------
+  try {
+    const cols2: any[] = await db.getAllAsync(`PRAGMA table_info(users)`);
+    const hasProfileIcon = Array.isArray(cols2) && cols2.some((c: any) => String(c?.name).toUpperCase() === 'PROFILEICON');
+    if (!hasProfileIcon) {
+      await db.execAsync(`ALTER TABLE users ADD COLUMN PROFILEICON TEXT`);
+      console.log('ℹ︎ Added users.PROFILEICON via migration');
+    }
+  } catch (e) {
+    const msg2 = String((e as any)?.message || e);
+    if (/duplicate column name: PROFILEICON/i.test(msg2)) {
+      // already exists — ignore
+    } else {
+      console.warn('PROFILEICON migration check failed', e);
+    }
+  }
+
+  // --- Optional dev reset ---------------------------------------------------
+  try {
+    // also allow toggling via globalThis.RESET_DB_ON_START = true at runtime
+    if (RESET_DB_ON_START || (globalThis as any)?.RESET_DB_ON_START === true) {
+      console.log('⚠️  RESET_DB_ON_START is true → wiping all tables');
+      await resetDb();
+    }
+  } catch (e) {
+    console.warn('DB reset failed', e);
+  }
+
+  // --- Auto-seed users when empty ------------------------------------------
+  try {
+    const row = await db.getFirstAsync<{ c: number }>(`SELECT COUNT(*) as c FROM users`);
+    if (!row || !row.c) {
+      await seedDefaultUsers();
+      const check = await db.getFirstAsync<{ c: number }>(`SELECT COUNT(*) as c FROM users`);
+      console.log(`🌱 Auto-seeded users because table was empty. Count now: ${check?.c ?? 0}`);
+    }
+  } catch (e) {
+    console.warn('Auto-seed check failed', e);
+  }
+
+  console.log('✅ Database initialized');
 }
 
-export async function setUserSecurityLevel(accountId: string, level: SecurityLevel) {
-await db.runAsync(
-    `UPDATE users SET SECURITYLVL = ? WHERE ACCOUNTID = ?`,
-    [level, accountId]
-);
-}
-
-export async function verifyUser(userNm: string, pswd: string) {
-  return await db.getFirstAsync(
-    `SELECT ACCOUNTID, USERNM, SECURITYLVL FROM users WHERE USERNM = ? AND PSWD = ? LIMIT 1`,
-    [userNm, pswd]
-  );
-}
-
-export async function updateProfileIcon(accountId: string, iconId: string) {
-  await db.runAsync(
-    `UPDATE users SET PROFILEICON = ? WHERE ACCOUNTID = ?`,
-    [iconId, accountId]
-  );
-}
-
+// 4) Seeding (dev convenience) -----------------------------------------------
 export async function seedDefaultUsers() {
   await runAsync(
     `INSERT OR IGNORE INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL) VALUES (?,?,?,?,?)`,
@@ -293,6 +196,145 @@ export async function seedDefaultUsers() {
   console.log('🌱 After seed, users:', rs?.rows?._array ?? []);
 }
 
-// Typed row helpers for reads (return plain arrays/rows)
+// 5) Submission ID generation -------------------------------------------------
+function genSubmissionId(prefix: string = 'SUB') {
+  // Include date in YYYYMMDD format for more complex IDs
+  const datePart = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  return makeId(`${prefix}_${datePart}`);
+}
+
+// 6) Inserts (reports, comments, ratings) ------------------------------------
+export async function insertReport(row: {
+  submissionId?: string; // optional: allow caller to pass in
+  accountId: string;
+  userNm: string;
+  mainCat: string; // CategoryId
+  subCat: string;
+  comments: string;
+}) {
+  const submissionId = row.submissionId ?? genSubmissionId('RPT');
+  const capped = (row.comments ?? '').slice(0, 160);
+
+  // First try: schemas that have SUBMISSIONID (NOT NULL)
+  try {
+    await db.runAsync(
+      `INSERT INTO reports (SUBMISSIONID, SID, ACCOUNTID, USERNM, MAINCAT, SUBCAT, COMMENTS)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [submissionId, submissionId, row.accountId, row.userNm, row.mainCat, row.subCat, capped]
+    );
+  } catch (e) {
+    const msg = String((e as any)?.message || e);
+    // Fallback for older DBs that don't have SUBMISSIONID column
+    if (/no such column:\s*SUBMISSIONID/i.test(msg) || /unknown column\s*SUBMISSIONID/i.test(msg)) {
+      await db.runAsync(
+        `INSERT INTO reports (SID, ACCOUNTID, USERNM, MAINCAT, SUBCAT, COMMENTS)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [submissionId, row.accountId, row.userNm, row.mainCat, row.subCat, capped]
+      );
+    } else {
+      throw e;
+    }
+  }
+  return submissionId;
+}
+
+export async function insertComment(row: {
+  accountId: string;
+  userNm: string;
+  comments: string;
+}) {
+  const submissionId = genSubmissionId('CMT');
+  const capped = (row.comments ?? '').slice(0, 160);
+  await db.runAsync(
+    `INSERT INTO comments (SID, ACCOUNTID, USERNM, COMMENTS)
+    VALUES (?, ?, ?, ?)`,
+    [submissionId, row.accountId, row.userNm, capped]
+  );
+  return submissionId;
+}
+
+export async function insertRating(row: {
+  accountId: string;
+  userNm: string;
+  rating: number; // 1..5
+}) {
+  const submissionId = genSubmissionId('RTG');
+  await db.runAsync(
+    `INSERT INTO ratings (SID, ACCOUNTID, USERNM, RATING)
+    VALUES (?, ?, ?, ?)`,
+    [submissionId, row.accountId, row.userNm, row.rating]
+  );
+  return submissionId;
+}
+
+// 7) Users: types, CRUD, auth, profile --------------------------------------
+export enum SecurityLevel {
+  Admin = 1,
+  Paid = 2,
+  Regular = 3,
+}
+
+export type UserRow = {
+  accountId: string;
+  userNm: string;
+  email: string;
+  pswd: string; // NOTE: store hashed in production
+  securityLvl: SecurityLevel; // 1=admin,2=paid,3=regular
+};
+
+export async function createUser(row: UserRow) {
+  await db.runAsync(
+    `INSERT INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL)
+    VALUES (?, ?, ?, ?, ?)`,
+    [row.accountId, row.userNm, row.email, row.pswd, row.securityLvl]
+  );
+  return row.accountId;
+}
+
+export async function upsertUser(row: UserRow) {
+  // Try update first; if no row changed, insert
+  const res = await db.runAsync(
+    `UPDATE users SET USERNM = ?, EMAIL = ?, PSWD = ?, SECURITYLVL = ? WHERE ACCOUNTID = ?`,
+    [row.userNm, row.email, row.pswd, row.securityLvl, row.accountId]
+  );
+  // @ts-ignore rowsAffected exists on result for runAsync
+  if (!res?.rowsAffected) {
+    await db.runAsync(
+      `INSERT INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL) VALUES (?,?,?,?,?)`,
+      [row.accountId, row.userNm, row.email, row.pswd, row.securityLvl]
+    );
+  }
+  return row.accountId;
+}
+
+export async function getUserByUsername(userNm: string) {
+  return await db.getFirstAsync(
+    `SELECT ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL FROM users WHERE USERNM = ? LIMIT 1`,
+    [userNm]
+  );
+}
+
+export async function setUserSecurityLevel(accountId: string, level: SecurityLevel) {
+  await db.runAsync(
+    `UPDATE users SET SECURITYLVL = ? WHERE ACCOUNTID = ?`,
+    [level, accountId]
+  );
+}
+
+export async function verifyUser(userNm: string, pswd: string) {
+  return await db.getFirstAsync(
+    `SELECT ACCOUNTID, USERNM, SECURITYLVL FROM users WHERE USERNM = ? AND PSWD = ? LIMIT 1`,
+    [userNm, pswd]
+  );
+}
+
+export async function updateProfileIcon(accountId: string, iconId: string) {
+  await db.runAsync(
+    `UPDATE users SET PROFILEICON = ? WHERE ACCOUNTID = ?`,
+    [iconId, accountId]
+  );
+}
+
+// 8) Typed query helpers ------------------------------------------------------
 export const queryAll = <T = any>(sql: string, params: any[] = []) => db.getAllAsync<T>(sql, params);
 export const queryFirst = <T = any>(sql: string, params: any[] = []) => db.getFirstAsync<T>(sql, params);

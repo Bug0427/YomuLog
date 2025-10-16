@@ -2,9 +2,13 @@
     "cSpell.words": [
         "ACCOUNTID",
         "adminheader",
+        "ciphertext",
         "creds",
+        "donttouch",
         "ellipsize",
         "HPAD",
+        "KEYBYTES",
+        "keyringcabinet",
         "MAINCAT",
         "mydb",
         "paiduser",

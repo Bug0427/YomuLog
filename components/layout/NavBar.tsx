@@ -9,7 +9,7 @@ const NavBar = () => {
 
   return (
     <View style={NavBarStyles.container}>
-      <Pressable style={NavBarStyles.navItem} onPress={() => navigation.navigate('Home' as never)}>
+      <Pressable style={NavBarStyles.navItem} onPress={() => navigation.navigate('HomeScreen' as never)}>
         <Text style={GeneralStyles.plainText}>Home</Text>
       </Pressable>
       <Pressable style={NavBarStyles.navItem} onPress={() => navigation.navigate('SearchScreen' as never)}>

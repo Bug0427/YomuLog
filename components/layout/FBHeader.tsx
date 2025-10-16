@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { View, Text, Pressable, ViewStyle, TextStyle } from 'react-native';
 import { GeneralStyles, FeedBackStyles } from '../../styles/global';
 
 
@@ -12,6 +12,7 @@ export type FBHeaderProps = {
     containerStyle?: ViewStyle;           // optional container override
     titleStyle?: TextStyle;               // optional title override
     showDivider?: boolean;                // default: true
+    disabled?: boolean;                   // optional; disables the submit button
 };
 
 export default function FBHeader({
@@ -23,6 +24,7 @@ export default function FBHeader({
     containerStyle,
     titleStyle,
     showDivider = true,
+    disabled,
 }: FBHeaderProps) {
 return (
     <View style={[FeedBackStyles.wrapper, containerStyle]}>      
@@ -42,7 +44,16 @@ return (
 
         {/* Right: Submit button (only if onSubmit exists) */}
         {onSubmit ? (
-        <Pressable onPress={onSubmit} style={[FeedBackStyles.Button, {marginBottom:0}]} hitSlop={10}>
+        <Pressable
+            onPress={onSubmit}
+            disabled={disabled}
+            style={[
+                FeedBackStyles.Button,
+                { marginBottom: 0 },
+                disabled ? { opacity: 0.5 } : null,
+            ]}
+            hitSlop={10}
+        >
             <Text style={FeedBackStyles.Text}>{submitLabel}</Text>
         </Pressable>
         ) : (
@@ -54,4 +65,3 @@ return (
     </View>
 );
 }
-
