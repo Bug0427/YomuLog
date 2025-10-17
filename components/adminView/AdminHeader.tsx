@@ -13,7 +13,6 @@ interface AdminHeaderProps {
 
 const AdminHeader: React.FC<AdminHeaderProps> = ({
   navigation,
-  activeTab,
   selectReports,
   selectAccounts,
   isReports,

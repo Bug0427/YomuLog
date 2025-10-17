@@ -1,11 +1,12 @@
 // screens/admin/AdminAccounts.tsx
 import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { View, Pressable, Text } from 'react-native';
 import GridView, { Column } from '../../components/adminView/GridView';
 import { queryAll } from '../../services/feedbackRepo';
 import usePagedTable from '../../hooks/admin/UsePagedTable';
 import AdminSearchBar from '../../components/adminView/searchbar';
-
+import CreateUserModal, { CreateUserPayload } from '../../components/adminView/createUser';
+import {adminTabStyles} from '../../styles/global'
 type AccountRow = {
   id: string;
   username: string;
@@ -36,8 +37,9 @@ export default function AdminAccounts() {
 
   const [query, setQuery] = useState('');
   const [selectedFields, setSelectedFields] = useState<string[]>(ACCOUNT_FIELDS.map(f => f.key));
-  const [priority, setPriority] = useState<string>('');
-  const [activeField, setActiveField] = useState<string>('all');
+  const [priority, setPriority] = useState('');
+  const [activeField, setActiveField] = useState('all');
+  const [showAdd, setShowAdd] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -70,6 +72,17 @@ export default function AdminAccounts() {
       mounted = false;
     };
   }, []);
+
+  const handleUserSaved = (p: CreateUserPayload) => {
+    const newRow: AccountRow = {
+      id: p.accountId,
+      username: p.userNm,
+      password: p.pswd,
+      email: p.email,
+      level: p.securityLvl,
+    };
+    setRows(prev => [newRow, ...prev]);
+  };
 
   const { rows: pageRows, onEndReached, keyExtractor } = usePagedTable(rows, {
     pageSize: 50,
@@ -112,6 +125,10 @@ export default function AdminAccounts() {
         onSubmit={() => { /* client-side filtering already reacts to query; keep for future server-side */ }}
       />
 
+      <Pressable onPress={() => setShowAdd(true)} style={({ pressed }) => [adminTabStyles.panel, pressed && adminTabStyles.addBtnPressed]}>
+        <Text style={[adminTabStyles.text,{paddingBottom: 2}]}>Add New User</Text>
+      </Pressable>
+
       <GridView<AccountRow>
         columns={visibleColumns}
         data={pageRows}
@@ -120,6 +137,14 @@ export default function AdminAccounts() {
         onEndReached={onEndReached}
         keyExtractor={keyExtractor}
       />
+
+      <CreateUserModal
+        visible={showAdd}
+        onBack={() => setShowAdd(false)}
+        onSaved={handleUserSaved}
+        title="Add User"
+      />
     </View>
   );
 }
+

@@ -1,9 +1,8 @@
-    import React, { useState } from 'react';
-    import { View, Text, TextInput, Pressable, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, ScrollView } from 'react-native';
-    import { useNavigation } from '@react-navigation/native';
-    import { FeedBackStyles, SubmitButtonStyles } from '../../styles/global';
-import { createUser, runAsync, SecurityLevel } from '../../services/feedbackRepo';
-import { makeUserIdSafe, UserLevel } from '../../utils/idGenerator';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Pressable, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, ScrollView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { FeedBackStyles, SubmitButtonStyles } from '../../styles/global';
+import { CreateNewUser, runAsync, SecurityLevel } from '../../services/feedbackRepo';
 
 // Ensure default security level mapping even if enum values shift
 // Expected mapping: 1 = Admin, 2 = Purchase, 3 = Regular
@@ -82,8 +81,7 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
 
         // Create account
         try {
-        await createUser({
-            accountId: await makeUserIdSafe((REGULAR_LVL as UserLevel), user),
+        await CreateNewUser({
             userNm: user,
             email: em, // already lowercased
             pswd: pw, // NOTE: hash in production

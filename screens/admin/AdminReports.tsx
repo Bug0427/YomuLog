@@ -6,7 +6,7 @@ import GridView, { Column } from '../../components/adminView/GridView';
 import AdminSearchBar from '../../components/adminView/searchbar';
 import { queryAll } from '../../services/feedbackRepo';
 import usePagedTable from '../../hooks/admin/UsePagedTable';
-import{AdminSearchBarStyles} from '../../styles/global'
+import{AdminSearchBarStyles, GeneralStyles} from '../../styles/global'
 
 type CategoryType = typeof CATEGORY_OPTIONS[number];
 const CATEGORY_OPTIONS = ['Reported Issues','Reviews','Ratings'] as const;
@@ -39,21 +39,6 @@ export default function AdminReports() {
   const [activeField, setActiveField] = useState<string>('all');
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailText, setDetailText] = useState('');
-  const tapRef = React.useRef<{ lastTs: number; count: number }>({ lastTs: 0, count: 0 });
-
-  const handleRowPress = (row: ReportRow) => {
-    const now = Date.now();
-    const dt = now - tapRef.current.lastTs;
-    tapRef.current.lastTs = now;
-    tapRef.current.count = dt < 450 ? tapRef.current.count + 1 : 1;
-    if (tapRef.current.count >= 3) {
-      tapRef.current.count = 0;
-      if (row.comments && row.comments.trim()) {
-        setDetailText(row.comments);
-        setDetailOpen(true);
-      }
-    }
-  };
 
   const fields = useMemo(() => {
     if (category === 'Reported Issues') {
@@ -273,17 +258,18 @@ export default function AdminReports() {
           closeAfterSelecting
         />
       </View>
-      <GridView<ReportRow>
-        columns={visibleColumns}
-        data={pageRows}
-        isLoading={loading}
-        onEndReached={onEndReached}
-        keyExtractor={keyExtractor}
-      />
+        <GridView<ReportRow>
+          columns={visibleColumns}
+          data={pageRows}
+          isLoading={loading}
+          onEndReached={onEndReached}
+          keyExtractor={keyExtractor}
+          commentKey="comments"   // <-- required for double-tap modal
+/>
       {/* Comments detail modal */}
       {detailOpen && (
-        <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)' }} />
+        <View style={[GeneralStyles.box, { justifyContent: 'center', alignItems: 'center' }]}>
+          <View style={[GeneralStyles.box, { backgroundColor: 'rgba(0,0,0,0.35)' }]} />
           <View style={{ width: '82%', maxHeight: '70%', backgroundColor: '#bfb9deff', borderColor: '#412d5cff', borderWidth: 1, padding: 12 }}>
             <View style={{ marginBottom: 8 }}>
               <View style={{ height: 1, backgroundColor: '#412d5cff' }} />

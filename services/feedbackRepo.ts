@@ -14,7 +14,7 @@
 
 // 0) Imports & constants ------------------------------------------------------
 import * as SQLite from 'expo-sqlite';
-import { makeIdSafe } from '../utils/idGenerator';
+import { makeIdSafe, makeUserIdSafe } from '../utils/idGenerator';
 
 // Dev toggle: set true to clear all tables on app start (useful while iterating)
 const RESET_DB_ON_START = false; // flip to true temporarily when you want a clean slate
@@ -265,6 +265,25 @@ export type UserRow = {
   pswd: string; // NOTE: store hashed in production
   securityLvl: SecurityLevel; // 1=admin,2=paid,3=regular
 };
+
+export async function CreateNewUser(row: {
+  userNm: string;
+  email: string;
+  pswd: string;
+  securityLvl: SecurityLevel;
+}) {
+  // use username + level to generate a safe unique ID
+  const accountId = await makeUserIdSafe(row.securityLvl, row.userNm);
+
+  await db.runAsync(
+    `INSERT INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL)
+      VALUES (?, ?, ?, ?, ?)`,
+    [accountId, row.userNm, row.email, row.pswd, row.securityLvl]
+  );
+
+  return accountId;
+}
+
 
 export async function createUser(row: UserRow) {
   await db.runAsync(

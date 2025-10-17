@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView, Modal } from 'react-native';
-import { AdminSearchBarStyles } from '../../styles/global';
+import { AdminSearchBarStyles, GeneralStyles, adminTabStyles } from '../../styles/global';
 
 export type Field = { key: string; label: string };
 
@@ -37,14 +37,14 @@ export function OrganizerControl({
           <Pressable
             onPress={onClose}
             pointerEvents="box-only"
-            style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)', zIndex: 1 }}
+            style={[GeneralStyles.box, { backgroundColor: 'rgba(0,0,0,0.35)', zIndex: 1 }]}
           />
 
           {/* centered card (above overlay) */}
           <View pointerEvents="box-none" style={{ zIndex: 2, width: '82%', maxHeight: '70%', backgroundColor: '#bfb9deff', borderColor: '#412d5cff', borderWidth: 2 }}>
             {/* Header row */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 2, borderColor: '#412d5cff' }}>
-              <Text style={{ fontSize: 16, color: '#412d5cff', fontWeight: '700' }}>Organize By:</Text>
+            <View style={[GeneralStyles.header, { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 2, borderColor: '#412d5cff', marginBottom: 0 }]}>
+              <Text style={adminTabStyles.text}>Organize By:</Text>
             </View>
 
             {/* Rows */}
@@ -115,7 +115,7 @@ export function ColumnFilterControl({
           <Pressable
             onPress={onClose}
             pointerEvents="box-only"
-            style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)', zIndex: 1 }}
+            style={[GeneralStyles.box, { backgroundColor: 'rgba(0,0,0,0.35)', zIndex: 1 }]}
           />
 
           {/* centered card (above overlay) */}

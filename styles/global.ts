@@ -54,6 +54,14 @@ const GeneralStyles = StyleSheet.create({
         paddingVertical: 8,
         textAlignVertical: 'center',
     },
+    box:{
+        position: 'absolute', 
+        left: 0, 
+        right: 0, 
+        top: 0, 
+        bottom: 0,
+    }
+
 });
 
 const MangaSliderStyles = StyleSheet.create({
@@ -148,18 +156,12 @@ const AnchorStyles = StyleSheet.create({
         borderWidth: 2,
         borderColor: '#463B54',
     },
-    scrollButtonColor: {
-        color: '#463B54',
-    },
     scrollButtonOverlay: {
         zIndex: 9999,
         elevation: 6,
         backgroundColor: '#AFA6DD',
         paddingHorizontal: 6,
         paddingVertical: 4,
-    },
-    scrollButtonIcon: {
-        fontSize: 18,
     },
 });
 
@@ -465,7 +467,8 @@ const confirmationStyles = StyleSheet.create({
     card: {
         backgroundColor: '#bfb9deff',
         padding: 16,
-        width: '86%',
+        width: '80%',
+        height:'40%',
         borderWidth:2,
         borderColor: '#463B54',
     },
@@ -554,8 +557,7 @@ const adminTabStyles = StyleSheet.create({
         paddingHorizontal: 15,
         zIndex: 2,
     },
-    tabLeft: 
-    { 
+    tabLeft: { 
         left: 0, 
         width: '45%', 
         alignItems: 'center',
@@ -565,12 +567,20 @@ const adminTabStyles = StyleSheet.create({
         width: '50%', 
         alignItems: 'center',
     },
-    text:
-    {
+    text:{
         fontSize: 16,
         color: '#412d5cff',
         fontWeight: '700',
-}
+    },
+    panel: {
+        marginHorizontal: 24, 
+        marginTop: 12, 
+        marginBottom: 8, 
+        zIndex: 500, 
+        borderRadius: 0, 
+        alignSelf:'center'
+    },
+    addBtnPressed: { opacity: 0.75 },
 
 })
 const adminCommonStyles = StyleSheet.create({

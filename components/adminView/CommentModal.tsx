@@ -1,30 +1,43 @@
 import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import {adminTabStyles, confirmationStyles} from '../../styles/global'
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import {adminTabStyles, confirmationStyles, AdminSearchBarStyles} from '../../styles/global'
 
 export default function CommentModal({
-visible,
-text,
-onClose,
+  visible,
+  text,
+  onClose,
+  sid,
 }: {
-visible: boolean;
-text: string;
-onClose: () => void;
+  visible: boolean;
+  text: string;
+  onClose: () => void;
+  sid?: string;
 }) {
-return (
+  const displaySid = sid ?? '';
+  return (
     <Modal transparent visible={visible} onRequestClose={onClose} animationType="fade">
-    <View style={confirmationStyles.backdrop}>
-        <View style={confirmationStyles.card}>
-        <Text style={adminTabStyles.text}>Comment</Text>
-        <ScrollView style={{ maxHeight: 280 }}>
-            <Text style={[{fontSize: 14, color: '#463B54'}]}>{text}</Text>
-        </ScrollView>
-        <Pressable style={adminTabStyles.button} onPress={onClose}>
-            <Text style={[{color: '#463B54', fontWeight: '600'}]}>Close</Text>
-        </Pressable>
+      <View style={confirmationStyles.backdrop}>
+        <View style={[confirmationStyles.card, { padding: 0 }]}>
+          <Text
+            style={[
+                AdminSearchBarStyles.checkText,
+                { paddingVertical: 15, borderBottomWidth: 2, borderColor: '#463B54', textAlign: 'center' },
+            ]}
+          >
+            Comment:
+            {displaySid ? <Text style={{ fontWeight: '600' }}>{` <SID: ${displaySid}>`}</Text> : null}
+          </Text>
+          <ScrollView style={{ maxHeight: 350 }}>
+            <Text style={[{ fontSize: 14, color: '#412d5cff', margin: 20 }]}>{text}</Text>
+          </ScrollView>
+          <Pressable
+            style={[adminTabStyles.button, { width: 80, margin: 20, alignSelf: 'center' }]}
+            onPress={onClose}
+          >
+            <Text style={[{ color: '#b2abd5ff', fontWeight: '600' }]}>Close</Text>
+          </Pressable>
         </View>
-    </View>
+      </View>
     </Modal>
-);
+  );
 }
-

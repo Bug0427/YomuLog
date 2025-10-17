@@ -1,8 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, FlatList, Pressable } from 'react-native';
 import { useWindowWidth } from '../../utils/findDimensions';
-import useTripleTap from '../../hooks/admin/useTripleTap';
-import useDoubleTap from '../../hooks/admin/useDoubleTap';
 import { abbrevForKey } from '../../utils/gridUtils';
 import { CHAR_PX, PAD_CH } from '../../utils/gridUtils';
 import { computeColumnWidths } from '../../utils/gridWidths';
@@ -10,6 +8,7 @@ import { LoadingRows } from './LoadingRow';
 import CommentModal from './CommentModal';
 import RowView from './RowView';
 import { adminCommonStyles, adminTabStyles } from '../../styles/global';
+import useDoubleTap from '../../hooks/admin/useDoubleTap';
 
 export type Align = 'left' | 'center' | 'right';
 
@@ -83,17 +82,6 @@ export default function GridView<T extends Record<string, any>>({
   const orderedColumns = useMemo(() => reorderColumns(columns, priority), [columns, priority]);
   const naturalWidths = useMemo(() => computeNaturalWidths(orderedColumns as any, data as any), [orderedColumns, data]);
   const allFit = useMemo(() => naturalWidths.reduce((a, b) => a + b, 0) <= Math.max(320, screenWidth), [naturalWidths, screenWidth]);
-  const onHeaderDoubleTap = useDoubleTap<string>((key) => {
-    if (allFit) {
-      setCollapsedSet((prev) => {
-        const next = new Set(prev);
-        if (next.has(key)) next.delete(key); else next.add(key);
-        return next;
-      });
-    } else {
-      setExpandedKey((prev) => (prev === key ? undefined : key));
-    }
-  }, 300);
   const colWidths = useMemo(
     () => computeColumnWidths(orderedColumns as any, data as any, screenWidth, expandedKey),
     [orderedColumns, data, screenWidth, expandedKey]
@@ -102,16 +90,19 @@ export default function GridView<T extends Record<string, any>>({
     const padding = 0;
     return Math.max(320, screenWidth - padding);
   }, [screenWidth]);
-  const handleRowPress = useTripleTap<T>((item) => {
-    if (commentKey) {
-      const text = String((item as any)[commentKey] ?? '');
-      if (text) setModal({ visible: true, text });
-    }
-  }, 500);
-  const [modal, setModal] = useState<{ visible: boolean; text: string }>({ visible: false, text: '' });
+  const handleRowDoublePress = useDoubleTap<T>((item) => {
+    if (!commentKey) return;
+    const raw = (item as any)[commentKey];
+    // Normalize to string safely and trim whitespace
+    const text = typeof raw === 'string' ? raw.trim() : (raw == null ? '' : String(raw));
+    if (!text || text.length === 0) return; // no-op if no comment
+    const sid = String((item as any)['sid'] ?? '');
+    setModal({ visible: true, text, sid });
+  }, 300);
+  const [modal, setModal] = useState<{ visible: boolean; text: string; sid?: string }>({ visible: false, text: '' });
   const _keyExtractor = keyExtractor ?? ((item: T, i: number) => String((item as any).id ?? i));
   const renderHeader = () => (
-    <View style={[adminCommonStyles.dataRow, { height: headerHeight, width: totalWidth, borderBottomWidth: 2, backgroundColor: '#412d5cff', }]}> 
+    <View style={[adminCommonStyles.dataRow, { height: headerHeight, width: totalWidth, borderBottomWidth: 2, backgroundColor: '#412d5cff', }]}>
       {orderedColumns.map((col, i) => {
         const keyStr = String(col.key);
         let displayTitle = col.title;
@@ -121,7 +112,17 @@ export default function GridView<T extends Record<string, any>>({
           <Pressable
             key={`h-${keyStr}-${i}`}
             style={[adminCommonStyles.dataCell, { width: colWidths[i], justifyContent: getCellAlign(col.align) }]}
-            onPress={() => onHeaderDoubleTap(keyStr)}
+            onPress={() => {
+              if (allFit) {
+                setCollapsedSet((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(keyStr)) next.delete(keyStr); else next.add(keyStr);
+                  return next;
+                });
+              } else {
+                setExpandedKey((prev) => (prev === keyStr ? undefined : keyStr));
+              }
+            }}
           >
             <Text style={[adminTabStyles.text, {color: '#bfb9deff',}]} numberOfLines={1} ellipsizeMode="tail">{displayTitle}</Text>
           </Pressable>
@@ -149,7 +150,7 @@ export default function GridView<T extends Record<string, any>>({
                 expandedKey={expandedKey}
                 allFit={allFit}
                 collapsedKeys={Array.from(collapsedSet)}
-                onPress={handleRowPress}
+                onPress={(index, item) => handleRowDoublePress(item)}
               />
             )}
             onEndReachedThreshold={0.2}
@@ -185,7 +186,8 @@ export default function GridView<T extends Record<string, any>>({
       <CommentModal
         visible={modal.visible}
         text={modal.text}
-        onClose={() => setModal({ visible: false, text: '' })}
+        onClose={() => setModal({ visible: false, text: '', sid: undefined })}
+        sid={modal.sid}
       />
     </>
   );

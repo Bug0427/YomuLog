@@ -105,7 +105,7 @@ export default function Anchor({ scrollRef, isScrolling }: AnchorProps) {
               hitSlop={8}
               onPress={scrollToTop}
             >
-                <Text style={[AnchorStyles.scrollButtonColor, AnchorStyles.scrollButtonIcon]}>↑</Text>
+                <Text style={[{color: '#463B54', fontSize: 18}]}>↑</Text>
             </Pressable>
         </Animated.View>
 
@@ -119,7 +119,7 @@ export default function Anchor({ scrollRef, isScrolling }: AnchorProps) {
               hitSlop={8}
               onPress={scrollToBottom}
             >
-                <Text style={[AnchorStyles.scrollButtonColor, AnchorStyles.scrollButtonIcon]}>↓</Text>
+                <Text style={[{color: '#463B54', fontSize: 18}]}>↓</Text>
             </Pressable>
         </Animated.View>
         </>
