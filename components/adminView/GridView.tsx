@@ -7,7 +7,7 @@ import { computeColumnWidths } from '../../utils/gridWidths';
 import { LoadingRows } from './LoadingRow';
 import CommentModal from './CommentModal';
 import RowView from './RowView';
-import { AdminCommonStyles, AdminTabStyles } from '../../styles/global';
+import { AdminCommonStyles, AdminTabStyles, GridViewStyles } from '../../styles/global';
 import useDoubleTap from '../../hooks/admin/useDoubleTap';
 
 export type Align = 'left' | 'center' | 'right';
@@ -102,7 +102,7 @@ export default function GridView<T extends Record<string, any>>({
   const [modal, setModal] = useState<{ visible: boolean; text: string; sid?: string }>({ visible: false, text: '' });
   const _keyExtractor = keyExtractor ?? ((item: T, i: number) => String((item as any).id ?? i));
   const renderHeader = () => (
-    <View style={[AdminCommonStyles.dataRow, { height: headerHeight, width: totalWidth, borderBottomWidth: 2, backgroundColor: '#412d5cff', }]}>
+    <View style={[AdminCommonStyles.dataRow, GridViewStyles.headerRow, { height: headerHeight, width: totalWidth }]}>
       {orderedColumns.map((col, i) => {
         const keyStr = String(col.key);
         let displayTitle = col.title;
@@ -124,7 +124,7 @@ export default function GridView<T extends Record<string, any>>({
               }
             }}
           >
-            <Text style={[AdminTabStyles.text, {color: '#bfb9deff',}]} numberOfLines={1} ellipsizeMode="tail">{displayTitle}</Text>
+            <Text style={[AdminTabStyles.text, GridViewStyles.headerText]} numberOfLines={1} ellipsizeMode="tail">{displayTitle}</Text>
           </Pressable>
         );
       })}
@@ -166,18 +166,11 @@ export default function GridView<T extends Record<string, any>>({
                 {isLoading ? (
                   <LoadingRows widths={colWidths} count={3} height={rowHeight} />
                 ) : null}
-                <View
-                  style={{
-                    height: 0,
-                    width: totalWidth,
-                    borderBottomWidth: 2,
-                    borderBottomColor: '#412d5cff',
-                  }}
-                />
+                <View style={[GridViewStyles.footerDivider, { width: totalWidth }]} />
               </>
             }
             ItemSeparatorComponent={() => (
-              <View style={{ height: 0, width: totalWidth, borderTopWidth: 1, borderTopColor: '#543C27' }} />
+              <View style={[GridViewStyles.itemDivider, { width: totalWidth }]} />
             )}
           />
         </View>

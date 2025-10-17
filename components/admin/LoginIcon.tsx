@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { IconStyles } from '../../styles/global';
+import { IconStyles, colors } from '../../styles/global';
 import { useNavigation } from '@react-navigation/native';
 import { verifyUser } from '../../services/feedbackRepo';
 
@@ -34,7 +34,7 @@ export default function LoginIcon({ userImage }: { userImage?: string }) {
       {userImage ? (
         <Image source={{ uri: userImage }} style={IconStyles.profileImage} />
       ) : (
-        <Ionicons name="person-circle-outline" size={40} color="#463B54" />
+        <Ionicons name="person-circle-outline" size={40} color={colors.plum} />
       )}
     </Pressable>
   );

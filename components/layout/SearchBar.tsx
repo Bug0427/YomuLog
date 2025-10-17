@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import { View, Pressable, Text, TextInput, Platform } from 'react-native';
 import type { ViewStyle } from 'react-native';
-import { GeneralStyles, SearchBarStyles} from '../../styles/global';
+import { GeneralStyles, SearchBarStyles, colors } from '../../styles/global';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useBreakpoint } from '../../utils/findDimensions';
 
@@ -54,13 +54,13 @@ return (
         accessibilityRole="button"
         accessibilityLabel="Open menu"
     >
-        <Text style={[{color:'#543C27', fontSize: iconSize, lineHeight: iconSize }]}>☰</Text>
+        <Text style={[SearchBarStyles.hamburger, { fontSize: iconSize, lineHeight: iconSize }]}>☰</Text>
     </Pressable>
 
     <View
         style={[
             SearchBarStyles.searchBar,
-            { flex: 1, flexDirection: 'row', alignItems: 'center', paddingLeft: 0, paddingRight: 8 }
+            SearchBarStyles.searchRow
         ]}
         >
         <Pressable
@@ -68,16 +68,16 @@ return (
             accessibilityRole="button"
             accessibilityLabel="Run search"
             hitSlop={8}
-            style={{ paddingLeft: 8, paddingRight: 8, justifyContent: 'center' }}
+            style={SearchBarStyles.searchIconBtn}
         >
-            <Feather name="search" size={iconSize} color="#543C27" />
+            <Feather name="search" size={iconSize} color={colors.cocoa} />
         </Pressable>
         <TextInput
             value={value}
             onChangeText={onChangeText}
             placeholder={placeholder}
-            placeholderTextColor={Platform.OS === 'web' ? '#7A6F65' : '#7A6F65'}
-            style={[SearchBarStyles.input, { flex: 1, paddingVertical: 4 }]}
+            placeholderTextColor={colors.placeholderText}
+            style={[SearchBarStyles.input, { paddingVertical: 4 }]}
             returnKeyType="search"
             onSubmitEditing={() => onSearchPress?.()}
             accessibilityLabel="Search"
@@ -92,7 +92,7 @@ return (
         accessibilityRole="button"
         accessibilityLabel="Open filters"
         >
-        <MaterialCommunityIcons name="filter-outline" size={iconSize} color="#543C27" />
+        <MaterialCommunityIcons name="filter-outline" size={iconSize} color={colors.cocoa} />
         </Pressable>
     )}
     </View>

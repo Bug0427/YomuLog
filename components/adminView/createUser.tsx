@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { CreateNewUser, SecurityLevel } from '../../services/feedbackRepo';
-import { AdminSearchBarStyles, CreateUserStyles } from '../../styles/global';
+import { AdminSearchBarStyles, CreateUserStyles, colors } from '../../styles/global';
 
 export type CreateUserPayload = {
   accountId: string;
@@ -90,7 +90,7 @@ export default function CreateUser({ visible, onBack, onSaved, title = 'Add User
             <Pressable onPress={onBack} style={CreateUserStyles.smallBtn} disabled={saving}>
               <Text style={CreateUserStyles.smallBtnText}>Back</Text>
             </Pressable>
-            <Text style={[AdminSearchBarStyles.checkText, {color:'#bfb9deff'}]}>{title}</Text>
+            <Text style={[AdminSearchBarStyles.checkText, CreateUserStyles.headerTitleAlt]}>{title}</Text>
             <Pressable onPress={handleSave} style={[CreateUserStyles.smallBtn, saving && CreateUserStyles.smallBtnDisabled]} disabled={saving}>
               <Text style={CreateUserStyles.smallBtnText}>Save</Text>
             </Pressable>
@@ -102,7 +102,7 @@ export default function CreateUser({ visible, onBack, onSaved, title = 'Add User
               value={userNm}
               onChangeText={setUserNm}
               placeholder="username"
-              placeholderTextColor="#bfb9deff"
+              placeholderTextColor={colors.paleLavender}
               style={CreateUserStyles.input}
               autoCapitalize="none"
             />
@@ -114,7 +114,7 @@ export default function CreateUser({ visible, onBack, onSaved, title = 'Add User
               value={pswd}
               onChangeText={setPswd}
               placeholder="password"
-              placeholderTextColor="#bfb9deff"
+              placeholderTextColor={colors.paleLavender}
               style={CreateUserStyles.input}
               secureTextEntry
             />
@@ -126,7 +126,7 @@ export default function CreateUser({ visible, onBack, onSaved, title = 'Add User
               value={email}
               onChangeText={setEmail}
               placeholder="email@example.com"
-              placeholderTextColor="#bfb9deff"
+              placeholderTextColor={colors.paleLavender}
               style={CreateUserStyles.input}
               keyboardType="email-address"
               autoCapitalize="none"

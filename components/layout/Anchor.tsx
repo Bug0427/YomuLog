@@ -96,30 +96,30 @@ export default function Anchor({ scrollRef, isScrolling }: AnchorProps) {
     return (
         <>
         <Animated.View
-          pointerEvents="box-none"
-          style={[AnchorStyles.scrollButtonUp, AnchorStyles.scrollButtonOverlay, { opacity: scrollOpacity }]}
+            pointerEvents="box-none"
+            style={[AnchorStyles.scrollButtonUp, AnchorStyles.scrollButtonOverlay, { opacity: scrollOpacity }]}
         >
             <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Scroll to top"
-              hitSlop={8}
-              onPress={scrollToTop}
+                accessibilityRole="button"
+                accessibilityLabel="Scroll to top"
+                hitSlop={8}
+                onPress={scrollToTop}
             >
-                <Text style={[{color: '#463B54', fontSize: 18}]}>↑</Text>
+                <Text style={AnchorStyles.arrowText}>↑</Text>
             </Pressable>
         </Animated.View>
 
         <Animated.View
-          pointerEvents="box-none"
-          style={[AnchorStyles.scrollButtonDown, AnchorStyles.scrollButtonOverlay, { opacity: scrollOpacity }]}
+            pointerEvents="box-none"
+            style={[AnchorStyles.scrollButtonDown, AnchorStyles.scrollButtonOverlay, { opacity: scrollOpacity }]}
         >
             <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Scroll to bottom"
-              hitSlop={8}
-              onPress={scrollToBottom}
+                accessibilityRole="button"
+                accessibilityLabel="Scroll to bottom"
+                hitSlop={8}
+                onPress={scrollToBottom}
             >
-                <Text style={[{color: '#463B54', fontSize: 18}]}>↓</Text>
+                <Text style={AnchorStyles.arrowText}>↓</Text>
             </Pressable>
         </Animated.View>
         </>

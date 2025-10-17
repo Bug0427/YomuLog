@@ -1,6 +1,7 @@
 // components/layout/TrackedScrollView.tsx
 import React, { useMemo, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { ScrollView, ScrollViewProps, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { u, spacing } from '../../styles/global';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
 
 type Props = ScrollViewProps & {
@@ -36,21 +37,20 @@ export const TrackedScrollView = forwardRef<ScrollView, Props>((props, ref) => {
   }, [externalRef, refToUse]);
 
   // ---- style normalization (unchanged) ----
-  const flat: ViewStyle = StyleSheet.flatten(style) || {};
+  const flat = (StyleSheet.flatten(style) ?? {}) as ViewStyle;
   const { paddingHorizontal, paddingLeft, paddingRight, paddingTop, paddingBottom, ...restContainerStyle } = flat;
 
   const ccPaddingLeft = paddingLeft ?? (typeof paddingHorizontal === 'number' ? paddingHorizontal : undefined);
   const ccPaddingRight = paddingRight ?? (typeof paddingHorizontal === 'number' ? paddingHorizontal : undefined);
   const ccPaddingTop = paddingTop;
-  const ccPaddingBottom = paddingBottom ?? 24;
+  const ccPaddingBottom = paddingBottom ?? spacing.p24;
 
   const normalizedContainerStyle: StyleProp<ViewStyle> = [
-    { flex: 1, paddingLeft: 0, paddingRight: 0, paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0 },
+    u.fullNoPad,
     restContainerStyle,
   ];
 
   const normalizedContentStyle: StyleProp<ViewStyle> = [
-    { paddingBottom: 24 },
     contentContainerStyle,
     ccPaddingTop != null ? { paddingTop: ccPaddingTop } : null,
     ccPaddingLeft != null ? { paddingLeft: ccPaddingLeft } : null,

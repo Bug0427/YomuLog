@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, View, ViewStyle } from 'react-native';
+import { colors, LoadingRowStyles } from '../../styles/global';
 
 export type LoadingRowProps = {
 widths: number[];
@@ -13,8 +14,8 @@ animate?: boolean;
 export default function LoadingRow({
 widths,
 height = 44,
-borderColor = '#543C27',
-cellBg = '#E3D3BD',
+borderColor = colors.cocoa,
+cellBg = colors.sand,
 style,
 animate = true,
 }: LoadingRowProps) {
@@ -37,25 +38,15 @@ const cells = useMemo(
     widths.map((w, i) => (
         <View
         key={`lr-${i}`}
-        style={[{
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderRightWidth: 1,
-                width: Math.max(1, Math.floor(w)),
-                borderRightColor: borderColor,
-                backgroundColor: cellBg,
-                height,
-            },
+        style={[
+            LoadingRowStyles.cell,
+            { width: Math.max(1, Math.floor(w)), borderRightColor: borderColor, backgroundColor: cellBg, height },
         ]}
         >
         <Animated.View
-            style={[{ 
-                height: 12,
-                borderRadius: 6, 
-                opacity, 
-                backgroundColor: 'rgba(0,0,0,0.08)', 
-                width: Math.max(12, 
-                Math.floor(w * 0.6)) },
+            style={[
+                LoadingRowStyles.shimmer,
+              { opacity, backgroundColor: colors.overlayScrim, width: Math.max(12, Math.floor(w * 0.6)) },
             ]}
         />
         </View>
@@ -66,16 +57,10 @@ const cells = useMemo(
 return (
     <View
         style={[
-        { 
-            flexDirection: 'row',
-            borderLeftWidth: 1,
-            borderRightWidth: 1,
-            height, 
-            borderLeftColor: borderColor, 
-            borderRightColor: borderColor 
-        },
-        style,
-    ]}
+            LoadingRowStyles.row,
+            { height, borderLeftColor: borderColor, borderRightColor: borderColor },
+            style,
+        ]}
     >
     {cells}
     </View>
@@ -86,8 +71,8 @@ export function LoadingRows({
 widths,
 count = 3,
 height = 44,
-borderColor = '#543C27',
-cellBg = '#E3D3BD',
+borderColor = colors.deepPlum,
+cellBg = colors.lavender,
 gap = 1,
 animate = true,
 }: LoadingRowProps & { count?: number; gap?: number }) {

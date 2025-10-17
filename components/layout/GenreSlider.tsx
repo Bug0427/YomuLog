@@ -22,11 +22,11 @@ const availableWidth = Math.max(0, screenWidth - MIN_HPAD * 2);
 const containerWidth = Math.min(availableWidth, contentWidth || availableWidth);
 
 return (
-    <View style={[{ width: '100%', alignItems: 'center', paddingHorizontal: MIN_HPAD }, containerStyle]}>
+    <View style={[GenreSliderStyles.outerWrap, containerStyle]}>
     <View style={{ width: containerWidth }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View
-            style={[{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' }, contentContainerStyle]}
+            style={[GenreSliderStyles.rowWrap, contentContainerStyle]}
             onLayout={(e) => {
             const w = Math.ceil(e.nativeEvent.layout.width);
             if (w && w !== contentWidth) setContentWidth(w);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { changeLoginData } from '../../data/SettingsButtonActions/changeLoginData';
-import { changeLoginStyle } from '../../styles/global';
+import { ChangeLoginStyles } from '../../styles/global';
 
 
 export type ChangeLoginModalProps = {
@@ -87,64 +87,64 @@ const ChangeLoginModal: React.FC<ChangeLoginModalProps> = ({ visible, onClose, a
   return (
     <>
       {showBanner && (
-        <View style={{ position: 'absolute', top: 150, left: 0, right: 0, alignItems: 'center', zIndex: 1000 }} pointerEvents="none">
-          <View style={{ backgroundColor: '#D7D2EE', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: '#463B54' }}>
-            <Text style={{ color: '#463B54', fontSize: 14 }}>Login info updated.</Text>
+        <View style={ChangeLoginStyles.bannerWrap} pointerEvents="none">
+          <View style={ChangeLoginStyles.bannerBox}>
+            <Text style={ChangeLoginStyles.bannerText}>Login info updated.</Text>
           </View>
         </View>
       )}
       <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.select({ ios: 'padding', android: undefined })}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
-            <View style={{ width: '90%', backgroundColor: '#8c84c8', padding: 16, borderWidth: 2, borderColor: '#333' }}>
-              <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Change username / password</Text>
+        <KeyboardAvoidingView style={ChangeLoginStyles.kbdWrap} behavior={Platform.select({ ios: 'padding', android: undefined })}>
+          <View style={ChangeLoginStyles.overlay}>
+            <View style={ChangeLoginStyles.card}>
+              <Text style={ChangeLoginStyles.title}>Change username / password</Text>
 
-              {error ? <Text style={{ color: '#ff6b6b', marginBottom: 8 }}>{error}</Text> : null}
-              {success ? <Text style={{ color: '#7bd88f', marginBottom: 8 }}>{success}</Text> : null}
+              {error ? <Text style={ChangeLoginStyles.errorText}>{error}</Text> : null}
+              {success ? <Text style={ChangeLoginStyles.successText}>{success}</Text> : null}
 
-              <View style={changeLoginStyle.typeBox}>
+              <View style={ChangeLoginStyles.typeBox}>
                 <TextInput
                   placeholder="Username"
                   placeholderTextColor="#543C27"
                   value={newUsername}
                   onChangeText={setNewUsername}
                   autoCapitalize="none"
-                  style={changeLoginStyle.typed}
+                  style={ChangeLoginStyles.typed}
                 />
               </View>
 
-              <View style={changeLoginStyle.typeBox}>
+              <View style={ChangeLoginStyles.typeBox}>
                 <TextInput
                   placeholder="Password"
                   placeholderTextColor="#543C27"
                   value={newPassword}
                   onChangeText={setNewPassword}
                   secureTextEntry
-                  style={changeLoginStyle.typed}
+                  style={ChangeLoginStyles.typed}
                 />
               </View>
 
-              <View style={changeLoginStyle.typeBox}>
+              <View style={ChangeLoginStyles.typeBox}>
                 <TextInput
                   placeholder="Confirm password"
                   placeholderTextColor="#543C27"
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry
-                  style={changeLoginStyle.typed}
+                  style={ChangeLoginStyles.typed}
                 />
               </View>
 
-              <Text style={{ color: '#fff', fontSize: 12, marginBottom: 12 }}>
+              <Text style={ChangeLoginStyles.helpText}>
                 Password must be 8+ chars and include 1 uppercase, 1 lowercase, 1 number, and 1 special character.
               </Text>
 
-              <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-                <Pressable onPress={handleClose} style={changeLoginStyle.button}>
-                  <Text style={changeLoginStyle.text}>Cancel</Text>
+              <View style={ChangeLoginStyles.actionsRow}>
+                <Pressable onPress={handleClose} style={ChangeLoginStyles.button}>
+                  <Text style={ChangeLoginStyles.text}>Cancel</Text>
                 </Pressable>
-                <Pressable onPress={handleSubmit} disabled={submitting} style={changeLoginStyle.button}>
-                  {submitting ? <ActivityIndicator color="#fff" /> : <Text style={changeLoginStyle.text}>Submit</Text>}
+                <Pressable onPress={handleSubmit} disabled={submitting} style={ChangeLoginStyles.button}>
+                  {submitting ? <ActivityIndicator color="#fff" /> : <Text style={ChangeLoginStyles.text}>Submit</Text>}
                 </Pressable>
               </View>
             </View>

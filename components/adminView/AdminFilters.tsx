@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView, Modal } from 'react-native';
-import { AdminSearchBarStyles, GeneralStyles, AdminTabStyles } from '../../styles/global';
+import { AdminSearchBarStyles, GeneralStyles, AdminTabStyles, AdminFiltersStyles } from '../../styles/global';
 
 export type Field = { key: string; label: string };
 
@@ -32,18 +32,18 @@ export function OrganizerControl({
         <View style={AdminSearchBarStyles.hLine} />
       </Pressable>
       <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={AdminFiltersStyles.overlayCenter}>
           {/* dark overlay BEHIND the card */}
           <Pressable
             onPress={onClose}
             pointerEvents="box-only"
-            style={[GeneralStyles.box, { backgroundColor: 'rgba(0,0,0,0.35)', zIndex: 1 }]}
+            style={AdminFiltersStyles.overlayDim}
           />
 
           {/* centered card (above overlay) */}
-          <View pointerEvents="box-none" style={{ zIndex: 2, width: '82%', maxHeight: '70%', backgroundColor: '#bfb9deff', borderColor: '#412d5cff', borderWidth: 2 }}>
+          <View pointerEvents="box-none" style={AdminFiltersStyles.organizerCard}>
             {/* Header row */}
-            <View style={[GeneralStyles.header, { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 2, borderColor: '#412d5cff', marginBottom: 0 }]}>
+            <View style={AdminFiltersStyles.headerRow}>
               <Text style={AdminTabStyles.text}>Organize By:</Text>
             </View>
 
@@ -55,18 +55,13 @@ export function OrganizerControl({
                   <Pressable
                     key={f.key}
                     onPress={() => { onChangePriority(f.key); onClose(); }}
-                    style={{
-                      paddingVertical: 10,
-                      paddingHorizontal: 12,
-                      backgroundColor: active ? '#bfb9deff' : 'transparent',
-                      borderTopWidth: f.key === fields[0].key ? 0 : (active ? 2 : 0),
-                      borderBottomWidth: active ? 2 : 0,
-                      borderLeftWidth: active ? 2 : 0,
-                      borderRightWidth: active ? 2 : 0,
-                      borderColor: '#412d5cff',
-                    }}
+                    style={[
+                      AdminFiltersStyles.rowBase,
+                      active && AdminFiltersStyles.rowActive,
+                      f.key === fields[0].key && AdminFiltersStyles.rowFirst
+                    ]}
                   >
-                    <Text style={{ fontSize: 14, color: '#412d5cff', fontWeight: active ? '900' : '500' }}>{f.label}</Text>
+                    <Text style={active ? AdminFiltersStyles.rowTextHeavy : AdminFiltersStyles.rowText}>{f.label}</Text>
                   </Pressable>
                 );
               })}
@@ -110,30 +105,30 @@ export function ColumnFilterControl({
         <Text style={AdminSearchBarStyles.checkText}>✓</Text>
       </Pressable>
       <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={AdminFiltersStyles.overlayCenter}>
           {/* dark overlay BEHIND the card */}
           <Pressable
             onPress={onClose}
             pointerEvents="box-only"
-            style={[GeneralStyles.box, { backgroundColor: 'rgba(0,0,0,0.35)', zIndex: 1 }]}
+            style={AdminFiltersStyles.overlayDim}
           />
 
           {/* centered card (above overlay) */}
-          <View pointerEvents="box-none" style={{ zIndex: 2, width: 180, backgroundColor: '#bfb9deff', borderColor: '#412d5cff', borderWidth: 2 }}>
+          <View pointerEvents="box-none" style={AdminFiltersStyles.filtersCard}>
             {/* Header row */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 2, borderColor: '#412d5cff' }}>
-              <Text style={{ fontSize: 16, color: '#412d5cff', fontWeight: '700' }}>Filters:</Text>
+            <View style={AdminFiltersStyles.headerRow}>
+              <Text style={AdminFiltersStyles.headerTitle}>Filters:</Text>
             </View>
             <ScrollView>
               {fields.map((f) => {
                 const checked = selectedFields.includes(f.key);
                 return (
-                  <Pressable key={f.key} onPress={() => toggleField(f.key)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, borderBottomWidth: 0, borderColor: '#412d5cff' }}>
+                  <Pressable key={f.key} onPress={() => toggleField(f.key)} style={AdminFiltersStyles.filterRow}>
                     {/* square checkbox */}
-                    <View style={{ width: 18, height: 18, marginRight: 10, borderWidth: 2, borderColor: '#412d5cff', backgroundColor: checked ? '#412d5cff' : 'transparent' }}>
-                      {checked && <Text style={{ color: '#bfb9deff', textAlign: 'center', lineHeight: 16, marginTop: -1 }}>✓</Text>}
+                    <View style={[ AdminFiltersStyles.checkbox, checked && AdminFiltersStyles.checkboxChecked ]}>
+                      {checked && <Text style={AdminFiltersStyles.checkText}>✓</Text>}
                     </View>
-                    <Text style={{ fontSize: 14, color: '#412d5cff', fontWeight: checked ? '500' : '500' }}>{f.label}</Text>
+                    <Text style={AdminFiltersStyles.rowText}>{f.label}</Text>
                   </Pressable>
                 );
               })}

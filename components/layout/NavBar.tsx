@@ -21,7 +21,7 @@ const NavBar = () => {
       <Pressable style={NavBarStyles.navItem} onPress={() => navigation.navigate('DownLoadsScreen' as never)}>
         <Text style={GeneralStyles.plainText}>Downloads</Text>
       </Pressable>
-      <Pressable style={[NavBarStyles.navItem, { borderRightWidth: 2 }]} onPress={() => navigation.navigate('SettingsScreen' as never)}>
+      <Pressable style={[NavBarStyles.navItem, NavBarStyles.navItemLast]} onPress={() => navigation.navigate('SettingsScreen' as never)}>
         <Text style={GeneralStyles.plainText}>Settings</Text>
       </Pressable>
     </View>

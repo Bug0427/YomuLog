@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, TextInput } from 'react-native';
-import { AdminSearchBarStyles } from '../../styles/global';
+import { AdminSearchBarStyles, colors } from '../../styles/global';
 import { OrganizerControl, ColumnFilterControl } from './AdminFilters';
 import type { Field } from './AdminFilters';
 
@@ -65,12 +65,7 @@ export default function AdminSearchBar({
     <View style={AdminSearchBarStyles.wrap}>
 
       {/* Row: Organizer, Query and field picker, Column filter */}
-      <View style={[{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        zIndex: 700,
-        }]}>
+      <View style={AdminSearchBarStyles.queryRow}>
         <OrganizerControl
           fields={fields}
           priority={priority}
@@ -81,9 +76,9 @@ export default function AdminSearchBar({
         />
 
         <View style={AdminSearchBarStyles.queryBox}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
+          <View style={AdminSearchBarStyles.fieldRow}>
             {/* Left inline field dropdown */}
-            <View style={{ width: 104, zIndex: 3000 }}>
+            <View style={AdminSearchBarStyles.fieldPickerWrap}>
               <DropDownPicker
                 open={fieldOpen}
                 value={fieldValue}
@@ -98,10 +93,10 @@ export default function AdminSearchBar({
                 zIndexInverse={1000}
                 style={[AdminSearchBarStyles.dropdown, { minHeight: 34 }]}
                 dropDownContainerStyle={AdminSearchBarStyles.dropdown}
-                textStyle={{ color: '#412d5cff', fontWeight: '600', fontSize:12 }}
-                placeholderStyle={{ color: '#7a6e8f' }}
-                selectedItemContainerStyle={{ backgroundColor: '#bfb9deff', borderTopWidth:1, borderBottomWidth:1  }}
-                selectedItemLabelStyle={{ fontWeight: '800'}}
+                textStyle={AdminSearchBarStyles.ddText}
+                placeholderStyle={AdminSearchBarStyles.ddPlaceholder}
+                selectedItemContainerStyle={AdminSearchBarStyles.ddSelectedContainer}
+                selectedItemLabelStyle={AdminSearchBarStyles.ddSelectedLabel}
                 closeAfterSelecting
               />
             </View>
@@ -110,8 +105,8 @@ export default function AdminSearchBar({
               value={query}
               onChangeText={onChangeQuery}
               placeholder="Query"
-              placeholderTextColor="#595360"
-              style={[{ flex: 1, textAlign: 'center', height: 32, fontSize: 16 }]}
+              placeholderTextColor={colors.placeholderText}
+              style={AdminSearchBarStyles.input}
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="search"

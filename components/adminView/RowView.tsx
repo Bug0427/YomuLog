@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { charsThatFit } from '../../utils/gridUtils';
-import{AdminCommonStyles, AdminTabStyles} from '../../styles/global'
+import{AdminCommonStyles, AdminTabStyles, RowViewStyles} from '../../styles/global'
 
 export type Align = 'left' | 'center' | 'right';
 
@@ -38,7 +38,7 @@ onPress: (index: number, item: T) => void;
 }) {
 return (
     <Pressable onPress={() => onPress(index, item)}>
-    <View style={[AdminCommonStyles.dataRow, { height: rowHeight, width: totalWidth, backgroundColor: '#AFA6DD' }]}>
+    <View style={[AdminCommonStyles.dataRow, RowViewStyles.row, { height: rowHeight, width: totalWidth }]}>
         {columns.map((col, ci) => {
         const keyStr = String(col.key);
         let content: React.ReactNode;
@@ -49,12 +49,12 @@ return (
             const value = String(item[col.key as keyof T] ?? '');
             const isExpandedCol = allFit ? !((collapsedKeys ?? []).includes(keyStr)) : expandedKey === keyStr;
             if (isExpandedCol) {
-            content = <Text style={[AdminTabStyles.text, {fontWeight: '400'}]}>{value}</Text>;
+            content = <Text style={[AdminTabStyles.text, RowViewStyles.textNormal]}>{value}</Text>;
             } else {
             const allowed = Math.max(1, charsThatFit(colWidths[ci]));
             const clipped = value.length > allowed ? value.slice(0, Math.max(0, allowed - 1)) + '…' : value;
             content = (
-                <Text style={[AdminTabStyles.text, {fontWeight: '400'}]} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={[AdminTabStyles.text, RowViewStyles.textNormal]} numberOfLines={1} ellipsizeMode="tail">
                 {clipped}
                 </Text>
             );

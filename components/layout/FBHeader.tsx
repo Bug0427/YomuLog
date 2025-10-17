@@ -28,9 +28,9 @@ export default function FBHeader({
 }: FBHeaderProps) {
 return (
     <View style={[FeedbackStyles.wrapper, containerStyle]}>      
-    <View style={[FeedbackStyles.button, {justifyContent: 'space-between', marginBottom: 7}]}>
+    <View style={FeedbackStyles.headerRow}>
         {onBack ? (
-        <Pressable onPress={onBack} style={[FeedbackStyles.button, {marginBottom:0}]} hitSlop={10}>
+        <Pressable onPress={onBack} style={[FeedbackStyles.button, FeedbackStyles.buttonTight]} hitSlop={10}>
             <Text style={FeedbackStyles.text}>{backLabel}</Text>
         </Pressable>
         ) : (
@@ -49,7 +49,7 @@ return (
             disabled={disabled}
             style={[
                 FeedbackStyles.button,
-                { marginBottom: 0 },
+                FeedbackStyles.buttonTight,
                 disabled ? { opacity: 0.5 } : null,
             ]}
             hitSlop={10}

@@ -101,7 +101,6 @@ const CardView: React.FC<Props> = ({
     if (numColumnsGrid && numColumnsGrid > 0) {
       columns = clamp(numColumnsGrid, 3, 6);
     } else {
-      // auto-fit based on min width, but clamp 3..6
       const inner = Math.max(0, available - contentPadding * 2);
       const autoCols = Math.floor((inner + itemSpacing) / (gridItemMinWidth + itemSpacing));
       columns = clamp(autoCols, 3, 6);
@@ -135,19 +134,20 @@ const CardView: React.FC<Props> = ({
           onPress={() => onPressItem?.(item)}
           style={[
             CardViewStyles.gridCard,
-            { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight, alignItems: 'center', justifyContent: 'center' },
+            { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight },
+            CardViewStyles.gridItemFrame,
             itemStyle ? itemStyle(item) : undefined,
           ]}
         >
-          <View style={[{ width: '92%', height: '86%', alignItems: 'center', justifyContent: 'center', borderRadius: 8 }, mediaStyle ? mediaStyle(item) : undefined]}>
+          <View style={[CardViewStyles.gridMedia, mediaStyle ? mediaStyle(item) : undefined]}>
             {(item.image || item.imageUrl) ? (
               <Image
                 source={toRNImageSource(item.image ?? item.imageUrl)}
-                style={{ width: '100%', height: '100%' }}
+                style={CardViewStyles.mediaFull}
                 resizeMode="contain"
               />
             ) : (
-              <View style={[CardViewStyles.placeholder, { width: '100%', height: '100%' }]} />
+              <View style={[CardViewStyles.placeholder, CardViewStyles.mediaFull]} />
             )}
           </View>
           {item.title ? (
@@ -166,18 +166,18 @@ const CardView: React.FC<Props> = ({
           itemStyle ? itemStyle(item) : undefined,
         ]}
       >
-        <View style={[{ width: rowThumbW, height: rowThumbH, alignItems: 'center', justifyContent: 'center', borderRadius: 8 }, mediaStyle ? mediaStyle(item) : undefined]}>
+        <View style={[CardViewStyles.rowMediaBase, { width: rowThumbW, height: rowThumbH }, mediaStyle ? mediaStyle(item) : undefined]}>
           {(item.image || item.imageUrl) ? (
             <Image
               source={toRNImageSource(item.image ?? item.imageUrl)}
-              style={[CardViewStyles.rowImage, { width: '100%', height: '100%' }]}
+              style={[CardViewStyles.rowImage, CardViewStyles.mediaFull]}
               resizeMode="contain"
             />
           ) : (
-            <View style={[CardViewStyles.placeholder, { width: '100%', height: '100%' }]} />
+            <View style={[CardViewStyles.placeholder, CardViewStyles.mediaFull]} />
           )}
         </View>
-        <View style={[CardViewStyles.rowTextWrap, { flex: 1, justifyContent: 'center' }]}> 
+        <View style={[CardViewStyles.rowTextWrap, CardViewStyles.rowTextCenter]}> 
           <Text style={CardViewStyles.rowTitle} numberOfLines={1}>{item.title}</Text>
         </View>
       </Pressable>
