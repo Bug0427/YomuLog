@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, ViewStyle, TextStyle } from 'react-native';
-import { GeneralStyles, FeedBackStyles } from '../../styles/global';
+import { GeneralStyles, FeedbackStyles } from '../../styles/global';
 
 
 export type FBHeaderProps = {
@@ -27,14 +27,14 @@ export default function FBHeader({
     disabled,
 }: FBHeaderProps) {
 return (
-    <View style={[FeedBackStyles.wrapper, containerStyle]}>      
-    <View style={[FeedBackStyles.Button, {justifyContent: 'space-between', marginBottom: 7}]}>
+    <View style={[FeedbackStyles.wrapper, containerStyle]}>      
+    <View style={[FeedbackStyles.button, {justifyContent: 'space-between', marginBottom: 7}]}>
         {onBack ? (
-        <Pressable onPress={onBack} style={[FeedBackStyles.Button, {marginBottom:0}]} hitSlop={10}>
-            <Text style={FeedBackStyles.Text}>{backLabel}</Text>
+        <Pressable onPress={onBack} style={[FeedbackStyles.button, {marginBottom:0}]} hitSlop={10}>
+            <Text style={FeedbackStyles.text}>{backLabel}</Text>
         </Pressable>
         ) : (
-        <View style={FeedBackStyles.actionBtnPlaceholder} />
+        <View style={FeedbackStyles.actionBtnPlaceholder} />
         )}
 
         {/* Center: Title */}
@@ -48,20 +48,20 @@ return (
             onPress={onSubmit}
             disabled={disabled}
             style={[
-                FeedBackStyles.Button,
+                FeedbackStyles.button,
                 { marginBottom: 0 },
                 disabled ? { opacity: 0.5 } : null,
             ]}
             hitSlop={10}
         >
-            <Text style={FeedBackStyles.Text}>{submitLabel}</Text>
+            <Text style={FeedbackStyles.text}>{submitLabel}</Text>
         </Pressable>
         ) : (
-        <View style={FeedBackStyles.actionBtnPlaceholder} />
+        <View style={FeedbackStyles.actionBtnPlaceholder} />
         )}
     </View>
 
-    {showDivider && <View style={FeedBackStyles.divider} />}
+    {showDivider && <View style={FeedbackStyles.divider} />}
     </View>
 );
 }

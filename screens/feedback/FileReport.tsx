@@ -3,7 +3,7 @@ import { View, Pressable, Text, KeyboardAvoidingView, ScrollView, TouchableWitho
 import { useNavigation } from '@react-navigation/native';
 import FBHeader from '../../components/layout/FBHeader';
 import { categories, issuesByCategory, type CategoryId } from '../../data/feedbackCategories';
-import { FeedBackStyles } from '../../styles/global';
+import { FeedbackStyles } from '../../styles/global';
 import SubmitButton from '../../components/layout/SubmitButton';
 import { insertReport, initDb } from '../../services/feedbackRepo';
 
@@ -99,41 +99,41 @@ export default function FileReport() {
   const currentIssues = selectedCat ? issuesByCategory[selectedCat.id] : [];
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: FeedBackStyles.screen.backgroundColor }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: FeedbackStyles.screen.backgroundColor }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={FeedBackStyles.screen}>
+        <View style={FeedbackStyles.screen}>
           <FBHeader title="Report a problem" onBack={() => navigation.goBack()} />
 
           <ScrollView
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{ paddingBottom: 40 }}
           >
-            <View style={FeedBackStyles.body}>
+            <View style={FeedbackStyles.body}>
               {/* Category dropdown trigger */}
               <Pressable
                 accessibilityRole="button"
-                style={[FeedBackStyles.item]}
+                style={[FeedbackStyles.item]}
                 onPress={() => setCatOpen((v) => !v)}
               >
-                <Text style={FeedBackStyles.itemText}>
+                <Text style={FeedbackStyles.itemText}>
                   {selectedCat ? selectedCat.title : 'Select a category'}
                 </Text>
-                <Text style={FeedBackStyles.caret}>{catOpen ? '▲' : '▼'}</Text>
+                <Text style={FeedbackStyles.caret}>{catOpen ? '▲' : '▼'}</Text>
               </Pressable>
 
               {/* Category dropdown list */}
               {catOpen && (
-                <View style={FeedBackStyles.dropdown}>
+                <View style={FeedbackStyles.dropdown}>
                   {categories.map((c, idx) => (
                     <View key={`${c.id}_${idx}`}>
                       <Pressable
                         accessibilityRole="button"
-                        style={({ pressed }) => [FeedBackStyles.option, pressed && FeedBackStyles.optionPressed]}
+                        style={({ pressed }) => [FeedbackStyles.option, pressed && FeedbackStyles.optionPressed]}
                         onPress={() => onSelectCategory(c.id as CategoryId, c.title)}
                       >
-                        <Text style={FeedBackStyles.itemText}>{c.title}</Text>
+                        <Text style={FeedbackStyles.itemText}>{c.title}</Text>
                       </Pressable>
-                      {idx < categories.length - 1 && <View style={FeedBackStyles.divider} />}
+                      {idx < categories.length - 1 && <View style={FeedbackStyles.divider} />}
                     </View>
                   ))}
                 </View>
@@ -143,7 +143,7 @@ export default function FileReport() {
               {selectedCat && (
                 isFreeTextSub ? (
                   <TextInput
-                    style={[FeedBackStyles.item, { color: '#2c1f42', minHeight: 40, paddingVertical: 10 }]}
+                    style={[FeedbackStyles.item, { color: '#2c1f42', minHeight: 40, paddingVertical: 10 }]}
                     placeholder="Please specify"
                     placeholderTextColor="#6b5a8e"
                     value={selectedIssue ?? ''}
@@ -154,27 +154,27 @@ export default function FileReport() {
                   <>
                     <Pressable
                       accessibilityRole="button"
-                      style={[FeedBackStyles.item]}
+                      style={[FeedbackStyles.item]}
                       onPress={() => setIssueOpen((v) => !v)}
                     >
-                      <Text style={FeedBackStyles.itemText}>
+                      <Text style={FeedbackStyles.itemText}>
                         {selectedIssue ? selectedIssue : 'Select a sub option'}
                       </Text>
-                      <Text style={FeedBackStyles.caret}>{issueOpen ? '▲' : '▼'}</Text>
+                      <Text style={FeedbackStyles.caret}>{issueOpen ? '▲' : '▼'}</Text>
                     </Pressable>
 
                     {issueOpen && (
-                      <View style={FeedBackStyles.dropdown}>
+                      <View style={FeedbackStyles.dropdown}>
                         {currentIssues.map((issue, idx) => (
                           <View key={`${issue}_${idx}`}>
                             <Pressable
                               accessibilityRole="button"
-                              style={({ pressed }) => [FeedBackStyles.option, pressed && FeedBackStyles.optionPressed]}
+                              style={({ pressed }) => [FeedbackStyles.option, pressed && FeedbackStyles.optionPressed]}
                               onPress={() => onSelectIssue(issue)}
                             >
-                              <Text style={FeedBackStyles.itemText}>{issue}</Text>
+                              <Text style={FeedbackStyles.itemText}>{issue}</Text>
                             </Pressable>
-                            {idx < currentIssues.length - 1 && <View style={FeedBackStyles.divider} />}
+                            {idx < currentIssues.length - 1 && <View style={FeedbackStyles.divider} />}
                           </View>
                         ))}
                       </View>
@@ -184,7 +184,7 @@ export default function FileReport() {
               )}
 
               {/* Helper text */}
-              <Text style={FeedBackStyles.helper}>
+              <Text style={FeedbackStyles.helper}>
                 {selectedCat
                   ? selectedIssue
                     ? ''

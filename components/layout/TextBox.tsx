@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Keyboard } from 'react-native';
-import { FeedBackStyles } from '../../styles/global';
+import { FeedbackStyles } from '../../styles/global';
 
 export type TextBoxProps = {
 label?: string;                 // e.g., "Add details (max 160)"
@@ -38,10 +38,10 @@ const handleSubmit = () => {
 
 return (
     <View style={{ gap: 8 }}>
-    <Text style={FeedBackStyles.itemText}>{label}</Text>
+    <Text style={FeedbackStyles.itemText}>{label}</Text>
 
     <TextInput
-        style={[FeedBackStyles.item, { minHeight: 96, textAlignVertical: 'top' }]}
+        style={[FeedbackStyles.item, { minHeight: 96, textAlignVertical: 'top' }]}
         multiline
         value={value}
         onChangeText={handleChange}
@@ -53,7 +53,7 @@ return (
     />
 
     {showCounter && (
-        <Text style={FeedBackStyles.helper}>{value.length}/{maxLength}</Text>
+        <Text style={FeedbackStyles.helper}>{value.length}/{maxLength}</Text>
     )}
     </View>
 );

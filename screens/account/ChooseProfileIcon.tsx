@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { GeneralStyles, SettingButtonStyles, FeedBackStyles } from '../../styles/global';
+import { GeneralStyles, SettingButtonStyles, FeedbackStyles } from '../../styles/global';
 import { profileIcons } from '../../data/profileIcons';
 import CardView from '../../components/cardLayouts/CardView';
 import { updateProfileIcon } from '../../services/feedbackRepo';
@@ -96,13 +96,13 @@ export default function ChooseProfileIcon() {
   const HeaderContent = (
     <View>
       <View style={[GeneralStyles.header, { marginTop: 30, marginBottom: 15, paddingBottom: 20, borderBottomWidth: 2, borderColor: '#463B54' }]}>
-        <Pressable onPress={navigateToUserAccount} style={[FeedBackStyles.item, { width: 57, paddingVertical: 7 }]}>
+        <Pressable onPress={navigateToUserAccount} style={[FeedbackStyles.item, { width: 57, paddingVertical: 7 }]}>
           <Text style={GeneralStyles.plainText}>Back</Text>
         </Pressable>
-        <Text style={[SettingButtonStyles.Icon, {}]}>Profile Icon</Text>
+        <Text style={[SettingButtonStyles.icon, {}]}>Profile Icon</Text>
         <Pressable
           onPress={handleSave}
-          style={[FeedBackStyles.item, { width: 57, paddingVertical: 7, opacity: selectedId ? 1 : 0.4 }]}
+          style={[FeedbackStyles.item, { width: 57, paddingVertical: 7, opacity: selectedId ? 1 : 0.4 }]}
           disabled={!selectedId}
           accessibilityState={{ disabled: !selectedId }}
         >

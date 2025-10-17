@@ -40,11 +40,11 @@ export const buttonActions = {
 
 const GridItem = ({ label, children, onPress }: { label: string; children?: React.ReactNode; onPress?: () => void }) => {
 return (
-    <View style={SettingButtonStyles.Cell}>
-        <Pressable style={SettingButtonStyles.Button} onPress={onPress} hitSlop={10}>
+    <View style={SettingButtonStyles.cell}>
+        <Pressable style={SettingButtonStyles.button} onPress={onPress} hitSlop={10}>
             {children}
         </Pressable>
-        <Text style={SettingButtonStyles.CellLabel}>{label}</Text>
+        <Text style={SettingButtonStyles.cellLabel}>{label}</Text>
     </View>
 );
 };
@@ -216,9 +216,9 @@ export default function SettingsScreen() {
             <View style={[GeneralStyles.container, { paddingHorizontal: 12 }]}>
             <Header />
             {loading ? null : null}
-            <View style={SettingButtonStyles.Grid}>
+            <View style={SettingButtonStyles.grid}>
                 <GridItem label="Theme" onPress={() => setThemeOn(prev => !prev)}>
-                <Feather name={themeOn ? "moon" : "sun"} style={SettingButtonStyles.Icon} />
+                <Feather name={themeOn ? "moon" : "sun"} style={SettingButtonStyles.icon} />
                 </GridItem>
                 <GridItem
                 label="Direction"
@@ -227,15 +227,15 @@ export default function SettingsScreen() {
                 }
                 >
                 {directionMode === 'ltr' && (
-                    <Feather name="chevrons-right" style={[SettingButtonStyles.Icon, { fontSize: 35 }]} />
+                    <Feather name="chevrons-right" style={[SettingButtonStyles.icon, { fontSize: 35 }]} />
                 )}
                 {directionMode === 'rtl' && (
-                    <Feather name="chevrons-left" style={[SettingButtonStyles.Icon, { fontSize: 35 }]} />
+                    <Feather name="chevrons-left" style={[SettingButtonStyles.icon, { fontSize: 35 }]} />
                 )}
                 {directionMode === 'vertical' && (
                     <View style={{ alignItems: 'center' }}>
-                    <Feather name="chevrons-up" style={SettingButtonStyles.Icon} />
-                    <Feather name="chevrons-down" style={SettingButtonStyles.Icon} />
+                    <Feather name="chevrons-up" style={SettingButtonStyles.icon} />
+                    <Feather name="chevrons-down" style={SettingButtonStyles.icon} />
                     </View>
                 )}
                 </GridItem>
@@ -245,43 +245,43 @@ export default function SettingsScreen() {
                     setLanguage(prev => (prev === 'en' ? 'ja' : prev === 'ja' ? 'ko' : 'en'))
                 }
                 >
-                <Text style={SettingButtonStyles.Flag}>
+                <Text style={SettingButtonStyles.flag}>
                     {language === 'en' ? '🇺🇸' : language === 'ja' ? '🇯🇵' : '🇰🇷'}
                 </Text>
                 </GridItem>
                 <GridItem label="Chapter alerts" onPress={() => setAlertsOn(prev => !prev)}>
-                <Feather name={alertsOn ? "bell" : "bell-off"} style={SettingButtonStyles.Icon} />
+                <Feather name={alertsOn ? "bell" : "bell-off"} style={SettingButtonStyles.icon} />
                 </GridItem>
                 <GridItem label="Refresh metadata" onPress={handleRefreshMetadata}>
-                <Feather name="refresh-ccw" style={SettingButtonStyles.Icon} />
+                <Feather name="refresh-ccw" style={SettingButtonStyles.icon} />
                 </GridItem>
                 <GridItem label="Clear cache" onPress={buttonActions.clearCache}>
-                <Feather name="trash-2" style={SettingButtonStyles.Icon} />
+                <Feather name="trash-2" style={SettingButtonStyles.icon} />
                 </GridItem>
                 <GridItem label="Reset AI recs" onPress={buttonActions.resetAIRecommendations}>
-                <Feather name="rotate-ccw" style={SettingButtonStyles.Icon} />
+                <Feather name="rotate-ccw" style={SettingButtonStyles.icon} />
                 </GridItem>
                 <GridItem label="Enable AI search" onPress={buttonActions.enableAISearch}>
-                <Feather name="cpu" style={SettingButtonStyles.Icon} />
+                <Feather name="cpu" style={SettingButtonStyles.icon} />
                 </GridItem>
                 <GridItem label="Manage downloads" onPress={() => buttonActions.openDownloads(navigation)}>
-                <Feather name="download" style={SettingButtonStyles.Icon} />
+                <Feather name="download" style={SettingButtonStyles.icon} />
                 </GridItem>
                 {isAdmin ? (
                     <GridItem label="Admin" onPress={goAdmin}>
-                        <Feather name="shield" style={SettingButtonStyles.Icon} />
+                        <Feather name="shield" style={SettingButtonStyles.icon} />
                     </GridItem>
                 ) : (
                     <GridItem label="Feedback" onPress={goFeedback}>
-                        <Feather name="message-square" style={SettingButtonStyles.Icon} />
+                        <Feather name="message-square" style={SettingButtonStyles.icon} />
                     </GridItem>
                 )}
 
                 <GridItem label="Change password/username" onPress={goChangeLogin}>
-                    <Feather name="lock" style={SettingButtonStyles.Icon} />
+                    <Feather name="lock" style={SettingButtonStyles.icon} />
                 </GridItem>
                 <GridItem label="Log out" onPress={() => buttonActions.logOut(navigation)}>
-                <Feather name="log-out" style={SettingButtonStyles.Icon} />
+                <Feather name="log-out" style={SettingButtonStyles.icon} />
                 </GridItem>
             </View>
             </View>

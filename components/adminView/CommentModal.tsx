@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
-import {adminTabStyles, confirmationStyles, AdminSearchBarStyles} from '../../styles/global'
+import {AdminTabStyles, confirmationStyles, AdminSearchBarStyles} from '../../styles/global'
 
 export default function CommentModal({
   visible,
@@ -31,7 +31,7 @@ export default function CommentModal({
             <Text style={[{ fontSize: 14, color: '#412d5cff', margin: 20 }]}>{text}</Text>
           </ScrollView>
           <Pressable
-            style={[adminTabStyles.button, { width: 80, margin: 20, alignSelf: 'center' }]}
+            style={[AdminTabStyles.button, { width: 80, margin: 20, alignSelf: 'center' }]}
             onPress={onClose}
           >
             <Text style={[{ color: '#b2abd5ff', fontWeight: '600' }]}>Close</Text>

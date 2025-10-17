@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, Text, ViewStyle, TextStyle } from 'react-native';
-import { SubmitButtonStyles, FeedBackStyles} from '../../styles/global';
+import { SubmitButtonStyles, FeedbackStyles} from '../../styles/global';
 
 type Props = {
 title?: string;
@@ -24,7 +24,7 @@ return (
     onPress={onPress}
     disabled={!!disabled}
     >
-    <Text style={[FeedBackStyles.itemText, textStyle]}>{title}</Text>
+    <Text style={[FeedbackStyles.itemText, textStyle]}>{title}</Text>
     </Pressable>
 );
 }

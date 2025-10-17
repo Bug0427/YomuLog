@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
 
 // Data & Styles
-import { GeneralStyles, SettingButtonStyles, FeedBackStyles } from '../../styles/global';
+import { GeneralStyles, SettingButtonStyles, FeedbackStyles } from '../../styles/global';
 
 export const buttonActions = {
     reportProblem: () => {console.log('🚨 Report a problem');},
@@ -18,11 +18,11 @@ export const buttonActions = {
 
 const GridItem = ({ label, children, onPress }: { label: string; children?: React.ReactNode; onPress?: () => void }) => {
 return (
-    <View style={SettingButtonStyles.Cell}>
-        <Pressable style={SettingButtonStyles.Button} onPress={onPress} hitSlop={10}>
+    <View style={SettingButtonStyles.cell}>
+        <Pressable style={SettingButtonStyles.button} onPress={onPress} hitSlop={10}>
             {children}
         </Pressable>
-        <Text style={SettingButtonStyles.CellLabel}>{label}</Text>
+        <Text style={SettingButtonStyles.cellLabel}>{label}</Text>
     </View>
 );
 };
@@ -57,20 +57,20 @@ export default function FeedBackHome() {
             onMomentumScrollEnd={handleScrollEnd}
         >
             <View style={[GeneralStyles.container, { paddingHorizontal: 12 }]}>
-            <View style={FeedBackStyles.Button}>
+            <View style={FeedbackStyles.button}>
                 <Pressable onPress={() => navigation.goBack()}>
-                    <Text style={FeedBackStyles.Text}>Back</Text>
+                    <Text style={FeedbackStyles.text}>Back</Text>
                 </Pressable>
             </View>
-            <View style={FeedBackStyles.grid}>
+            <View style={FeedbackStyles.grid}>
                 <GridItem label="Report a problem" onPress={() => (navigation as any).navigate('FileReport')}>
-                    <Feather name="alert-triangle" style={SettingButtonStyles.Icon} />
+                    <Feather name="alert-triangle" style={SettingButtonStyles.icon} />
                 </GridItem>
                 <GridItem label="Leave a Review" onPress={() => (navigation as any).navigate('LeaveReview')}>
-                    <Feather name="message-square" style={SettingButtonStyles.Icon} />
+                    <Feather name="message-square" style={SettingButtonStyles.icon} />
                 </GridItem>
                 <GridItem label="Leave a Rating" onPress={() => (navigation as any).navigate('LeaveRating')}>
-                    <Feather name="heart" style={SettingButtonStyles.Icon} />
+                    <Feather name="heart" style={SettingButtonStyles.icon} />
                 </GridItem>
             </View>
             </View>

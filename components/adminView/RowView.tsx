@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { charsThatFit } from '../../utils/gridUtils';
-import{adminCommonStyles, adminTabStyles} from '../../styles/global'
+import{AdminCommonStyles, AdminTabStyles} from '../../styles/global'
 
 export type Align = 'left' | 'center' | 'right';
 
@@ -38,7 +38,7 @@ onPress: (index: number, item: T) => void;
 }) {
 return (
     <Pressable onPress={() => onPress(index, item)}>
-    <View style={[adminCommonStyles.dataRow, { height: rowHeight, width: totalWidth, backgroundColor: '#AFA6DD' }]}>
+    <View style={[AdminCommonStyles.dataRow, { height: rowHeight, width: totalWidth, backgroundColor: '#AFA6DD' }]}>
         {columns.map((col, ci) => {
         const keyStr = String(col.key);
         let content: React.ReactNode;
@@ -49,12 +49,12 @@ return (
             const value = String(item[col.key as keyof T] ?? '');
             const isExpandedCol = allFit ? !((collapsedKeys ?? []).includes(keyStr)) : expandedKey === keyStr;
             if (isExpandedCol) {
-            content = <Text style={[adminTabStyles.text, {fontWeight: '400'}]}>{value}</Text>;
+            content = <Text style={[AdminTabStyles.text, {fontWeight: '400'}]}>{value}</Text>;
             } else {
             const allowed = Math.max(1, charsThatFit(colWidths[ci]));
             const clipped = value.length > allowed ? value.slice(0, Math.max(0, allowed - 1)) + '…' : value;
             content = (
-                <Text style={[adminTabStyles.text, {fontWeight: '400'}]} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={[AdminTabStyles.text, {fontWeight: '400'}]} numberOfLines={1} ellipsizeMode="tail">
                 {clipped}
                 </Text>
             );
@@ -64,7 +64,7 @@ return (
         return (
             <View
             key={`c-${index}-${keyStr}-${ci}`}
-            style={[adminCommonStyles.dataCell, { width: colWidths[ci], justifyContent: getCellAlign(col.align) }]}
+            style={[AdminCommonStyles.dataCell, { width: colWidths[ci], justifyContent: getCellAlign(col.align) }]}
             >
             {content}
             </View>

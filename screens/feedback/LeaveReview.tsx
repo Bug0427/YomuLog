@@ -5,7 +5,7 @@ import { View, Text, TextInput, KeyboardAvoidingView, Platform, ScrollView } fro
 import { useNavigation } from '@react-navigation/native';
 
 import FBHeader from '../../components/layout/FBHeader';
-import { GeneralStyles, FeedBackStyles } from '../../styles/global';
+import { GeneralStyles, FeedbackStyles } from '../../styles/global';
 
 const MAX_CHARS = 360;
 
@@ -62,7 +62,7 @@ export default function LeaveReview() {
       behavior={Platform.select({ ios: 'padding', android: undefined })}
       style={GeneralStyles.section}
     >
-      <View style={FeedBackStyles.screen}>
+      <View style={FeedbackStyles.screen}>
         <FBHeader
           title="Leave a review"
           onBack={() => navigation.goBack()}

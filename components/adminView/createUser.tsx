@@ -5,13 +5,12 @@ import {
   Text,
   Pressable,
   TextInput,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
   Alert,
 } from 'react-native';
 import { CreateNewUser, SecurityLevel } from '../../services/feedbackRepo';
-import { AdminSearchBarStyles } from '../../styles/global';
+import { AdminSearchBarStyles, CreateUserStyles } from '../../styles/global';
 
 export type CreateUserPayload = {
   accountId: string;
@@ -85,66 +84,66 @@ export default function CreateUser({ visible, onBack, onSaved, title = 'Add User
 
   return (
     <Modal visible={visible} animationType="fade" transparent>
-      <View style={styles.overlay}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.card}>
-          <View style={styles.headerRow}>
-            <Pressable onPress={onBack} style={styles.smallBtn} disabled={saving}>
-              <Text style={styles.smallBtnText}>Back</Text>
+      <View style={CreateUserStyles.overlay}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={CreateUserStyles.card}>
+          <View style={CreateUserStyles.headerRow}>
+            <Pressable onPress={onBack} style={CreateUserStyles.smallBtn} disabled={saving}>
+              <Text style={CreateUserStyles.smallBtnText}>Back</Text>
             </Pressable>
             <Text style={[AdminSearchBarStyles.checkText, {color:'#bfb9deff'}]}>{title}</Text>
-            <Pressable onPress={handleSave} style={[styles.smallBtn, saving && styles.smallBtnDisabled]} disabled={saving}>
-              <Text style={styles.smallBtnText}>Save</Text>
+            <Pressable onPress={handleSave} style={[CreateUserStyles.smallBtn, saving && CreateUserStyles.smallBtnDisabled]} disabled={saving}>
+              <Text style={CreateUserStyles.smallBtnText}>Save</Text>
             </Pressable>
           </View>
 
-          <View style={styles.inputBlock}>
-            <Text style={styles.inputLabel}>Username</Text>
+          <View style={CreateUserStyles.inputBlock}>
+            <Text style={CreateUserStyles.inputLabel}>Username</Text>
             <TextInput
               value={userNm}
               onChangeText={setUserNm}
               placeholder="username"
               placeholderTextColor="#bfb9deff"
-              style={styles.input}
+              style={CreateUserStyles.input}
               autoCapitalize="none"
             />
           </View>
 
-          <View style={styles.inputBlock}>
-            <Text style={styles.inputLabel}>Password</Text>
+          <View style={CreateUserStyles.inputBlock}>
+            <Text style={CreateUserStyles.inputLabel}>Password</Text>
             <TextInput
               value={pswd}
               onChangeText={setPswd}
               placeholder="password"
               placeholderTextColor="#bfb9deff"
-              style={styles.input}
+              style={CreateUserStyles.input}
               secureTextEntry
             />
           </View>
 
-          <View style={styles.inputBlock}>
-            <Text style={styles.inputLabel}>E-mail</Text>
+          <View style={CreateUserStyles.inputBlock}>
+            <Text style={CreateUserStyles.inputLabel}>E-mail</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
               placeholder="email@example.com"
               placeholderTextColor="#bfb9deff"
-              style={styles.input}
+              style={CreateUserStyles.input}
               keyboardType="email-address"
               autoCapitalize="none"
             />
           </View>
 
-          <View style={styles.inputBlock}>
-            <Text style={styles.inputLabel}>Security Level (1/2/3)</Text>
-            <View style={styles.levelRow}>
+          <View style={CreateUserStyles.inputBlock}>
+            <Text style={CreateUserStyles.inputLabel}>Security Level (1/2/3)</Text>
+            <View style={CreateUserStyles.levelRow}>
               {[SecurityLevel.Admin, SecurityLevel.Paid, SecurityLevel.Regular].map((l) => (
                 <Pressable
                   key={l}
                   onPress={() => setLevel(l)}
-                  style={[styles.levelChip, level === l && styles.levelChipActive]}
+                  style={[CreateUserStyles.levelChip, level === l && CreateUserStyles.levelChipActive]}
                   disabled={saving}
                 >
-                  <Text style={styles.levelChipText}>{l}</Text>
+                  <Text style={CreateUserStyles.levelChipText}>{l}</Text>
                 </Pressable>
               ))}
             </View>
@@ -154,77 +153,3 @@ export default function CreateUser({ visible, onBack, onSaved, title = 'Add User
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 560,
-    borderWidth: 1,
-    borderColor: '#AFA6DD',
-    backgroundColor: '#412d5cff',
-    padding: 16,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    paddingBottom:15,
-    borderBottomWidth: 2,
-    borderBottomColor:'#AFA6DD',
-  },
-  smallBtn: {
-    borderWidth: 1,
-    borderColor: '#AFA6DD',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-  },
-  smallBtnDisabled: {
-    opacity: 0.6,
-  },
-  smallBtnText: {
-    color: '#bfb9deff',
-    fontWeight: '600',
-  },
-  inputBlock: { marginTop: 10 },
-  inputLabel: { 
-    color: '#bfb9deff', 
-    marginBottom: 6, 
-    fontSize: 12 
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#AFA6DD',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    color: '#bfb9deff',
-  },
-  levelRow: { 
-    flexDirection: 'row', 
-    gap: 8 
-  },
-  levelChip: {
-    borderWidth: 1,
-    borderColor: '#AFA6DD',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginRight: 8,
-    marginBottom: 15,
-  },
-  levelChipActive: { 
-    backgroundColor: '#AFA6DD', 
-    color: '#412d5cff', 
-    fontWeight: '600' 
-  },
-  levelChipText: { 
-    color: '#bfb9deff', 
-    fontWeight: '600' 
-  },
-});

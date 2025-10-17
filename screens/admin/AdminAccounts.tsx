@@ -6,7 +6,7 @@ import { queryAll } from '../../services/feedbackRepo';
 import usePagedTable from '../../hooks/admin/UsePagedTable';
 import AdminSearchBar from '../../components/adminView/searchbar';
 import CreateUserModal, { CreateUserPayload } from '../../components/adminView/createUser';
-import {adminTabStyles} from '../../styles/global'
+import {AdminTabStyles} from '../../styles/global'
 type AccountRow = {
   id: string;
   username: string;
@@ -125,8 +125,8 @@ export default function AdminAccounts() {
         onSubmit={() => { /* client-side filtering already reacts to query; keep for future server-side */ }}
       />
 
-      <Pressable onPress={() => setShowAdd(true)} style={({ pressed }) => [adminTabStyles.panel, pressed && adminTabStyles.addBtnPressed]}>
-        <Text style={[adminTabStyles.text,{paddingBottom: 2}]}>Add New User</Text>
+      <Pressable onPress={() => setShowAdd(true)} style={({ pressed }) => [AdminTabStyles.panel, pressed && AdminTabStyles.addBtnPressed]}>
+        <Text style={[AdminTabStyles.text,{paddingBottom: 2}]}>Add New User</Text>
       </Pressable>
 
       <GridView<AccountRow>

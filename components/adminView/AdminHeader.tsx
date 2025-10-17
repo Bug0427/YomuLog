@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { GeneralStyles, adminTabStyles } from '../../styles/global';
+import { GeneralStyles, AdminTabStyles } from '../../styles/global';
 
 interface AdminHeaderProps {
   navigation: any;
@@ -20,10 +20,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
 }) => {
   return (
     <>
-      <View style={adminTabStyles.header}>
+      <View style={AdminTabStyles.header}>
         {navigation?.goBack && (
           <TouchableOpacity
-            style={adminTabStyles.button}
+            style={AdminTabStyles.button}
             onPress={() => navigation.goBack()}
           >
             <Text style={[{color:'#b2abd5ff', fontWeight: '600',}]}>Back</Text>
@@ -32,24 +32,24 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
         <Text style={[GeneralStyles.title, {flex: 1, textAlign: 'center', color: '#412d5cff'}]}>Admin</Text>
         <View style={{ width: 70, marginRight: 15 }} />
       </View>
-      <View style={adminTabStyles.tabsWrap}>
+      <View style={AdminTabStyles.tabsWrap}>
         {isReports ? (
-          <View style={[adminTabStyles.activeHalf, { left: 0 }]} />
+          <View style={[AdminTabStyles.activeHalf, { left: 0 }]} />
         ) : (
-          <View style={[adminTabStyles.activeHalf, { right: 0 }]} />
+          <View style={[AdminTabStyles.activeHalf, { right: 0 }]} />
         )}
         {/* Stationary diagonal at center; color flips to blend with the active side */}
         <View style={[
-          adminTabStyles.diagonalRight,
+          AdminTabStyles.diagonalRight,
           { left: '50%', borderTopColor: isReports ? '#412d5cff' : '#AFA6DD' }
         ]} />
-        <TouchableOpacity onPress={selectReports} style={[adminTabStyles.tabHit, adminTabStyles.tabLeft]} hitSlop={10}>
+        <TouchableOpacity onPress={selectReports} style={[AdminTabStyles.tabHit, AdminTabStyles.tabLeft]} hitSlop={10}>
           <Text style={[
-            adminTabStyles.text, isReports && {color: '#AFA6DD'}
+            AdminTabStyles.text, isReports && {color: '#AFA6DD'}
           ]}>Reports</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={selectAccounts} style={[adminTabStyles.tabHit, adminTabStyles.tabRight]} hitSlop={10}>
-          <Text style={[adminTabStyles.text, isAccounts && {color: '#AFA6DD'}]}>Accounts</Text>
+        <TouchableOpacity onPress={selectAccounts} style={[AdminTabStyles.tabHit, AdminTabStyles.tabRight]} hitSlop={10}>
+          <Text style={[AdminTabStyles.text, isAccounts && {color: '#AFA6DD'}]}>Accounts</Text>
         </TouchableOpacity>
       </View>
     </>

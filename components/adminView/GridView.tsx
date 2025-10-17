@@ -7,7 +7,7 @@ import { computeColumnWidths } from '../../utils/gridWidths';
 import { LoadingRows } from './LoadingRow';
 import CommentModal from './CommentModal';
 import RowView from './RowView';
-import { adminCommonStyles, adminTabStyles } from '../../styles/global';
+import { AdminCommonStyles, AdminTabStyles } from '../../styles/global';
 import useDoubleTap from '../../hooks/admin/useDoubleTap';
 
 export type Align = 'left' | 'center' | 'right';
@@ -102,7 +102,7 @@ export default function GridView<T extends Record<string, any>>({
   const [modal, setModal] = useState<{ visible: boolean; text: string; sid?: string }>({ visible: false, text: '' });
   const _keyExtractor = keyExtractor ?? ((item: T, i: number) => String((item as any).id ?? i));
   const renderHeader = () => (
-    <View style={[adminCommonStyles.dataRow, { height: headerHeight, width: totalWidth, borderBottomWidth: 2, backgroundColor: '#412d5cff', }]}>
+    <View style={[AdminCommonStyles.dataRow, { height: headerHeight, width: totalWidth, borderBottomWidth: 2, backgroundColor: '#412d5cff', }]}>
       {orderedColumns.map((col, i) => {
         const keyStr = String(col.key);
         let displayTitle = col.title;
@@ -111,7 +111,7 @@ export default function GridView<T extends Record<string, any>>({
         return (
           <Pressable
             key={`h-${keyStr}-${i}`}
-            style={[adminCommonStyles.dataCell, { width: colWidths[i], justifyContent: getCellAlign(col.align) }]}
+            style={[AdminCommonStyles.dataCell, { width: colWidths[i], justifyContent: getCellAlign(col.align) }]}
             onPress={() => {
               if (allFit) {
                 setCollapsedSet((prev) => {
@@ -124,7 +124,7 @@ export default function GridView<T extends Record<string, any>>({
               }
             }}
           >
-            <Text style={[adminTabStyles.text, {color: '#bfb9deff',}]} numberOfLines={1} ellipsizeMode="tail">{displayTitle}</Text>
+            <Text style={[AdminTabStyles.text, {color: '#bfb9deff',}]} numberOfLines={1} ellipsizeMode="tail">{displayTitle}</Text>
           </Pressable>
         );
       })}
@@ -157,7 +157,7 @@ export default function GridView<T extends Record<string, any>>({
             onEndReached={onEndReached}
             ListEmptyComponent={
               isLoading ? null : (
-                <View style={[adminCommonStyles.dataCell, { width: totalWidth, height: rowHeight * 3 }]}>
+                <View style={[AdminCommonStyles.dataCell, { width: totalWidth, height: rowHeight * 3 }]}>
                 </View>
               )
             }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { FeedBackStyles, SubmitButtonStyles } from '../../styles/global';
+import { FeedbackStyles, SubmitButtonStyles } from '../../styles/global';
 import { CreateNewUser, runAsync, SecurityLevel } from '../../services/feedbackRepo';
 
 // Ensure default security level mapping even if enum values shift
@@ -115,12 +115,12 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
     };
 
     return (
-        <KeyboardAvoidingView style={FeedBackStyles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={FeedbackStyles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <View style={{ flex: 1, paddingHorizontal: 20 }}>
             {/* App title */}
             <View style={{ alignItems: 'center', marginTop: 60, marginBottom: 12 }}>
-                <Text style={[FeedBackStyles.itemText, { fontSize: 36 }]}>YomuLog</Text>
+                <Text style={[FeedbackStyles.itemText, { fontSize: 36 }]}>YomuLog</Text>
             </View>
 
             <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}>
@@ -128,18 +128,18 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
                 <View style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, backgroundColor: 'transparent', overflow: 'hidden', marginHorizontal: 8 }}>
                 {/* Header */}
                 <View style={{ paddingVertical: 12, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#ddd' }}>
-                    <Text style={[FeedBackStyles.itemText, { fontSize: 20 }]}>Create account</Text>
+                    <Text style={[FeedbackStyles.itemText, { fontSize: 20 }]}>Create account</Text>
                 </View>
 
                 {/* Body */}
                 <View style={{ padding: 16, alignItems: 'center' }}>
                     {errorMsg ? (
-                    <Text style={[FeedBackStyles.helper, { color: '#d33', marginBottom: 8 }]}>{errorMsg}</Text>
+                    <Text style={[FeedbackStyles.helper, { color: '#d33', marginBottom: 8 }]}>{errorMsg}</Text>
                     ) : null}
 
                     {/* Username */}
                     <TextInput
-                    style={[FeedBackStyles.item, { width: '90%', minHeight: 44 }]}
+                    style={[FeedbackStyles.item, { width: '90%', minHeight: 44 }]}
                     value={username}
                     onChangeText={setUsername}
                     placeholder="Username"
@@ -151,7 +151,7 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
 
                     {/* Password */}
                     <TextInput
-                    style={[FeedBackStyles.item, { width: '90%', minHeight: 44, marginTop: 12 }]}
+                    style={[FeedbackStyles.item, { width: '90%', minHeight: 44, marginTop: 12 }]}
                     value={password}
                     onChangeText={setPassword}
                     placeholder="Password"
@@ -162,7 +162,7 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
 
                     {/* Email */}
                     <TextInput
-                    style={[FeedBackStyles.item, { width: '90%', minHeight: 44, marginTop: 12 }]}
+                    style={[FeedbackStyles.item, { width: '90%', minHeight: 44, marginTop: 12 }]}
                     value={email}
                     onChangeText={setEmail}
                     placeholder="E‑mail"
@@ -180,12 +180,12 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
                     }}
                     style={[SubmitButtonStyles.item, { marginTop: 16, width: 120, alignSelf: 'center', opacity: isSubmitting ? 0.6 : 1 }]}
                     >
-                    <Text style={FeedBackStyles.itemText}>Submit</Text>
+                    <Text style={FeedbackStyles.itemText}>Submit</Text>
                     </Pressable>
 
                     {/* Login link */}
                     <Pressable accessibilityRole="button" onPress={goLogin} style={{ marginTop: 16 }}>
-                    <Text style={FeedBackStyles.helper}>Login →</Text>
+                    <Text style={FeedbackStyles.helper}>Login →</Text>
                     </Pressable>
                 </View>
                 </View>
@@ -193,7 +193,7 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
             {/* Exit button at bottom */}
             <View style={{ alignItems: 'center', marginVertical: 16 }}>
                 <Pressable accessibilityRole="button" onPress={exit} style={[SubmitButtonStyles.item, { width: 120, marginBottom:250 }]}>
-                <Text style={FeedBackStyles.itemText}>Exit</Text>
+                <Text style={FeedbackStyles.itemText}>Exit</Text>
                 </Pressable>
             </View>
             </ScrollView>

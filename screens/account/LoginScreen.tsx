@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { FeedBackStyles, SubmitButtonStyles } from '../../styles/global';
+import { FeedbackStyles, SubmitButtonStyles } from '../../styles/global';
 import { verifyUser } from '../../services/feedbackRepo';
 
 
@@ -62,14 +62,14 @@ const exit = () => navigation.goBack();
 
 return (
     <KeyboardAvoidingView
-    style={FeedBackStyles.screen}
+    style={FeedbackStyles.screen}
     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={{ flex: 1, paddingHorizontal: 20 }}>
         {/* App title */}
         <View style={{ alignItems: 'center', marginTop: 60, marginBottom: 12 }}>
-            <Text style={[FeedBackStyles.itemText, { fontSize: 36 }]}>YomuLog</Text>
+            <Text style={[FeedbackStyles.itemText, { fontSize: 36 }]}>YomuLog</Text>
         </View>
 
         <ScrollView
@@ -87,19 +87,19 @@ return (
             }}>
             {/* Card header */}
             <View style={{ paddingVertical: 12, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#ddd' }}>
-                <Text style={[FeedBackStyles.itemText, { fontSize: 20 }]}>Login</Text>
+                <Text style={[FeedbackStyles.itemText, { fontSize: 20 }]}>Login</Text>
             </View>
 
             {/* Card body */}
             <View style={{ padding: 16, alignItems: 'center' }}>
                 {errorMsg ? (
-                <Text style={[FeedBackStyles.helper, { color: '#d33', marginBottom: 8 }]}>
+                <Text style={[FeedbackStyles.helper, { color: '#d33', marginBottom: 8 }]}>
                     {errorMsg}
                 </Text>
                 ) : null}
                 {/* Username / Email */}
                 <TextInput
-                style={[FeedBackStyles.item, { width: '90%', minHeight: 44 }]}
+                style={[FeedbackStyles.item, { width: '90%', minHeight: 44 }]}
                 value={username}
                 onChangeText={setUsername}
                 placeholder="username"
@@ -111,7 +111,7 @@ return (
 
                 {/* Password */}
                 <TextInput
-                style={[FeedBackStyles.item, { width: '90%', minHeight: 44, marginTop: 12 }]}
+                style={[FeedbackStyles.item, { width: '90%', minHeight: 44, marginTop: 12 }]}
                 value={password}
                 onChangeText={setPassword}
                 placeholder="password"
@@ -133,7 +133,7 @@ return (
                 }}
                 style={[SubmitButtonStyles.item, { marginTop: 16, width: 120, alignSelf: 'center' }]}
                 >
-                <Text style={FeedBackStyles.itemText}>Submit</Text>
+                <Text style={FeedbackStyles.itemText}>Submit</Text>
                 </Pressable>
 
 
@@ -142,7 +142,7 @@ return (
                 onPress={() => navigation.navigate('ForgotCredentials')}
                 style={{ marginTop: 12 }}
                 >
-                <Text style={FeedBackStyles.helper}>Forgot username or password?</Text>
+                <Text style={FeedbackStyles.helper}>Forgot username or password?</Text>
                 </Pressable>
 
                 {/* Create account link */}
@@ -151,7 +151,7 @@ return (
                   onPress={() => navigation.replace('CreateAccount')}
                   style={{ marginTop: 2 }}
                 >
-                    <Text style={FeedBackStyles.helper}>Create account →</Text>
+                    <Text style={FeedbackStyles.helper}>Create account →</Text>
                 </Pressable>
             </View>
             </View>
@@ -159,7 +159,7 @@ return (
         {/* Exit button at bottom */}
         <View style={{ alignItems: 'center', marginVertical: 16 }}>
             <Pressable accessibilityRole="button" onPress={exit} style={[SubmitButtonStyles.item, { width: 120, marginBottom: 300 }]}>
-            <Text style={FeedBackStyles.itemText}>Exit</Text>
+            <Text style={FeedbackStyles.itemText}>Exit</Text>
             </Pressable>
         </View>
         </ScrollView>

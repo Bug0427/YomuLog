@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView, Modal } from 'react-native';
-import { AdminSearchBarStyles, GeneralStyles, adminTabStyles } from '../../styles/global';
+import { AdminSearchBarStyles, GeneralStyles, AdminTabStyles } from '../../styles/global';
 
 export type Field = { key: string; label: string };
 
@@ -44,7 +44,7 @@ export function OrganizerControl({
           <View pointerEvents="box-none" style={{ zIndex: 2, width: '82%', maxHeight: '70%', backgroundColor: '#bfb9deff', borderColor: '#412d5cff', borderWidth: 2 }}>
             {/* Header row */}
             <View style={[GeneralStyles.header, { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 2, borderColor: '#412d5cff', marginBottom: 0 }]}>
-              <Text style={adminTabStyles.text}>Organize By:</Text>
+              <Text style={AdminTabStyles.text}>Organize By:</Text>
             </View>
 
             {/* Rows */}

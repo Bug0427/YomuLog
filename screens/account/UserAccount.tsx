@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ActivityIndicator, Modal, Image } from 'react-native';
 import { useNavigation, StackActions } from '@react-navigation/native';
-import { FeedBackStyles, GeneralStyles } from '../../styles/global';
+import { FeedbackStyles, GeneralStyles } from '../../styles/global';
 import { queryFirst, runAsync, getUserByUsername, verifyUser } from '../../services/feedbackRepo';
 import { Ionicons } from '@expo/vector-icons';
 import { profileIcons } from '../../data/profileIcons';
@@ -270,16 +270,16 @@ export default function UserAccount() {
     }
 
     return (
-        <KeyboardAvoidingView style={[FeedBackStyles.screen, { backgroundColor: '#AFA6DD' }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={[FeedbackStyles.screen, { backgroundColor: '#AFA6DD' }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <View style={{ flex: 1, padding: 16, backgroundColor: '#AFA6DD' }}>
             {/* Back */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 50 }}>
                 <Pressable
                     onPress={handleBack}
-                    style={[FeedBackStyles.item, { width: 67, marginTop: 0, marginRight: 12 }]}
+                    style={[FeedbackStyles.item, { width: 67, marginTop: 0, marginRight: 12 }]}
                 >
-                    <Text style={[FeedBackStyles.itemText, {paddingLeft: 1}]}>back</Text>
+                    <Text style={[FeedbackStyles.itemText, {paddingLeft: 1}]}>back</Text>
                 </Pressable>
 
                 <Text style={GeneralStyles.title}> Account Profile</Text>
@@ -299,7 +299,7 @@ export default function UserAccount() {
                     resizeMode="contain"
                     />
                 ) : (
-                    <Text style={FeedBackStyles.helper}>Profile picture{"\n"}(tap to choose)</Text>
+                    <Text style={FeedbackStyles.helper}>Profile picture{"\n"}(tap to choose)</Text>
                 )}
                 </Pressable>
 
@@ -309,7 +309,7 @@ export default function UserAccount() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
                     <TextInput
                     ref={usernameRef}
-                    style={[FeedBackStyles.item, { flex: 1, minHeight: 44 }]}
+                    style={[FeedbackStyles.item, { flex: 1, minHeight: 44 }]}
                     value={canEditUsername ? newUsername : '*'.repeat(Math.max(4, (username?.length ?? 0) || 4))}
                     onChangeText={setNewUsername}
                     placeholder={canEditUsername ? 'Username' : ''}
@@ -320,7 +320,7 @@ export default function UserAccount() {
                     <Pressable
                     accessibilityRole="button"
                     onPress={() => (canEditUsername ? handleUpdateUsername() : openVerify('username'))}
-                    style={[FeedBackStyles.item, { marginLeft: 8, width: 50, alignItems: 'center', justifyContent: 'center' }]}
+                    style={[FeedbackStyles.item, { marginLeft: 8, width: 50, alignItems: 'center', justifyContent: 'center' }]}
                     >
                     <Ionicons name={canEditUsername ? 'checkmark-outline' : 'create-outline'} size={20} color="#463B54" />
                     </Pressable>
@@ -330,7 +330,7 @@ export default function UserAccount() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
                     <TextInput
                     ref={passwordRef}
-                    style={[FeedBackStyles.item, { flex: 1, minHeight: 44 }]}
+                    style={[FeedbackStyles.item, { flex: 1, minHeight: 44 }]}
                     value={canEditPassword ? newPassword : '*'.repeat(Math.max(8, pwLen || 8))}
                     onChangeText={setNewPassword}
                     placeholder={canEditPassword ? 'Password' : ''}
@@ -340,7 +340,7 @@ export default function UserAccount() {
                     <Pressable
                     accessibilityRole="button"
                     onPress={() => (canEditPassword ? handleUpdatePassword() : openVerify('password'))}
-                    style={[FeedBackStyles.item, { marginLeft: 8, width: 50, alignItems: 'center', justifyContent: 'center' }]}
+                    style={[FeedbackStyles.item, { marginLeft: 8, width: 50, alignItems: 'center', justifyContent: 'center' }]}
                     >
                     <Ionicons name={canEditPassword ? 'checkmark-outline' : 'create-outline'} size={20} color="#463B54" />
                     </Pressable>
@@ -350,7 +350,7 @@ export default function UserAccount() {
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <TextInput
                     ref={emailRef}
-                    style={[FeedBackStyles.item, { flex: 1, minHeight: 44 }]}
+                    style={[FeedbackStyles.item, { flex: 1, minHeight: 44 }]}
                     value={newEmail}
                     onChangeText={setNewEmail}
                     placeholder="E‑mail"
@@ -361,7 +361,7 @@ export default function UserAccount() {
                     <Pressable
                     accessibilityRole="button"
                     onPress={() => (canEditEmail ? handleUpdateEmail() : openVerify('email'))}
-                    style={[FeedBackStyles.item, { marginLeft: 8, width: 50, alignItems: 'center', justifyContent: 'center' }]}
+                    style={[FeedbackStyles.item, { marginLeft: 8, width: 50, alignItems: 'center', justifyContent: 'center' }]}
                     >
                     <Ionicons name={canEditEmail ? 'checkmark-outline' : 'create-outline'} size={20} color="#463B54" />
                     </Pressable>
@@ -371,29 +371,29 @@ export default function UserAccount() {
 
             {/* Error / status */}
             {error ? (
-                <Text style={[FeedBackStyles.helper, { color: '#d33', marginTop: 8 }]}>{error}</Text>
+                <Text style={[FeedbackStyles.helper, { color: '#d33', marginTop: 8 }]}>{error}</Text>
             ) : null}
 
             {/* Logout */}
             <Pressable
             accessibilityRole="button"
             onPress={() => logout(navigation)}
-            style={[FeedBackStyles.item, { marginTop: 20, paddingHorizontal: 140 }]}
+            style={[FeedbackStyles.item, { marginTop: 20, paddingHorizontal: 140 }]}
             >
-            <Text style={FeedBackStyles.itemText}>Log Out</Text>
+            <Text style={FeedbackStyles.itemText}>Log Out</Text>
             </Pressable>
 
             {/* Delete account */}
-            <Pressable accessibilityRole="button" onPress={handleDeleteAccount} style={[FeedBackStyles.item, { marginTop: 20, paddingHorizontal: 120  }]}> 
-                <Text style={FeedBackStyles.itemText}>Delete account</Text>
+            <Pressable accessibilityRole="button" onPress={handleDeleteAccount} style={[FeedbackStyles.item, { marginTop: 20, paddingHorizontal: 120  }]}> 
+                <Text style={FeedbackStyles.itemText}>Delete account</Text>
             </Pressable>
 
             <Modal visible={showVerify} transparent animationType="fade" onRequestClose={() => setShowVerify(false)}>
             <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}>
                 <View style={{ backgroundColor: '#D7D2EE', padding: 16, borderRadius: 8, width: '86%' }}>
-                <Text style={[FeedBackStyles.itemText, { marginBottom: 8 }]}>Verify your identity</Text>
+                <Text style={[FeedbackStyles.itemText, { marginBottom: 8 }]}>Verify your identity</Text>
                 <TextInput
-                    style={[FeedBackStyles.item, { marginBottom: 8, minHeight: 44 }]}
+                    style={[FeedbackStyles.item, { marginBottom: 8, minHeight: 44 }]}
                     value={verifyUserNm}
                     onChangeText={setVerifyUserNm}
                     placeholder="Username"
@@ -401,19 +401,19 @@ export default function UserAccount() {
                     autoCorrect={false}
                 />
                 <TextInput
-                    style={[FeedBackStyles.item, { marginBottom: 8, minHeight: 44 }]}
+                    style={[FeedbackStyles.item, { marginBottom: 8, minHeight: 44 }]}
                     value={verifyPw}
                     onChangeText={setVerifyPw}
                     placeholder="Password"
                     secureTextEntry
                 />
-                {verifyError ? (<Text style={[FeedBackStyles.helper, { color: '#d33', marginBottom: 8 }]}>{verifyError}</Text>) : null}
+                {verifyError ? (<Text style={[FeedbackStyles.helper, { color: '#d33', marginBottom: 8 }]}>{verifyError}</Text>) : null}
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
-                    <Pressable onPress={() => setShowVerify(false)} style={[FeedBackStyles.item, { paddingHorizontal: 16 }]}>
-                    <Text style={FeedBackStyles.itemText}>Cancel</Text>
+                    <Pressable onPress={() => setShowVerify(false)} style={[FeedbackStyles.item, { paddingHorizontal: 16 }]}>
+                    <Text style={FeedbackStyles.itemText}>Cancel</Text>
                     </Pressable>
-                    <Pressable onPress={handleVerifySubmit} style={[FeedBackStyles.item, { paddingHorizontal: 16 }]}>
-                    <Text style={FeedBackStyles.itemText}>Verify</Text>
+                    <Pressable onPress={handleVerifySubmit} style={[FeedbackStyles.item, { paddingHorizontal: 16 }]}>
+                    <Text style={FeedbackStyles.itemText}>Verify</Text>
                     </Pressable>
                 </View>
                 </View>
@@ -423,14 +423,14 @@ export default function UserAccount() {
             <Modal visible={showDeleteConfirm} transparent animationType="fade" onRequestClose={() => setShowDeleteConfirm(false)}>
             <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}>
                 <View style={{ backgroundColor: '#bfb9deff', padding: 16, borderRadius: 8, width: '86%' }}>
-                <Text style={[FeedBackStyles.itemText, { marginBottom: 8 }]}>Delete account?</Text>
-                <Text style={[FeedBackStyles.helper, { marginBottom: 12 }]}>This will permanently remove your account and related data. This action cannot be undone.</Text>
+                <Text style={[FeedbackStyles.itemText, { marginBottom: 8 }]}>Delete account?</Text>
+                <Text style={[FeedbackStyles.helper, { marginBottom: 12 }]}>This will permanently remove your account and related data. This action cannot be undone.</Text>
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
-                    <Pressable onPress={() => setShowDeleteConfirm(false)} style={[FeedBackStyles.item, { paddingHorizontal: 16 }]}>
-                    <Text style={FeedBackStyles.itemText}>Cancel</Text>
+                    <Pressable onPress={() => setShowDeleteConfirm(false)} style={[FeedbackStyles.item, { paddingHorizontal: 16 }]}>
+                    <Text style={FeedbackStyles.itemText}>Cancel</Text>
                     </Pressable>
-                    <Pressable onPress={() => deleteAccount(accountId, navigation, setError, setShowDeleteConfirm)} style={[FeedBackStyles.item, { paddingHorizontal: 16, marginRight:60 }]}>
-                    <Text style={[FeedBackStyles.itemText]}>Delete</Text>
+                    <Pressable onPress={() => deleteAccount(accountId, navigation, setError, setShowDeleteConfirm)} style={[FeedbackStyles.item, { paddingHorizontal: 16, marginRight:60 }]}>
+                    <Text style={[FeedbackStyles.itemText]}>Delete</Text>
                     </Pressable>
                 </View>
                 </View>
