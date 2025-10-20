@@ -1,6 +1,7 @@
 import React, { FC, useState } from 'react';
 import { View, ScrollView, Pressable, Text, StyleProp, ViewStyle } from 'react-native';
-import { GenreSliderStyles, GeneralStyles } from '../../styles/global';
+import { GeneralStyles } from '../../styles/global';
+import { GenreSliderStyles } from '../../styles/IndependentStyles/GenreSliderStyles';
 import { useWindowWidth } from '../../utils/findDimensions';
 
 type GenreSliderProps = {

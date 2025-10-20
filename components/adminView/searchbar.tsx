@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, TextInput } from 'react-native';
-import { AdminSearchBarStyles, colors } from '../../styles/global';
+import { AdminSearchBarStyles } from '../../styles/global';
+import { colors } from '../../styles/tokens';
 import { OrganizerControl, ColumnFilterControl } from './AdminFilters';
 import type { Field } from './AdminFilters';
 

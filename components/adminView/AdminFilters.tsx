@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView, Modal } from 'react-native';
-import { AdminSearchBarStyles, GeneralStyles, AdminTabStyles, AdminFiltersStyles } from '../../styles/global';
+import { AdminSearchBarStyles, AdminTabStyles } from '../../styles/global';
+import { AdminFiltersStyles } from '../../styles/IndependentStyles/AdminFiltersStyles';
 
 export type Field = { key: string; label: string };
 

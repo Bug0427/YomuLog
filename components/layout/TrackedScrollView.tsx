@@ -1,7 +1,7 @@
 // components/layout/TrackedScrollView.tsx
 import React, { useMemo, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { ScrollView, ScrollViewProps, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { u, spacing } from '../../styles/global';
+import { u, spacing } from '../../styles/tokens';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
 
 type Props = ScrollViewProps & {

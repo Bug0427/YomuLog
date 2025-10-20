@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, FlatList, Image, Pressable } from 'react-native';
-import { MangaSliderStyles, GeneralStyles } from '../../styles/global';
+import { GeneralStyles } from '../../styles/global';
+import { MangaSliderStyles } from '../../styles/IndependentStyles/MangaSliderStyles';
 import { useWindowWidth } from '../../utils/findDimensions';
 
 interface MangaItem {

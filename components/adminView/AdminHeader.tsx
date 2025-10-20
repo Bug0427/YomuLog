@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { GeneralStyles, AdminTabStyles, AdminHeaderStyles } from '../../styles/global';
+import { GeneralStyles, AdminTabStyles } from '../../styles/global';
+import { AdminHeaderStyles } from '../../styles/IndependentStyles/AdminHeaderStyles';
 
 interface AdminHeaderProps {
   navigation: any;

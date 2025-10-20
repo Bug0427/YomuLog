@@ -1,7 +1,8 @@
 import React from 'react';
 import { Pressable, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { IconStyles, colors } from '../../styles/global';
+import { colors } from '../../styles/tokens'
+import { IconStyles } from '../../styles/IndependentStyles/IconStyles';
 import { useNavigation } from '@react-navigation/native';
 import { verifyUser } from '../../services/feedbackRepo';
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { changeLoginData } from '../../data/SettingsButtonActions/changeLoginData';
-import { ChangeLoginStyles } from '../../styles/global';
+import { ChangeLoginStyles } from '../../styles/IndependentStyles/ChangeLoginStyles';
 
 
 export type ChangeLoginModalProps = {

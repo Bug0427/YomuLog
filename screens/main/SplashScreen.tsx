@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { View, Text } from 'react-native';
-import{SplashScreenStyles} from '../../styles/global';
+import { View, Text, StyleSheet } from 'react-native';
+import { colors, u } from '../../styles/tokens';
 
 export default function SplashScreen({ navigation }: any) {
   useEffect(() => {
@@ -17,3 +17,12 @@ export default function SplashScreen({ navigation }: any) {
     </View>
   );
 }
+
+const SplashScreenStyles = StyleSheet.create({
+    container: {
+        ...u.full, backgroundColor: colors.creamWhite,
+        justifyContent: 'center', alignItems: 'center',
+    },
+    text: {fontSize: 24, fontWeight: '600', color: colors.splashText,
+    },
+});

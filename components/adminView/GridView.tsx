@@ -7,7 +7,8 @@ import { computeColumnWidths } from '../../utils/gridWidths';
 import { LoadingRows } from './LoadingRow';
 import CommentModal from './CommentModal';
 import RowView from './RowView';
-import { AdminCommonStyles, AdminTabStyles, GridViewStyles } from '../../styles/global';
+import { AdminCommonStyles, AdminTabStyles } from '../../styles/global';
+import { GridViewStyles } from '../../styles/IndependentStyles/GridViewStyles';
 import useDoubleTap from '../../hooks/admin/useDoubleTap';
 
 export type Align = 'left' | 'center' | 'right';

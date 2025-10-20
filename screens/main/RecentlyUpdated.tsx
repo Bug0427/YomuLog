@@ -13,7 +13,8 @@ import CardView, { ViewMode } from '../../components/cardLayouts/CardView';
 
 // Data & Styles
 import { sampleMangaData } from '../../data/sampleMangaData';
-import { GeneralStyles, UpdatedStyles } from '../../styles/global';
+import { GeneralStyles } from '../../styles/global';
+import { UpdatedStyles } from '../../styles/IndependentStyles/UpdatedStyles';
 
 // Icons
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -29,11 +30,9 @@ export default function RecentlyUpdated() {
         <View style={[UpdatedStyles.container,]}>
             <Pressable style={[UpdatedStyles.navItem,{alignItems: 'flex-start'}]}　
                 onPress={() => navigation.goBack()}>
-                    <Text style={UpdatedStyles.Text}>Back</Text>
             </Pressable>
             <Pressable style={[UpdatedStyles.navItem, { borderRightWidth: 2, borderLeftWidth: 0 }]}　
                 onPress={() => console.log("Clear pressed")}>
-                    <Text style={UpdatedStyles.Text}>Clear</Text>
             </Pressable>
         </View>
         <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10}]}> 

@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import {NavBarStyles, GeneralStyles} from '../../styles/global';
+import { GeneralStyles} from '../../styles/global';
+import { NavBarStyles } from '../../styles/IndependentStyles/NavBarStyles';
 
 
 const NavBar = () => {

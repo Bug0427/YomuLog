@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, View, ViewStyle } from 'react-native';
-import { colors, LoadingRowStyles } from '../../styles/global';
+import { LoadingRowStyles } from '../../styles/IndependentStyles/LoadingRowStyles';
+import { colors } from '../../styles/tokens';
 
 export type LoadingRowProps = {
 widths: number[];

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
-import { AdminTabStyles, confirmationStyles, AdminSearchBarStyles, CommentModalStyles } from '../../styles/global'
+import { AdminTabStyles, confirmationStyles, AdminSearchBarStyles } from '../../styles/global'
+import { CommentModalStyles } from '../../styles/IndependentStyles/CommentModalStyles';
 
 export default function CommentModal({
   visible,

@@ -10,7 +10,9 @@ import {
   Alert,
 } from 'react-native';
 import { CreateNewUser, SecurityLevel } from '../../services/feedbackRepo';
-import { AdminSearchBarStyles, CreateUserStyles, colors } from '../../styles/global';
+import { AdminSearchBarStyles } from '../../styles/global';
+import { CreateUserStyles } from '../../styles/IndependentStyles/CreateUserStyles';
+import { colors } from '../../styles/tokens';
 
 export type CreateUserPayload = {
   accountId: string;
@@ -29,14 +31,6 @@ type Props = {
   title?: string;
 };
 
-/**
- * CreateUser
- * A self-contained popup for adding a new user using built-in React Native Modal.
- * - Shows Back | Title | Save header
- * - Fields: Username, Password, Email, Security Level (1/2/3)
- * - Generates ACCOUNTID on save; by default calls CreateUser(),
- *   or forwards payload to onSaved if provided.
- */
 export default function CreateUser({ visible, onBack, onSaved, title = 'Add User' }: Props) {
   const [userNm, setUserNm] = useState('');
   const [pswd, setPswd] = useState('');
