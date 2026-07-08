@@ -7,6 +7,7 @@ import AdminSearchBar from '../../components/adminView/searchbar';
 import { queryAll } from '../../services/feedbackRepo';
 import usePagedTable from '../../hooks/admin/UsePagedTable';
 import{AdminSearchBarStyles, GeneralStyles} from '../../styles/global'
+import { u } from '../../styles/tokens'
 
 type CategoryType = typeof CATEGORY_OPTIONS[number];
 const CATEGORY_OPTIONS = ['Reported Issues','Reviews','Ratings'] as const;
@@ -268,8 +269,8 @@ export default function AdminReports() {
 />
       {/* Comments detail modal */}
       {detailOpen && (
-        <View style={[GeneralStyles.box, { justifyContent: 'center', alignItems: 'center' }]}>
-          <View style={[GeneralStyles.box, { backgroundColor: 'rgba(0,0,0,0.35)' }]} />
+        <View style={[u.absFill, { justifyContent: 'center', alignItems: 'center' }]}>
+          <View style={[u.absFill, { backgroundColor: 'rgba(0,0,0,0.35)' }]} />
           <View style={{ width: '82%', maxHeight: '70%', backgroundColor: '#bfb9deff', borderColor: '#412d5cff', borderWidth: 1, padding: 12 }}>
             <View style={{ marginBottom: 8 }}>
               <View style={{ height: 1, backgroundColor: '#412d5cff' }} />

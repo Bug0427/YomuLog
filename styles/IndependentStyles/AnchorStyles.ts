@@ -40,5 +40,4 @@ const AnchorStyles = StyleSheet.create({
     },
 });
 
-
 export{AnchorStyles}

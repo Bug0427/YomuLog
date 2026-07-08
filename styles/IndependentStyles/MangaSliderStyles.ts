@@ -7,7 +7,6 @@ const MangaSliderStyles = StyleSheet.create({
         padding: spacing.p7,
         ...u.border2Plum, 
         ...u.bgSand,
-        borderColor: colors.plum,
     },
     sliderContainer: {paddingHorizontal: spacing.p5,},
     card: {
@@ -25,7 +24,7 @@ const MangaSliderStyles = StyleSheet.create({
         marginBottom: spacing.p5,
     },
     title: {
-        color: '#fff', 
+        color: colors.white, 
         fontSize: 14, 
         textAlign: 'center',
     },

@@ -1,7 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../../styles/tokens';
 
-
 const CommentModalStyles = StyleSheet.create({
     cardNoPad: { padding: 0 },
     sidStrong: { fontWeight: '600' as const },

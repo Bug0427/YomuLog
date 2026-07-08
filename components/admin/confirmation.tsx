@@ -88,7 +88,7 @@ export function ConfirmProvider({ children }: ConfirmProviderProps) {
         <View style={confirmationStyles.backdrop}>
           <View style={confirmationStyles.card}>
             <Pressable onPress={onCancel} style={confirmationStyles.alignEnd}>
-              <Text style={[FeedbackStyles.item, confirmationStyles.cancelTextDelta]}>{cancelText}</Text>
+              <Text style={[FeedbackStyles.item, confirmationStyles.cancelTextPad]}>{cancelText}</Text>
             </Pressable>
             <Text style={[GeneralStyles.title, confirmationStyles.titleDelta]}>{title}</Text>
             <Text style={[GeneralStyles.h1, confirmationStyles.messageDelta]}>{message}</Text>

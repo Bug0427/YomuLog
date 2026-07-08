@@ -9,6 +9,7 @@ const colors = {
     splashText: '#8e6e53',
     sand: '#E3D3BD',
     creamWhite: '#fff8f0',
+    white: '#ffffff',
     error: '#ff6b6b',
     success: '#7bd88f',
     placeholderText: '#595360',
@@ -93,14 +94,10 @@ const u = {
     px16: { paddingHorizontal: spacing.p16 },
     py8: { paddingVertical: spacing.p8 },
     mb0: { marginBottom: 0 },
-
     fullNoPad: { 
         flex: 1 as const, 
-        paddingLeft: 0, 
-        paddingRight: 0, 
         paddingHorizontal: 0, 
-        paddingTop: 0, 
-        paddingBottom: 0 
+        paddingVertical: 0,
     },
 };
 
@@ -115,19 +112,21 @@ const ux = {
         borderRightWidth: 0, 
         ...u.center 
     },
-};
-
-const adminUI = {
-    overlayBase: { 
-        ...u.full, 
-        justifyContent: 'center' as const, 
-        alignItems: 'center' as const 
-    },
+    // shared admin layout helpers
     headerRowBase: { 
         ...u.row, 
         alignItems: 'center' as const, 
         justifyContent: 'space-between' as const 
     },
+    overlayBase: { 
+        ...u.full, 
+        ...u.center
+    },
+};
+
+const adminUI = {
+    overlayBase: ux.overlayBase,
+    headerRowBase: ux.headerRowBase,
     smallBtn: { 
         borderWidth: 1, 
         borderColor: colors.lavender, 

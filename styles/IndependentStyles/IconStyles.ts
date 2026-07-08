@@ -16,5 +16,4 @@ const IconStyles = StyleSheet.create({
     },
 });
 
-
 export{IconStyles}
