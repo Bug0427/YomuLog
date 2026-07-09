@@ -9,6 +9,7 @@ export type RootStackParamList = {
     FeedBackHome: { username?: string; securityLevel?: number } | undefined;
     FileReport:undefined;
     LoginScreen: undefined;
+    RecentlyReadScreen: undefined;
     
   // Add more screens here as needed
 };
