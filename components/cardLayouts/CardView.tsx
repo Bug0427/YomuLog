@@ -196,7 +196,7 @@ const CardView: React.FC<Props> = ({
     }
     if (!hasMore && safeData.length > 0) {
       return (
-        <View style={CardViewStyles.footerEnd}>
+        <View style={CardViewStyles.footer}>
           <Text style={CardViewStyles.footerText}>You’ve reached the end.</Text>
         </View>
       );

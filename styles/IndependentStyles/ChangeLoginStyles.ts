@@ -6,10 +6,9 @@ const ChangeLoginStyles = StyleSheet.create({
         paddingVertical: 10, 
         marginRight: 12,
         paddingHorizontal: spacing.p16,
-        borderWidth: 2,
-        backgroundColor: colors.sand, 
+        ...u.border2Cocoa,
+        ...u.bgSand,
         alignItems: 'center',
-        borderColor: colors.cocoa,
     },
     typed: {
         ...u.textCocoa, 
@@ -18,9 +17,8 @@ const ChangeLoginStyles = StyleSheet.create({
         fontSize: 16,
     },
     typeBox: {
-        backgroundColor: colors.sand, 
-        borderWidth: 2,
-        borderColor: colors.cocoa, 
+        ...u.bgSand,
+        ...u.border2Cocoa,
         marginBottom: spacing.p10,
     },
     text: {
@@ -41,8 +39,7 @@ const ChangeLoginStyles = StyleSheet.create({
         borderRadius: borders.br8,
         paddingVertical: 10, 
         paddingHorizontal: 12,
-        borderWidth: 1, 
-        borderColor: colors.plum,
+        ...u.border1DeepPlum,
     },
     bannerText: {
         color: colors.plum, 

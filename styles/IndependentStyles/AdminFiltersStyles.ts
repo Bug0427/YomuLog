@@ -1,6 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { colors, adminUI, u, spacing } from '../../styles/tokens';
-
+import { colors, adminUI, u, spacing, ux } from '../../styles/tokens';
 
 const AdminFiltersStyles = StyleSheet.create({
     overlayCenter: { ...adminUI.overlayBase },
@@ -8,8 +7,7 @@ const AdminFiltersStyles = StyleSheet.create({
     checkboxChecked: { backgroundColor: colors.deepPlum },
     overlayDim: { 
         ...u.absFill, 
-        backgroundColor: 
-        colors.overlayScrim, 
+        backgroundColor: colors.overlayScrim, 
         zIndex: 1 
     },
     organizerCard: { 
@@ -27,13 +25,11 @@ const AdminFiltersStyles = StyleSheet.create({
         borderColor: colors.deepPlum, 
     },
     headerRow: { 
-        ...u.row, 
-        alignItems: 'center', 
+        ...ux.headerRowBase,
         paddingHorizontal: spacing.p12,
         borderColor: colors.deepPlum,
         paddingVertical: spacing.p10, 
         borderBottomWidth: 2, 
-        justifyContent: 'space-between',
     },
     headerTitle: { 
         fontSize: 16, 
@@ -47,10 +43,7 @@ const AdminFiltersStyles = StyleSheet.create({
     },
     rowActive: { 
         backgroundColor: colors.paleLavender, 
-        borderTopWidth: 2, 
-        borderBottomWidth: 2, 
-        borderLeftWidth: 2, 
-        borderRightWidth: 2 
+        borderWidth: 2,
     },
     rowText: { 
         fontSize: 14, 
@@ -67,7 +60,6 @@ const AdminFiltersStyles = StyleSheet.create({
         borderColor: colors.deepPlum,
         paddingVertical: 10, 
         paddingHorizontal: 12, 
-        borderBottomWidth: 0, 
         alignItems: 'center',
     },
     checkbox: { 

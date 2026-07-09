@@ -1,7 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../../styles/tokens';
 
-
 const AdminHeaderStyles = StyleSheet.create({
     backText: { 
         color: colors.paleLavender, 

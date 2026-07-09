@@ -12,10 +12,9 @@ const GeneralStyles = StyleSheet.create({
         paddingHorizontal: 0, paddingBottom: spacing.p24,
     },
     h1: {...t.h1, paddingTop: spacing.p18,},
-    scrollContainer: {...u.bgLavender,flexGrow: 1,},
+    scrollContainer: {...u.bgLavender, flexGrow: 1,},
     header: {
-        ...u.row,
-        justifyContent: 'space-between', alignItems: 'center',
+        ...ux.headerRowBase,
         paddingHorizontal: spacing.p10, marginBottom: spacing.p10,
     },
     title: {...t.titleXXL,},
@@ -24,7 +23,6 @@ const GeneralStyles = StyleSheet.create({
         ...u.rowCenter, paddingHorizontal: 0,
         paddingVertical: spacing.p8, textAlignVertical: 'center',
     },
-    box: {...u.absFill,},
 });
 
 const CardViewStyles = StyleSheet.create({
@@ -40,13 +38,12 @@ const CardViewStyles = StyleSheet.create({
     rowTitle: {...t.body, fontWeight: '700', marginBottom: 2,},
     placeholder: {...ux.cellItem,},
     footer: {paddingVertical: 16, alignItems: 'center',},
-    footerEnd: {paddingVertical: 15, alignItems: 'center',},
     footerText: {marginTop: spacing.p6, ...u.textCocoa, opacity: 0.8,},
-    emptyWrap: {...u.full, alignItems: 'center', justifyContent: 'center',},
+    emptyWrap: {...u.full, ...u.center},
     emptyText: {marginTop: 8, ...u.textCocoa,},
     title: {color: colors.creamWhite, fontSize: 14, textAlign: 'center',},
-    // --- Added centralized helpers for CardView
-    gridItemFrame: { alignItems: 'center', justifyContent: 'center' },
+    // --- Centralized helpers for CardView
+    gridItemFrame: {...u.center},
     gridMedia: {
         width: '92%', height: '86%', alignItems: 'center',
         justifyContent: 'center', borderRadius: 8,
@@ -79,16 +76,15 @@ const SettingButtonStyles = StyleSheet.create({
         flexWrap: 'wrap', justifyContent: 'space-between',
         alignItems: 'flex-start', gap: 12,
     },
-    icon: {fontSize: 35,color: colors.plum,},
+    icon: {fontSize: 35, color: colors.plum,},
     cell: {
-        width: '30%',minWidth: 96, gap: 8,
-        alignItems: 'center',marginBottom: 16,
+        width: '30%', minWidth: 96, gap: 8,
+        alignItems: 'center', marginBottom: 16,
     },
     button: {
-        alignItems: 'center', aspectRatio: 1,
+        ...u.center, aspectRatio: 1,
         ...u.border3Plum, ...u.bgSand,
-        width: '100%', justifyContent: 'center',
-
+        width: '100%',
     },
     cellLabel: { color: colors.plum, fontWeight: '700', textAlign: 'center',},
     flag: {fontSize: 35, lineHeight: 30,},
@@ -107,8 +103,6 @@ const FeedbackStyles = StyleSheet.create({
         justifyContent: 'center', alignSelf: 'center',
         borderColor: colors.plum, marginTop: 90,
         backgroundColor: colors.lavender, gap: 12,
-        flexWrap: 'wrap',
-        
     },
     button: {...u.rowCenter, marginBottom: 20,},
     buttonTight: { marginBottom: 0 },
@@ -124,15 +118,14 @@ const FeedbackStyles = StyleSheet.create({
     body: {padding: spacing.p16, gap: 12,},
     item: {
         ...u.border2Cocoa, ...u.bgSand, ...u.rowCenter,
-        paddingVertical: 14,paddingHorizontal: 12,
+        paddingVertical: 14, paddingHorizontal: 12,
         justifyContent: 'space-between',
     },
     itemText: {
         ...u.textCocoa, fontSize: 16,
         fontWeight: '700', textAlign: 'center',
     },
-    caret: {marginLeft: 12, fontSize: 16,
-    },
+    caret: {marginLeft: 12, fontSize: 16,},
     dropdown: {borderWidth: 1, overflow: 'hidden', marginTop: 8,},
     option: {paddingVertical: 14, paddingHorizontal: 16,},
     optionPressed: {opacity: 0.7,},
@@ -149,8 +142,8 @@ const SubmitButtonStyles = StyleSheet.create({
 
 const confirmationStyles = StyleSheet.create({
     backdrop: {
-        ...u.full, backgroundColor: 'rgba(0,0,0,0.4)',
-        alignItems: 'center', justifyContent: 'center',
+        ...ux.overlayBase,
+        backgroundColor: colors.overlayScrim,
     },
     card: {
         backgroundColor: colors.paleLavender, width: '80%',
@@ -158,7 +151,7 @@ const confirmationStyles = StyleSheet.create({
         ...u.border2Plum,
     },
     alignEnd: { alignItems: 'flex-end' },
-    cancelTextDelta: { paddingVertical: 7 },
+    cancelTextPad: { paddingVertical: 7 },
     titleDelta: { fontSize: 25, marginLeft: 70 },
     messageDelta: { fontSize: 18, marginLeft: 20, paddingBottom: 30 },
     confirmTextDelta: { width: 80, paddingVertical: 7, marginLeft: 110 },
@@ -167,17 +160,17 @@ const confirmationStyles = StyleSheet.create({
 const AdminTabStyles = StyleSheet.create({
     header: { 
         ...u.rowCenter, marginTop: 60, paddingBottom: 7,
-        borderBottomWidth: 3, borderColor: colors.deepPlum 
-        },
+        borderBottomWidth: borders.bw3, borderColor: colors.deepPlum 
+    },
     button: {
         paddingVertical: 10, paddingHorizontal: spacing.p16, 
         marginHorizontal: 12, backgroundColor: colors.deepPlum, 
-        borderWidth: 2, borderColor: colors.dark,
+        borderWidth: borders.bw2, borderColor: colors.dark,
         alignItems: 'center', width: 70,
     },
     tabsWrap: {
         position: 'relative', height: 50, 
-        borderBottomWidth: 3, borderBottomColor: colors.deepPlum,
+        borderBottomWidth: borders.bw3, borderBottomColor: colors.deepPlum,
         overflow: 'hidden', backgroundColor: colors.lavender,
     },
     activeHalf: { 
@@ -212,7 +205,7 @@ const AdminCommonStyles = StyleSheet.create({
         borderRightWidth: 1, borderTopWidth: 1, 
         borderColor: colors.deepPlum },
     dataCell: { 
-        justifyContent: 'center', alignItems: 'center', 
+        ...u.center,
         borderRightWidth: 1, borderRightColor: colors.deepPlum 
     },
 });
@@ -235,12 +228,11 @@ const AdminSearchBarStyles = StyleSheet.create({
     iconBtn: {
         width: 34, borderColor: colors.deepPlum,
         height: 34, backgroundColor: colors.paleLavender,
-        borderWidth: 1, alignItems: 'center',
-        justifyContent: 'center',
+        borderWidth: 1, ...u.center,
     },
     checkText: {color: colors.deepPlum, fontSize: 18, fontWeight: '800',},
     dropdown: {borderColor: colors.deepPlum, backgroundColor: colors.paleLavender, borderRadius: 0,},
-    // --- Added centralized row and dropdown styles for admin search bar
+    // --- Centralized row and dropdown styles for admin search bar
     queryRow: { flexDirection: 'row', alignItems: 'center', gap: 10, zIndex: 700 },
     fieldRow: { flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 },
     fieldPickerWrap: { width: 104, zIndex: 3000 },
