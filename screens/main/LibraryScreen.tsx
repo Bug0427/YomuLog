@@ -40,14 +40,26 @@ export default function LibraryScreen() {
 
             <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}> 
                 <Text style={GeneralStyles.h1}>Library</Text>
-                <Pressable onPress={() => setViewMode(viewMode === 'grid' ? 'row' : 'grid')} accessibilityLabel="Toggle view">
-                    <MaterialCommunityIcons
-                    name={viewMode === 'grid' ? 'view-grid' : 'view-agenda'}
-                    size={24}
-                    color="#463B54"
-                    
-                    />
-                </Pressable>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Pressable
+                        onPress={() => navigation.navigate('RecentlyReadScreen' as never)}
+                        accessibilityLabel="Recently read"
+                    >
+                        <MaterialCommunityIcons
+                        name="history"
+                        size={22}
+                        color="#463B54"
+                        />
+                    </Pressable>
+                    <Pressable onPress={() => setViewMode(viewMode === 'grid' ? 'row' : 'grid')} accessibilityLabel="Toggle view">
+                        <MaterialCommunityIcons
+                        name={viewMode === 'grid' ? 'view-grid' : 'view-agenda'}
+                        size={24}
+                        color="#463B54"
+                        
+                        />
+                    </Pressable>
+                </View>
             </View>
         </>
     );
