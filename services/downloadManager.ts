@@ -1,6 +1,7 @@
 // services/downloadManager.ts
 // Queue-based offline chapter download manager with background recovery.
-// Persists download state via AsyncStorage, downloads using expo-file-system/legacy.
+// Supports concurrency pool (2-3 pages), interrupted download recovery,
+// and API aliases for a clean external interface.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -51,6 +52,8 @@ const DOWNLOAD_QUEUE_KEY = '@YomuLog:downloadQueue';
 const DOWNLOADED_CHAPTERS_KEY = '@YomuLog:downloadedChapters';
 const MAX_RETRIES = 3;
 const DOWNLOAD_BASE_DIR = `${documentDirectory}yomulog/downloads/`;
+/** Maximum concurrent page downloads */
+const CONCURRENCY_LIMIT = 3;
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
@@ -126,23 +129,60 @@ export async function enqueueDownload(
   return job;
 }
 
-/** Remove a job from the queue. */
-export async function removeJob(jobId: string): Promise<void> {
-  let queue = await getDownloadQueue();
-  queue = queue.filter((j) => j.jobId !== jobId);
-  await saveQueue(queue);
+// ─── API Aliases ───────────────────────────────────────────────────
+
+/** Alias: downloadChapter → enqueueDownload */
+export async function downloadChapter(
+  chapterId: string,
+  mangaId: string,
+  mangaTitle: string,
+  chapterNumber: string,
+): Promise<DownloadJob> {
+  return enqueueDownload(chapterId, mangaId, mangaTitle, chapterNumber);
 }
 
-/** Remove all completed jobs from the queue. */
-export async function clearCompleted(): Promise<void> {
+/** Alias: getChapterDownloadStatus → returns status string for a chapter */
+export async function getChapterDownloadStatus(chapterId: string): Promise<DownloadStatus | null> {
+  const queue = await getDownloadQueue();
+  const job = queue.find((j) => j.chapterId === chapterId);
+  return job ? job.status : null;
+}
+
+/** Alias: deleteDownloadedChapter → removes a chapter from both queue and index */
+export async function deleteDownloadedChapter(chapterId: string): Promise<void> {
+  // Remove from queue
   let queue = await getDownloadQueue();
-  queue = queue.filter((j) => j.status !== 'completed');
+  queue = queue.filter((j) => j.chapterId !== chapterId);
   await saveQueue(queue);
+
+  // Remove from downloaded index
+  let downloaded = await getDownloadedChaptersRaw();
+  downloaded = downloaded.filter((c) => c.chapterId !== chapterId);
+  await setJson(DOWNLOADED_CHAPTERS_KEY, downloaded);
+
+  // Clean up local files
+  const chapter = downloaded.find((c) => c.chapterId === chapterId);
+  if (chapter?.localDir) {
+    await deleteAsync(chapter.localDir, { idempotent: true }).catch(() => {});
+  }
 }
 
 // ─── Download execution ────────────────────────────────────────────
 
-/** Process the next pending (or retryable failed) job in the queue. */
+/** Download a single page and return whether it succeeded. */
+async function downloadPage(url: string, dest: string): Promise<boolean> {
+  try {
+    const result = await downloadAsync(url, dest);
+    return result.status === 200;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Process the next pending (or retryable failed) job in the queue.
+ * Downloads pages concurrently in batches of CONCURRENCY_LIMIT.
+ */
 export async function processNextDownload(): Promise<boolean> {
   const queue = await getDownloadQueue();
   const job = queue.find(
@@ -168,23 +208,23 @@ export async function processNextDownload(): Promise<boolean> {
     const localDir = `${DOWNLOAD_BASE_DIR}${job.mangaId}/${job.chapterId}/`;
     await makeDirectoryAsync(localDir, { intermediates: true });
 
-    // 3. Download each page sequentially, persisting progress at milestones
-    // to reduce AsyncStorage writes (0%, every 10%, and 100%)
+    // 3. Download pages concurrently in batches of CONCURRENCY_LIMIT
     let downloaded = 0;
     let lastPersistedMilestone = -1;
-    for (let i = 0; i < pageUrls.length; i++) {
-      const ext = pageUrls[i].split('.').pop() || 'jpg';
-      const dest = `${localDir}page_${String(i + 1).padStart(3, '0')}.${ext}`;
 
-      try {
-        const downloadResult = await downloadAsync(pageUrls[i], dest);
-        if (downloadResult.status === 200) {
-          downloaded++;
-        }
-      } catch (pageErr) {
-        console.warn(`Failed to download page ${i + 1} of chapter ${job.chapterId}:`, pageErr);
-        // Continue with remaining pages
-      }
+    for (let i = 0; i < pageUrls.length; i += CONCURRENCY_LIMIT) {
+      const batch = pageUrls.slice(i, i + CONCURRENCY_LIMIT);
+      const batchResults = await Promise.all(
+        batch.map(async (url, idx) => {
+          const pageIndex = i + idx;
+          const ext = url.split('.').pop() || 'jpg';
+          const dest = `${localDir}page_${String(pageIndex + 1).padStart(3, '0')}.${ext}`;
+          const ok = await downloadPage(url, dest);
+          return ok ? 1 : 0;
+        }),
+      );
+
+      downloaded += batchResults.reduce<number>((sum, val) => sum + val, 0);
 
       // Update progress — persist at milestones to reduce AsyncStorage writes
       job.downloadedPages = downloaded;
@@ -196,7 +236,7 @@ export async function processNextDownload(): Promise<boolean> {
       }
     }
 
-    // Ensure final progress is persisted even if we didn't hit the milestones above
+    // Ensure final progress is persisted
     if (downloaded === pageUrls.length) {
       await saveQueue(queue);
     }
@@ -223,6 +263,7 @@ export async function processNextDownload(): Promise<boolean> {
   } catch (err: any) {
     job.status = 'failed';
     job.errorMessage = err?.message ?? 'Unknown error';
+    job.localDir = `${DOWNLOAD_BASE_DIR}${job.mangaId}/${job.chapterId}/`;
     await saveQueue(queue);
     return false;
   }
@@ -234,6 +275,86 @@ export async function processAllDownloads(): Promise<void> {
   while (processed) {
     processed = await processNextDownload();
   }
+}
+
+// ─── Intelligent Download Recovery ─────────────────────────────────
+
+/**
+ * Scan for interrupted downloads (status 'downloading' or 'pending' with
+ * existing local files) and resume from the last successfully completed page.
+ * Returns the number of jobs resumed.
+ */
+export async function resumeInterruptedDownloads(): Promise<number> {
+  const queue = await getDownloadQueue();
+  let resumed = 0;
+
+  for (const job of queue) {
+    if (job.status !== 'downloading' && job.status !== 'pending') continue;
+
+    const localDir = job.localDir || `${DOWNLOAD_BASE_DIR}${job.mangaId}/${job.chapterId}/`;
+
+    // Scan for existing pages
+    let highestCompletedPage = 0;
+    try {
+      for (let i = 1; i <= 999; i++) {
+        let found = false;
+        for (const ext of ['jpg', 'png', 'webp']) {
+          const uri = `${localDir}page_${String(i).padStart(3, '0')}.${ext}`;
+          const info = await getInfoAsync(uri);
+          if (info.exists) {
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          highestCompletedPage = i;
+        } else {
+          break;
+        }
+      }
+    } catch {
+      // Directory doesn't exist yet
+    }
+
+    if (highestCompletedPage > 0) {
+      job.downloadedPages = highestCompletedPage;
+      job.status = 'pending';
+      job.retryCount = 0;
+      job.errorMessage = undefined;
+      job.localDir = localDir;
+      resumed++;
+    } else if (job.status === 'downloading') {
+      job.status = 'pending';
+      job.retryCount = 0;
+      job.errorMessage = undefined;
+      job.localDir = localDir;
+      resumed++;
+    }
+  }
+
+  if (resumed > 0) {
+    await saveQueue(queue);
+    await processAllDownloads();
+  }
+
+  return resumed;
+}
+
+/** Retry failed downloads. */
+export async function retryFailedDownloads(): Promise<number> {
+  const queue = await getDownloadQueue();
+  const failed = queue.filter((j) => j.status === 'failed' && j.retryCount < MAX_RETRIES);
+  if (failed.length === 0) return 0;
+
+  for (const job of failed) {
+    job.status = 'pending';
+    job.progress = 0;
+    job.downloadedPages = 0;
+    job.errorMessage = undefined;
+  }
+  await saveQueue(queue);
+  await processAllDownloads();
+  return failed.length;
 }
 
 // ─── Downloaded chapters index ─────────────────────────────────────
@@ -298,24 +419,6 @@ export async function getLocalPageUris(chapterId: string): Promise<string[] | nu
   return uris.length > 0 ? uris : null;
 }
 
-/** Resume failed downloads (recovery system). Resets retryable failures and runs the queue. */
-export async function retryFailedDownloads(): Promise<number> {
-  const queue = await getDownloadQueue();
-  const failed = queue.filter((j) => j.status === 'failed' && j.retryCount < MAX_RETRIES);
-  if (failed.length === 0) return 0;
-
-  // Reset each failed job back to pending
-  for (const job of failed) {
-    job.status = 'pending';
-    job.progress = 0;
-    job.downloadedPages = 0;
-    job.errorMessage = undefined;
-  }
-  await saveQueue(queue);
-  await processAllDownloads();
-  return failed.length;
-}
-
 /** Get download stats. */
 export async function getDownloadStats(): Promise<{
   total: number;
@@ -338,4 +441,18 @@ export async function getDownloadStats(): Promise<{
 export async function clearAllDownloads(): Promise<void> {
   await AsyncStorage.removeMany([DOWNLOAD_QUEUE_KEY, DOWNLOADED_CHAPTERS_KEY]);
   await deleteAsync(DOWNLOAD_BASE_DIR, { idempotent: true });
+}
+
+/** Remove a specific job from the queue. */
+export async function removeJob(jobId: string): Promise<void> {
+  let queue = await getDownloadQueue();
+  queue = queue.filter((j) => j.jobId !== jobId);
+  await saveQueue(queue);
+}
+
+/** Remove all completed jobs from the queue. */
+export async function clearCompleted(): Promise<void> {
+  let queue = await getDownloadQueue();
+  queue = queue.filter((j) => j.status !== 'completed');
+  await saveQueue(queue);
 }

@@ -1,8 +1,11 @@
 // screens/main/DownLoadsScreen.tsx
 // Displays downloaded chapters and download queue with progress.
+// Tapping a downloaded chapter navigates to ReaderScreen.
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Pressable, FlatList } from 'react-native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { RootStackParamList } from '../../navigation/navigation';
 import Header from '../../components/layout/Header';
 import SearchBar from '../../components/layout/SearchBar';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
@@ -97,33 +100,42 @@ function JobRow({ item, onRemove }: { item: DownloadJob; onRemove: (id: string) 
   );
 }
 
-// ─── Downloaded chapter row ────────────────────────────────────────
+// ─── Downloaded chapter row (navigates to ReaderScreen on tap) ─────
 
-function DownloadedRow({ item }: { item: DownloadedChapter }) {
+function DownloadedRow({
+  item,
+  onPress,
+}: {
+  item: DownloadedChapter;
+  onPress: (item: DownloadedChapter) => void;
+}) {
   return (
-    <View style={[CardViewStyles.rowCard, { marginBottom: 6, alignItems: 'center' }]}>
-      <View
-        style={[
-          CardViewStyles.rowMediaBase,
-          { width: 40, height: 56, backgroundColor: colors.sand },
-        ]}
-      />
-      <View style={[CardViewStyles.rowTextWrap, { flex: 1 }]}>
-        <Text style={CardViewStyles.rowTitle} numberOfLines={1}>
-          {item.mangaTitle}
-        </Text>
-        <Text style={{ fontSize: 12, color: colors.mutedPlum, marginTop: 2 }}>
-          Ch. {item.chapterNumber} · {item.totalPages} pages
-        </Text>
+    <Pressable onPress={() => onPress(item)}>
+      <View style={[CardViewStyles.rowCard, { marginBottom: 6, alignItems: 'center' }]}>
+        <View
+          style={[
+            CardViewStyles.rowMediaBase,
+            { width: 40, height: 56, backgroundColor: colors.sand },
+          ]}
+        />
+        <View style={[CardViewStyles.rowTextWrap, { flex: 1 }]}>
+          <Text style={CardViewStyles.rowTitle} numberOfLines={1}>
+            {item.mangaTitle}
+          </Text>
+          <Text style={{ fontSize: 12, color: colors.mutedPlum, marginTop: 2 }}>
+            Ch. {item.chapterNumber} · {item.totalPages} pages
+          </Text>
+        </View>
+        <MaterialCommunityIcons name="check-circle" size={18} color={colors.success} />
       </View>
-      <MaterialCommunityIcons name="check-circle" size={18} color={colors.success} />
-    </View>
+    </Pressable>
   );
 }
 
 // ─── Main screen ───────────────────────────────────────────────────
 
 export default function DownLoadsScreen() {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
   const scrollRef = React.useRef<any>(null);
 
@@ -176,6 +188,18 @@ export default function DownLoadsScreen() {
     await refresh();
   }, [refresh]);
 
+  /** Navigate to ReaderScreen when tapping a downloaded chapter. */
+  const handleChapterPress = useCallback(
+    (chapter: DownloadedChapter) => {
+      navigation.navigate('ReaderScreen', {
+        chapterId: chapter.chapterId,
+        mangaId: chapter.mangaId,
+        chapterNum: chapter.chapterNumber,
+      });
+    },
+    [navigation],
+  );
+
   const hasActiveDownload = stats.pending > 0 || stats.downloading > 0 || stats.failed > 0;
   const isEmpty = downloaded.length === 0 && queue.length === 0;
 
@@ -185,7 +209,7 @@ export default function DownLoadsScreen() {
         ref={scrollRef as any}
         data={downloaded}
         keyExtractor={(item) => item.chapterId}
-        renderItem={({ item }) => <DownloadedRow item={item} />}
+        renderItem={({ item }) => <DownloadedRow item={item} onPress={handleChapterPress} />}
         onScrollBeginDrag={handleScrollStart}
         onScrollEndDrag={handleScrollEnd}
         onMomentumScrollEnd={handleScrollEnd}
