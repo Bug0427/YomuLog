@@ -148,16 +148,22 @@ export default function DownLoadsScreen() {
 
   const handleProcessAll = useCallback(async () => {
     setProcessing(true);
-    await processAllDownloads();
-    await refresh();
-    setProcessing(false);
+    try {
+      await processAllDownloads();
+      await refresh();
+    } finally {
+      setProcessing(false);
+    }
   }, [refresh]);
 
   const handleRetry = useCallback(async () => {
     setProcessing(true);
-    await retryFailedDownloads();
-    await refresh();
-    setProcessing(false);
+    try {
+      await retryFailedDownloads();
+      await refresh();
+    } finally {
+      setProcessing(false);
+    }
   }, [refresh]);
 
   const handleRemove = useCallback(async (jobId: string) => {

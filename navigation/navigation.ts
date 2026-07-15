@@ -1,15 +1,13 @@
 export type RootStackParamList = {
     HomeScreen: undefined;
-    MangaInfoScreen: undefined;
+    MangaInfoScreen: { mangaId?: string } | undefined;
     SearchScreen: undefined;
     LibraryScreen: undefined;
     DownLoadsScreen: undefined;
-    ReaderScreen: undefined;
+    ReaderScreen: { chapterId: string; mangaId?: string; chapterNum?: string } | undefined;
     SettingsScreen: undefined;
     FeedBackHome: { username?: string; securityLevel?: number } | undefined;
-    FileReport:undefined;
+    FileReport: undefined;
     LoginScreen: undefined;
     RecentlyReadScreen: undefined;
-    
-  // Add more screens here as needed
 };
