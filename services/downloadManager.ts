@@ -168,8 +168,10 @@ export async function processNextDownload(): Promise<boolean> {
     const localDir = `${DOWNLOAD_BASE_DIR}${job.mangaId}/${job.chapterId}/`;
     await makeDirectoryAsync(localDir, { intermediates: true });
 
-    // 3. Download each page sequentially
+    // 3. Download each page sequentially, persisting progress at milestones
+    // to reduce AsyncStorage writes (0%, every 10%, and 100%)
     let downloaded = 0;
+    let lastPersistedMilestone = -1;
     for (let i = 0; i < pageUrls.length; i++) {
       const ext = pageUrls[i].split('.').pop() || 'jpg';
       const dest = `${localDir}page_${String(i + 1).padStart(3, '0')}.${ext}`;
@@ -184,9 +186,18 @@ export async function processNextDownload(): Promise<boolean> {
         // Continue with remaining pages
       }
 
-      // Update progress
+      // Update progress — persist at milestones to reduce AsyncStorage writes
       job.downloadedPages = downloaded;
       job.progress = Math.round((downloaded / pageUrls.length) * 100);
+      const milestone = Math.floor(job.progress / 10);
+      if (milestone > lastPersistedMilestone) {
+        await saveQueue(queue);
+        lastPersistedMilestone = milestone;
+      }
+    }
+
+    // Ensure final progress is persisted even if we didn't hit the milestones above
+    if (downloaded === pageUrls.length) {
       await saveQueue(queue);
     }
 
