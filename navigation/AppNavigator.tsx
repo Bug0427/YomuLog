@@ -20,8 +20,7 @@ import ForgotCredentials from '../screens/account/ForgotCredentials'
 import ChooseProfileIcon from '../screens/account/ChooseProfileIcon'
 import LeaveRating from '../screens/feedback/LeaveRating';
 import LeaveReview from '../screens/feedback/LeaveReview';
-
-
+import ReadingStatsScreen from '../screens/main/ReadingStatsScreen';
 
 const Stack = createStackNavigator();
 
@@ -37,6 +36,7 @@ export default function AppNavigator() {
             <Stack.Screen name="RecentlyReadScreen" component={RecentlyReadScreen} />
             <Stack.Screen name="DownLoadsScreen" component={DownLoadsScreen} />
             <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
+            <Stack.Screen name="ReadingStatsScreen" component={ReadingStatsScreen} />
             <Stack.Screen name="FeedBackHome" component={FeedBackHome} />
             <Stack.Screen name="FileReport" component={FileReport} />
             <Stack.Screen name="AdminScreen" component={AdminScreen} />
@@ -47,7 +47,6 @@ export default function AppNavigator() {
             <Stack.Screen name="ChooseProfileIcon" component={ChooseProfileIcon} />
             <Stack.Screen name="LeaveRating" component={LeaveRating} />
             <Stack.Screen name="LeaveReview" component={LeaveReview} />
-
         </Stack.Navigator>
         </NavigationContainer>
     );

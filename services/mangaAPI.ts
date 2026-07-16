@@ -75,6 +75,32 @@ export async function searchManga(title: string, limit = 20): Promise<Manga[]> {
   return fetchMangaList({ title, limit });
 }
 
+export type MangaResult<T> = { data: T[]; total: number; limit: number; offset: number; };
+
+export async function getMangaFeed(mangaId: string, limit = 100, offset = 0): Promise<MangaResult<MangaChapter>> {
+  const query = new URLSearchParams();
+  query.set('limit', String(Math.min(limit, 100)));
+  query.set('offset', String(offset));
+  query.set('translatedLanguage[]', 'en');
+  query.set('order[chapter]', 'desc');
+  query.set('contentRating[]', 'safe');
+  query.set('contentRating[]', 'suggestive');
+  try {
+    const res = await fetch(`${BASE_URL}/manga/${mangaId}/feed?${query.toString()}`);
+    const json = await res.json();
+    const data: MangaChapter[] = (json?.data ?? []).map((item: any) => ({
+      id: item.id, mangaId,
+      chapter: item.attributes?.chapter ?? '0',
+      title: item.attributes?.title,
+      volume: item.attributes?.volume,
+      pages: item.attributes?.pages ?? 0,
+      updatedAt: item.attributes?.updatedAt,
+      language: item.attributes?.translatedLanguage ?? 'en',
+    }));
+    return { data, total: json?.total ?? data.length, limit, offset };
+  } catch { return { data: [], total: 0, limit, offset }; }
+}
+
 // ─── Chapter page fetching (for offline download manager) ──────────
 
 export async function getChapterPages(
