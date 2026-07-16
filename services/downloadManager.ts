@@ -10,6 +10,7 @@ import {
   downloadAsync,
   getInfoAsync,
   deleteAsync,
+  readDirectoryAsync,
 } from 'expo-file-system/legacy';
 import { getChapterPages, buildPageUrlsFromChapterData } from './mangaAPI';
 
@@ -155,15 +156,15 @@ export async function deleteDownloadedChapter(chapterId: string): Promise<void> 
   queue = queue.filter((j) => j.chapterId !== chapterId);
   await saveQueue(queue);
 
-  // Remove from downloaded index
-  let downloaded = await getDownloadedChaptersRaw();
-  downloaded = downloaded.filter((c) => c.chapterId !== chapterId);
-  await setJson(DOWNLOADED_CHAPTERS_KEY, downloaded);
+  // Remove from downloaded index — capture localDir before filtering
+  const downloaded = await getDownloadedChaptersRaw();
+  const chapterToDelete = downloaded.find((c) => c.chapterId === chapterId);
+  const remaining = downloaded.filter((c) => c.chapterId !== chapterId);
+  await setJson(DOWNLOADED_CHAPTERS_KEY, remaining);
 
   // Clean up local files
-  const chapter = downloaded.find((c) => c.chapterId === chapterId);
-  if (chapter?.localDir) {
-    await deleteAsync(chapter.localDir, { idempotent: true }).catch(() => {});
+  if (chapterToDelete?.localDir) {
+    await deleteAsync(chapterToDelete.localDir, { idempotent: true }).catch(() => {});
   }
 }
 
@@ -293,23 +294,22 @@ export async function resumeInterruptedDownloads(): Promise<number> {
 
     const localDir = job.localDir || `${DOWNLOAD_BASE_DIR}${job.mangaId}/${job.chapterId}/`;
 
-    // Scan for existing pages
+    // Scan for existing pages using readDirectoryAsync (faster than sequential getInfoAsync)
     let highestCompletedPage = 0;
     try {
-      for (let i = 1; i <= 999; i++) {
-        let found = false;
-        for (const ext of ['jpg', 'png', 'webp']) {
-          const uri = `${localDir}page_${String(i).padStart(3, '0')}.${ext}`;
-          const info = await getInfoAsync(uri);
-          if (info.exists) {
-            found = true;
-            break;
-          }
-        }
-        if (found) {
-          highestCompletedPage = i;
+      const files = await readDirectoryAsync(localDir);
+      const pageNumbers = files
+        .filter((f) => /^page_\d+\.(jpg|png|webp)$/i.test(f))
+        .map((f) => parseInt(f.match(/\d+/)?.[0] ?? '0', 10))
+        .filter((n) => n > 0)
+        .sort((a, b) => a - b);
+
+      // Find the highest consecutive page number from 1
+      for (const num of pageNumbers) {
+        if (num === highestCompletedPage + 1) {
+          highestCompletedPage = num;
         } else {
-          break;
+          break; // gap found — stop counting
         }
       }
     } catch {
@@ -403,20 +403,20 @@ export async function getLocalPageUris(chapterId: string): Promise<string[] | nu
   const chapter = list.find((c) => c.chapterId === chapterId);
   if (!chapter) return null;
 
-  const uris: string[] = [];
-  for (let i = 1; i <= chapter.totalPages; i++) {
-    let found = false;
-    for (const ext of ['jpg', 'png', 'webp']) {
-      if (found) break;
-      const uri = `${chapter.localDir}page_${String(i).padStart(3, '0')}.${ext}`;
-      const info = await getInfoAsync(uri);
-      if (info.exists) {
-        uris.push(uri);
-        found = true;
-      }
-    }
+  try {
+    const files = await readDirectoryAsync(chapter.localDir);
+    const pageFiles = files
+      .filter((f) => /^page_(\d+)\.(jpg|png|webp)$/i.test(f))
+      .sort((a, b) => {
+        const numA = parseInt(a.match(/\d+/)?.[0] ?? '0', 10);
+        const numB = parseInt(b.match(/\d+/)?.[0] ?? '0', 10);
+        return numA - numB;
+      });
+    const uris = pageFiles.map((f) => `${chapter.localDir}${f}`);
+    return uris.length > 0 ? uris : null;
+  } catch {
+    return null;
   }
-  return uris.length > 0 ? uris : null;
 }
 
 /** Get download stats. */
