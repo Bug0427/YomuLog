@@ -171,13 +171,18 @@ const adminUI = {
 
 const t = {
     h1: {
-        fontSize: 20 as const, 
-        fontWeight: 'bold' as const, 
-        ...u.textPlum,
-        textShadowColor: colors.paleLavender, 
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 1,
-    },
+            fontSize: 20 as const,
+            fontWeight: 'bold' as const,
+            ...u.textPlum,
+            textShadowColor: colors.paleLavender,
+            textShadowOffset: { width: 1, height: 1 },
+            textShadowRadius: 1,
+        },
+        h2: {
+            fontSize: 16 as const,
+            fontWeight: '700' as const,
+            ...u.textPlum,
+        },
     titleXXL: { 
         fontSize: 36 as const, 
         fontWeight: 'bold' as const, 

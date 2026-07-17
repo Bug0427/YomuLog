@@ -74,3 +74,57 @@ export async function fetchChapters(mangaId: string, limit = 100, offset = 0): P
 export async function searchManga(title: string, limit = 20): Promise<Manga[]> {
   return fetchMangaList({ title, limit });
 }
+
+export type MangaResult<T> = { data: T[]; total: number; limit: number; offset: number; };
+
+export async function getMangaFeed(mangaId: string, limit = 100, offset = 0): Promise<MangaResult<MangaChapter>> {
+  const query = new URLSearchParams();
+  query.set('limit', String(Math.min(limit, 100)));
+  query.set('offset', String(offset));
+  query.set('translatedLanguage[]', 'en');
+  query.set('order[chapter]', 'desc');
+  query.set('contentRating[]', 'safe');
+  query.set('contentRating[]', 'suggestive');
+  try {
+    const res = await fetch(`${BASE_URL}/manga/${mangaId}/feed?${query.toString()}`);
+    const json = await res.json();
+    const data: MangaChapter[] = (json?.data ?? []).map((item: any) => ({
+      id: item.id, mangaId,
+      chapter: item.attributes?.chapter ?? '0',
+      title: item.attributes?.title,
+      volume: item.attributes?.volume,
+      pages: item.attributes?.pages ?? 0,
+      updatedAt: item.attributes?.updatedAt,
+      language: item.attributes?.translatedLanguage ?? 'en',
+    }));
+    return { data, total: json?.total ?? data.length, limit, offset };
+  } catch { return { data: [], total: 0, limit, offset }; }
+}
+
+// ─── Chapter page fetching (for offline download manager) ──────────
+
+export async function getChapterPages(
+  chapterId: string, signal?: AbortSignal,
+): Promise<{ baseUrl: string; chapterHash: string; pages: string[]; dataSaverPages: string[] } | null> {
+  try {
+    const res = await fetch(`${BASE_URL}/at-home/server/${chapterId}`, { signal });
+    const json = await res.json();
+    if (json.result !== 'ok') return null;
+    return { baseUrl: json.baseUrl, chapterHash: json.chapter.hash, pages: json.chapter.data, dataSaverPages: json.chapter.dataSaver };
+  } catch { return null; }
+}
+
+export function buildChapterImageUrls(
+  baseUrl: string, hash: string, pages: string[], quality: 'data' | 'data-saver' = 'data',
+): string[] {
+  const suffix = quality === 'data-saver' ? 'data-saver' : 'data';
+  return pages.map((p) => `${baseUrl}/${suffix}/${hash}/${p}`);
+}
+
+export function buildPageUrlsFromChapterData(
+  cd: NonNullable<Awaited<ReturnType<typeof getChapterPages>>>,
+  quality: 'data' | 'data-saver' = 'data',
+): string[] {
+  const pages = quality === 'data-saver' ? cd.dataSaverPages : cd.pages;
+  return buildChapterImageUrls(cd.baseUrl, cd.chapterHash, pages, quality);
+}
