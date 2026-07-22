@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, Pressable, Text, Alert } from 'react-native';
+import { View, ScrollView, Pressable, Text, Alert, ActivityIndicator } from 'react-native';
 import { Feather } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import Header from '../../components/layout/Header';
@@ -8,8 +8,17 @@ import Anchor from '../../components/layout/Anchor';
 import { resetDatabase } from '../../services/devResetDB';
 import { logout } from '../../data/SettingsButtonActions/Logout';
 import ChangeLoginModal from '../../components/admin/ChangeLoginModal';
+import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
 import { GeneralStyles, SettingButtonStyles } from '../../styles/global';
 import { SecurityLevel, verifyUser } from '../../services/feedbackRepo';
+import {
+  getSyncState,
+  setSyncEnabled,
+  performFullSync,
+  formatSyncTimestamp,
+  type SyncState,
+} from '../../services/supabaseSyncService';
+import { colors } from '../../styles/tokens';
 
 type VerifyRow = { SECURITYLVL: SecurityLevel } | null;
 const isAdminLevel = (lvl: any) => lvl === SecurityLevel?.Admin || lvl === 1 || lvl === '1' || lvl === 'Admin';
@@ -38,6 +47,58 @@ const GridItem = ({ label, children, onPress }: { label: string; children?: Reac
   );
 };
 
+/** Larger grid item for the sync section — spans full width */
+const SyncGridItem = ({
+  label,
+  subtitle,
+  children,
+  onPress,
+}: {
+  label: string;
+  subtitle?: string;
+  children?: React.ReactNode;
+  onPress?: () => void;
+}) => {
+  return (
+    <View style={{
+      width: '100%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      marginBottom: 8,
+      backgroundColor: colors.creamWhite,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: colors.plum,
+    }}>
+      <Pressable
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: 12,
+          backgroundColor: colors.sand,
+          borderWidth: 3,
+          borderColor: colors.plum,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 14,
+        }}
+        onPress={onPress}
+        hitSlop={10}
+      >
+        {children}
+      </Pressable>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: colors.plum }}>{label}</Text>
+        {subtitle ? (
+          <Text style={{ fontSize: 12, color: colors.mutedPlum, marginTop: 2 }}>{subtitle}</Text>
+        ) : null}
+      </View>
+    </View>
+  );
+};
+
 export default function SettingsScreen() {
   const [themeOn, setThemeOn] = useState(false);
   const [directionMode, setDirectionMode] = useState<'ltr' | 'rtl' | 'vertical'>('ltr');
@@ -49,6 +110,31 @@ export default function SettingsScreen() {
   const [securityLevel, setSecurityLevel] = useState<SecurityLevel | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [showChangeLogin, setShowChangeLogin] = useState(false);
+
+  // ─── Sync state ──────────────────────────────────────────────────
+  const [syncState, setSyncState] = useState<SyncState>({
+    status: 'pending',
+    lastSyncedAt: null,
+    lastError: null,
+    syncEnabled: false,
+    scopeTimestamps: {},
+  });
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+
+  // Simulated premium check — in production this would come from a
+  // subscription verification endpoint (Stripe / RevenueCat).
+  const [isPremium, setIsPremium] = useState(false);
+
+  // Load sync state on mount
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      const ss = await getSyncState();
+      if (isMounted) setSyncState(ss);
+    })();
+    return () => { isMounted = false; };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -72,6 +158,11 @@ export default function SettingsScreen() {
   useFocusEffect(useCallback(() => {
     setSecurityLevel((globalThis as any).currentSecurityLevel ?? null);
     setAccountId((globalThis as any).currentAccountId ?? null);
+    // Refresh sync state when screen gains focus
+    (async () => {
+      const ss = await getSyncState();
+      setSyncState(ss);
+    })();
   }, []));
 
   const handleRefreshMetadata = () => {
@@ -107,11 +198,188 @@ export default function SettingsScreen() {
   const goAdmin = () => { navigation.navigate('AdminScreen' as never); };
   const isAdmin = isAdminLevel(securityLevel);
 
+  // ─── Sync handlers ───────────────────────────────────────────────
+
+  const handleSyncToggle = async () => {
+    // Check premium tier
+    if (!isPremium && !syncState.syncEnabled) {
+      setShowPremiumModal(true);
+      return;
+    }
+
+    setSyncLoading(true);
+    try {
+      const newState = await setSyncEnabled(!syncState.syncEnabled);
+      setSyncState(newState);
+
+      if (newState.status === 'synced') {
+        Alert.alert(
+          'Sync Complete',
+          `Your data has been backed up.\nLast synced: ${formatSyncTimestamp(newState.lastSyncedAt)}`,
+          [{ text: 'OK' }],
+        );
+      } else if (newState.status === 'error') {
+        Alert.alert(
+          'Sync Error',
+          newState.lastError ?? 'An unknown error occurred during sync.',
+          [{ text: 'OK' }],
+        );
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Sync failed';
+      Alert.alert('Sync Error', msg);
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  const handleManualSync = async () => {
+    if (!syncState.syncEnabled) return;
+
+    setSyncLoading(true);
+    try {
+      const newState = await performFullSync();
+      setSyncState(newState);
+
+      if (newState.status === 'synced') {
+        Alert.alert(
+          'Sync Complete',
+          `All data synced successfully.\nLast synced: ${formatSyncTimestamp(newState.lastSyncedAt)}`,
+          [{ text: 'OK' }],
+        );
+      } else if (newState.status === 'error') {
+        Alert.alert(
+          'Sync Error',
+          newState.lastError ?? 'An unknown error occurred.',
+          [{ text: 'OK' }],
+        );
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Sync failed';
+      Alert.alert('Sync Error', msg);
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  // ─── Sync subtitle ───────────────────────────────────────────────
+
+  const syncSubtitle = (() => {
+    if (syncLoading) return 'Syncing...';
+    if (syncState.status === 'syncing') return 'Sync in progress...';
+    if (syncState.status === 'error') return `Error: ${syncState.lastError ?? 'Unknown'}`;
+    if (syncState.status === 'synced') return `Last synced: ${formatSyncTimestamp(syncState.lastSyncedAt)}`;
+    if (syncState.syncEnabled) return 'Sync enabled — pending sync';
+    return isPremium ? 'Tap to enable cloud backup' : 'Premium feature — tap to upgrade';
+  })();
+
+  // ─── Sync icon ──────────────────────────────────────────────────
+
+  const syncIcon = () => {
+    if (syncLoading || syncState.status === 'syncing') {
+      return <ActivityIndicator size="small" color={colors.plum} />;
+    }
+    if (syncState.status === 'error') {
+      return <Feather name="cloud-off" size={26} color={colors.error} />;
+    }
+    if (syncState.syncEnabled && syncState.status === 'synced') {
+      return <Feather name="cloud" size={26} color={colors.success} />;
+    }
+    return <Feather name="cloud" size={26} color={colors.plum} />;
+  };
+
   return (
     <View style={GeneralStyles.section}>
       <ScrollView ref={scrollRef} onScrollBeginDrag={handleScrollStart} onScrollEndDrag={handleScrollEnd} onMomentumScrollEnd={handleScrollEnd}>
         <View style={[GeneralStyles.container, { paddingHorizontal: 12 }]}>
           <Header />
+
+          {/* ─── Cloud Sync & Backup Section ─────────────────────── */}
+          <View style={{ marginBottom: 16, marginTop: 4 }}>
+            <Text style={{
+              fontSize: 18,
+              fontWeight: '800',
+              color: colors.deepPlum,
+              marginBottom: 10,
+              paddingLeft: 4,
+            }}>
+              Cloud Sync & Backup
+            </Text>
+
+            <SyncGridItem
+              label={syncState.syncEnabled ? 'Sync Enabled' : 'Sync Disabled'}
+              subtitle={syncSubtitle}
+              onPress={handleSyncToggle}
+            >
+              {syncIcon()}
+            </SyncGridItem>
+
+            {/* Manual sync button — only visible when sync is enabled */}
+            {syncState.syncEnabled && syncState.status !== 'syncing' && !syncLoading && (
+              <Pressable
+                onPress={handleManualSync}
+                style={{
+                  alignSelf: 'flex-end',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingVertical: 8,
+                  paddingHorizontal: 14,
+                  backgroundColor: colors.lavender,
+                  borderRadius: 8,
+                  gap: 6,
+                  marginBottom: 8,
+                }}
+              >
+                <Feather name="refresh-cw" size={14} color={colors.deepPlum} />
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.deepPlum }}>
+                  Sync Now
+                </Text>
+              </Pressable>
+            )}
+
+            {/* Sync status details — visible when synced */}
+            {syncState.syncEnabled && syncState.status === 'synced' && syncState.scopeTimestamps && (
+              <View style={{
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                marginTop: 2,
+              }}>
+                {(['favorites', 'progress', 'downloads'] as const).map((scope) => {
+                  const ts = syncState.scopeTimestamps[scope];
+                  const scopeLabel = scope === 'favorites' ? 'Library' : scope === 'progress' ? 'Reading Progress' : 'Downloads';
+                  return (
+                    <View key={scope} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
+                      <Feather
+                        name={ts ? 'check-circle' : 'circle'}
+                        size={12}
+                        color={ts ? colors.success : colors.mutedPlum}
+                        style={{ marginRight: 6 }}
+                      />
+                      <Text style={{ fontSize: 11, color: colors.mutedPlum, flex: 1 }}>
+                        {scopeLabel}
+                      </Text>
+                      {ts ? (
+                        <Text style={{ fontSize: 11, color: colors.mutedPlum }}>
+                          {formatSyncTimestamp(ts)}
+                        </Text>
+                      ) : null}
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+
+          {/* ─── Divider ─────────────────────────────────────────── */}
+          <View style={{
+            height: 2,
+            backgroundColor: colors.plum,
+            opacity: 0.25,
+            marginBottom: 16,
+            marginHorizontal: 4,
+          }} />
+
+          {/* ─── Original Settings Grid ──────────────────────────── */}
           <View style={SettingButtonStyles.grid}>
             <GridItem label="Theme" onPress={() => setThemeOn(prev => !prev)}>
               <Feather name={themeOn ? "moon" : "sun"} style={SettingButtonStyles.icon} />
@@ -168,7 +436,33 @@ export default function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
+
       <ChangeLoginModal visible={showChangeLogin} onClose={() => setShowChangeLogin(false)} accountId={accountId ?? undefined} navigation={navigation} />
+
+      {/* Premium Upgrade Modal */}
+      <PremiumUpgradeModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        onUpgrade={() => {
+          // Simulate upgrading — in production this would trigger Stripe checkout
+          setIsPremium(true);
+          // Auto-enable sync after upgrade
+          (async () => {
+            setSyncLoading(true);
+            const newState = await setSyncEnabled(true);
+            setSyncState(newState);
+            setSyncLoading(false);
+            if (newState.status === 'synced') {
+              Alert.alert(
+                'Welcome to Premium!',
+                `Cloud Sync is now enabled.\nLast synced: ${formatSyncTimestamp(newState.lastSyncedAt)}`,
+                [{ text: 'OK' }],
+              );
+            }
+          })();
+        }}
+      />
+
       <Anchor scrollRef={scrollRef} isScrolling={isScrolling} />
     </View>
   );
