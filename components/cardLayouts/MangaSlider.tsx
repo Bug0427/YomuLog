@@ -15,9 +15,11 @@ interface MangaSliderProps {
   data: MangaItem[];
   title?: string;
   onTitlePress?: () => void;
+  /** Optional component rendered as the last card (e.g. RefreshCard) */
+  footerComponent?: React.ReactElement;
 }
 
-const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress }) => {
+const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress, footerComponent }) => {
   const screenWidth = useWindowWidth();
 
   // Ensure a minimum horizontal gutter on all screen sizes
@@ -87,6 +89,7 @@ const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress }) 
                 <Text style={MangaSliderStyles.title} numberOfLines={1}>{item.title}</Text>
               </Pressable>
             )}
+            ListFooterComponent={footerComponent}
           />
         </View>
       </View>
