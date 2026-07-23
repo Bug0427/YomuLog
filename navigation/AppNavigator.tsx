@@ -10,6 +10,8 @@ import DownLoadsScreen from '../screens/main/DownLoadsScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
 import RecentlyUpdated from '../screens/main/RecentlyUpdated'
 import RecentlyReadScreen from '../screens/main/RecentlyReadScreen'
+import ReaderScreen from '../screens/main/ReaderScreen';
+import MangaInfoScreen from '../screens/main/MangaInfoScreen';
 import FeedBackHome from '../screens/feedback/FeedBackHome'
 import FileReport from '../screens/feedback/FileReport'
 import AdminScreen from '../screens/admin/AdminScreen'
@@ -21,8 +23,9 @@ import ChooseProfileIcon from '../screens/account/ChooseProfileIcon'
 import LeaveRating from '../screens/feedback/LeaveRating';
 import LeaveReview from '../screens/feedback/LeaveReview';
 import ReadingStatsScreen from '../screens/main/ReadingStatsScreen';
+import { RootStackParamList } from '../navigation/navigation';
 
-const Stack = createStackNavigator();
+const Stack = createStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
     return (
@@ -45,6 +48,8 @@ export default function AppNavigator() {
             <Stack.Screen name="CreateAccount" component={CreateAccount} />
             <Stack.Screen name="ForgotCredentials" component={ForgotCredentials} />
             <Stack.Screen name="ChooseProfileIcon" component={ChooseProfileIcon} />
+            <Stack.Screen name="ReaderScreen" component={ReaderScreen} />
+            <Stack.Screen name="MangaInfoScreen" component={MangaInfoScreen} />
             <Stack.Screen name="LeaveRating" component={LeaveRating} />
             <Stack.Screen name="LeaveReview" component={LeaveReview} />
         </Stack.Navigator>

@@ -1,4 +1,5 @@
 export type RootStackParamList = {
+    Splash: undefined;
     HomeScreen: undefined;
     MangaInfoScreen: { mangaId: string } | undefined;
     SearchScreen: undefined;
@@ -7,8 +8,16 @@ export type RootStackParamList = {
     ReaderScreen: { chapterId: string; mangaId: string; chapterNum: string } | undefined;
     SettingsScreen: undefined;
     ReadingStatsScreen: undefined;
+    RecentlyUpdated: undefined;
+    RecentlyReadScreen: undefined;
     FeedBackHome: { username?: string; securityLevel?: number } | undefined;
     FileReport: undefined;
+    AdminScreen: undefined;
     LoginScreen: undefined;
-    RecentlyReadScreen: undefined;
+    UserAccount: undefined;
+    CreateAccount: undefined;
+    ForgotCredentials: undefined;
+    ChooseProfileIcon: undefined;
+    LeaveRating: undefined;
+    LeaveReview: undefined;
 };
