@@ -1,10 +1,11 @@
 // screens/main/HomeScreen.tsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, Text, Pressable, Image } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, ScrollView, Text, Pressable } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
 import Header from '../../components/layout/Header';
 import MangaSlider from '../../components/cardLayouts/MangaSlider';
+import RefreshCard from '../../components/cardLayouts/RefreshCard';
 import CollapsibleSection from '../../components/layout/CollapsibleSection';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
 import Anchor from '../../components/layout/Anchor';
@@ -13,12 +14,59 @@ import { GeneralStyles, CardViewStyles } from '../../styles/global';
 import { colors } from '../../styles/tokens';
 import { getRecentFavoritesUpdates, MangaUpdate } from '../../services/favoritesService';
 
+// Slider configurations with their titles and genre tags
+const SLIDER_CONFIGS = [
+  { title: 'New Manga', genre: '' },
+  { title: 'Popular Picks', genre: '' },
+  { title: 'Recommended', genre: '' },
+  { title: 'Updated', genre: '' },
+  { title: 'Action', genre: 'action' },
+  { title: 'Comedy', genre: 'comedy' },
+  { title: 'Fantasy', genre: 'fantasy' },
+  { title: 'Reincarnation', genre: 'reincarnation' },
+  { title: 'Romance', genre: 'romance' },
+  { title: 'Si-Fi', genre: 'sci-fi' },
+  { title: 'Slice of Life', genre: 'slice-of-life' },
+];
+
+/** Fisher-Yates shuffle for randomization */
+function shuffle<T>(array: T[]): T[] {
+  const copy = [...array];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { scrollRef, isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
   const [recentUpdates, setRecentUpdates] = useState<MangaUpdate[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+
   const loadUpdates = useCallback(async () => { setRecentUpdates(await getRecentFavoritesUpdates()); }, []);
   useEffect(() => { loadUpdates(); }, [loadUpdates]);
+
+  /** Shuffle sample data and bump refreshKey to re-render all sliders */
+  const handleRefresh = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+  }, []);
+
+  /** Memoized shuffled datasets so each title gets a random order */
+  const shuffledData = useMemo(
+    () =>
+      SLIDER_CONFIGS.map(() => ({
+        id: `shuffled-${refreshKey}`,
+        items: shuffle(sampleMangaData.slice(0, 10)).map((m) => ({
+          id: `${m.id}-${refreshKey}`,
+          title: m.title,
+          image: m.image,
+          onPress: () => (navigation as any).navigate('MangaInfoScreen', { mangaId: m.id }),
+        })),
+      })),
+    [refreshKey, navigation],
+  );
 
   return (
     <View style={GeneralStyles.section}>
@@ -37,17 +85,15 @@ export default function HomeScreen() {
             ))}
           </CollapsibleSection>
         )}
-        <MangaSlider title="New Manga" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
-        <MangaSlider title="Popular Picks" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
-        <MangaSlider title="Recommended" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
-        <MangaSlider title="Updated" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
-        <MangaSlider title="Action" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
-        <MangaSlider title="Comedy" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
-        <MangaSlider title="Fantasy" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
-        <MangaSlider title="Reincarnation" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
-        <MangaSlider title="Romance" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
-        <MangaSlider title="Si-Fi" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
-        <MangaSlider title="Slice of Life" data={sampleMangaData} onTitlePress={() => navigation.navigate('SearchScreen' as never)} />
+        {SLIDER_CONFIGS.map((config, idx) => (
+          <MangaSlider
+            key={`${config.title}-${refreshKey}`}
+            title={config.title}
+            data={shuffledData[idx]?.items ?? []}
+            onTitlePress={() => navigation.navigate('SearchScreen' as never)}
+            footerComponent={<RefreshCard onRefresh={handleRefresh} />}
+          />
+        ))}
       </ScrollView>
       <Anchor scrollRef={scrollRef} isScrolling={isScrolling} />
     </View>
