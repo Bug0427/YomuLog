@@ -15,7 +15,7 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { useRoute, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { fetchMangaById, getMangaFeed, type Manga, type MangaChapter } from '../../services/mangaAPI';
 import {
@@ -52,7 +52,7 @@ const COVER_SIZE = SCREEN_W * 0.4;
 
 export default function MangaInfoScreen() {
   const route = useRoute<MangaInfoRoute>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const mangaId = route.params?.mangaId;
 
   const [manga, setManga] = useState<Manga | null>(null);
