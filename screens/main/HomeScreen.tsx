@@ -13,6 +13,7 @@ import { sampleMangaData } from '../../data/sampleMangaData';
 import { GeneralStyles, CardViewStyles } from '../../styles/global';
 import { colors } from '../../styles/tokens';
 import { getRecentFavoritesUpdates, MangaUpdate } from '../../services/favoritesService';
+import { useTheme } from '../../context/ThemeContext';
 
 // Slider configurations with their titles and genre tags
 const SLIDER_CONFIGS = [
@@ -42,6 +43,7 @@ function shuffle<T>(array: T[]): T[] {
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { scrollRef, isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
+  const { colors: theme } = useTheme();
   const [recentUpdates, setRecentUpdates] = useState<MangaUpdate[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -69,9 +71,9 @@ export default function HomeScreen() {
   );
 
   return (
-    <View style={GeneralStyles.section}>
+    <View style={[GeneralStyles.section, { backgroundColor: theme.bg }]}>
       <ScrollView ref={scrollRef} onScrollBeginDrag={handleScrollStart} onScrollEndDrag={handleScrollEnd} onMomentumScrollEnd={handleScrollEnd} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
-        <View style={[GeneralStyles.container, { paddingHorizontal: 12 }]}><Header /></View>
+        <View style={[GeneralStyles.container, { paddingHorizontal: 12, backgroundColor: theme.bg }]}><Header /></View>
         {recentUpdates.length > 0 && (
           <CollapsibleSection title="Recently Updated" badgeCount={recentUpdates.length}>
             {recentUpdates.slice(0, 5).map((u) => (

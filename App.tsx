@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import AppNavigator from './navigation/AppNavigator';
 import { initDb } from './services/feedbackRepo';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider } from './context/ThemeContext';
 
 export default function App() {
   useEffect(() => {
@@ -9,7 +10,9 @@ export default function App() {
   }, []);
   return (
     <SafeAreaProvider>
+      <ThemeProvider>
         <AppNavigator />
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

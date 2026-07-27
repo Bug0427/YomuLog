@@ -33,6 +33,7 @@ import {
 import { colors, spacing, borders } from '../../styles/tokens';
 import { RootStackParamList } from '../../navigation/navigation';
 import { updateChapterProgress } from '../../services/readingProgress';
+import { useTheme } from '../../context/ThemeContext';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -54,6 +55,7 @@ export default function MangaInfoScreen() {
   const route = useRoute<MangaInfoRoute>();
   const navigation = useNavigation();
   const mangaId = route.params?.mangaId;
+  const { colors: theme } = useTheme();
 
   const [manga, setManga] = useState<Manga | null>(null);
   const [chapters, setChapters] = useState<ChapterWithDownload[]>([]);
@@ -220,7 +222,7 @@ export default function MangaInfoScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: theme.bg }]}>
         <ActivityIndicator size="large" color={colors.deepPlum} />
         <Text style={styles.loadingText}>Loading manga details...</Text>
       </View>
@@ -231,7 +233,7 @@ export default function MangaInfoScreen() {
 
   if (error || !manga) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: theme.bg }]}>
         <Feather name="alert-triangle" size={40} color={colors.error} />
         <Text style={styles.errorText}>{error ?? 'Manga not found.'}</Text>
         <Pressable style={styles.retryBtn} onPress={loadData}>
@@ -244,7 +246,7 @@ export default function MangaInfoScreen() {
   // ─── Main render ─────────────────────────────────────────────────
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: theme.bg }]}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
