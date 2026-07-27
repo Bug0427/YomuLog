@@ -15,10 +15,19 @@ import { GeneralStyles, CardViewStyles } from '../../styles/global';
 import { colors } from '../../styles/tokens';
 import { getRecentFavoritesUpdates, MangaUpdate } from '../../services/favoritesService';
 import { fetchMangaList, MangaListParams, Manga } from '../../services/mangaAPI';
-import { FilterState, DEFAULT_FILTER_STATE, hasActiveFilters, GENRE_TAGS, GENRE_TAG_IDS, GenreTag } from '../../utils/filters';
+import { enhanceSearch } from '../../services/aiSearchEnhancer';
+import {
+  FilterState,
+  DEFAULT_FILTER_STATE,
+  hasActiveFilters,
+  GENRE_TAGS,
+  GENRE_TAG_IDS,
+  GenreTag,
+} from '../../utils/filters';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const LIMIT = 20;
+const NLP_THRESHOLD = 4; // word count to trigger natural-language parsing
 
 /** Format genre tag slugs into display labels (e.g. "slice-of-life" → "Slice of Life") */
 function genreLabel(tag: GenreTag): string {
@@ -35,6 +44,9 @@ export default function SearchScreen() {
   const [searchText, setSearchText] = useState('');
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER_STATE);
 
+  // ── AI enhancer summary ──────────────────────────────────────────
+  const [aiSummary, setAiSummary] = useState('');
+
   // ── Results state ────────────────────────────────────────────────
   const [results, setResults] = useState<Manga[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,23 +56,45 @@ export default function SearchScreen() {
 
   // ── Recent updates (independent of search) ───────────────────────
   const [recentUpdates, setRecentUpdates] = useState<MangaUpdate[]>([]);
-  const loadUpdates = useCallback(async () => { setRecentUpdates(await getRecentFavoritesUpdates()); }, []);
-  useEffect(() => { loadUpdates(); }, [loadUpdates]);
+  const loadUpdates = useCallback(async () => {
+    setRecentUpdates(await getRecentFavoritesUpdates());
+  }, []);
+  useEffect(() => {
+    loadUpdates();
+  }, [loadUpdates]);
 
-  // ── Build API params from search text + filter ───────────────────
+  // ── Build API params: NLP-enhanced search + manual filter merge ──
   const buildParams = useCallback(
     (pageOffset: number): MangaListParams => {
-      const params: MangaListParams = { limit: LIMIT, offset: pageOffset };
-      if (searchText.trim()) params.title = searchText.trim();
+      const wordCount = searchText.trim().split(/\s+/).filter(Boolean).length;
+      let params: MangaListParams = { limit: LIMIT, offset: pageOffset };
+
+      if (wordCount >= NLP_THRESHOLD) {
+        // Natural-language mode: use AI enhancer as base
+        const enhanced = enhanceSearch(searchText.trim(), LIMIT, pageOffset);
+        params = enhanced.params;
+        setAiSummary(enhanced.summary);
+      } else {
+        // Simple mode: direct title search
+        setAiSummary('');
+        if (searchText.trim()) params.title = searchText.trim();
+      }
+
+      // Merge manual filter choices on top (user can override/refine AI)
       if (filter.genres.length > 0) {
-        params.includedTags = filter.genres
+        const manualTagIds = filter.genres
           .map((g) => GENRE_TAG_IDS[g])
           .filter(Boolean);
+        // Union: keep AI-detected + add manual selections
+        const existing = new Set(params.includedTags ?? []);
+        manualTagIds.forEach((id) => existing.add(id));
+        params.includedTags = Array.from(existing);
       }
       if (filter.pubStatus) params.status = filter.pubStatus;
       if (filter.contentRating) {
         params.contentRating = [filter.contentRating];
       }
+
       return params;
     },
     [searchText, filter]
@@ -82,7 +116,7 @@ export default function SearchScreen() {
           setOffset((prev) => prev + LIMIT);
         }
         setHasMore(data.length >= LIMIT);
-        if (reset && data.length === 0) setError(null); // no results is fine, not an error
+        if (reset && data.length === 0) setError(null);
       } catch (e) {
         console.error('Search failed:', e);
         if (reset) setError('Failed to load results. Please try again.');
@@ -100,7 +134,9 @@ export default function SearchScreen() {
     debounceRef.current = setTimeout(() => {
       fetchResults(true);
     }, 400);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [searchText, filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Map Manga[] → CardItem[] ─────────────────────────────────────
@@ -116,26 +152,18 @@ export default function SearchScreen() {
   );
 
   // ── Genre slider handlers ────────────────────────────────────────
-  const handleGenrePress = useCallback(
-    (displayLabel: string) => {
-      // Reverse-map display label back to genre tag
-      const tag = GENRE_TAGS.find((t) => genreLabel(t) === displayLabel);
-      if (!tag) return;
-      setFilter((prev) => {
-        const next = prev.genres.includes(tag)
-          ? prev.genres.filter((g) => g !== tag)
-          : [...prev.genres, tag];
-        return { ...prev, genres: next };
-      });
-    },
-    []
-  );
+  const handleGenrePress = useCallback((displayLabel: string) => {
+    const tag = GENRE_TAGS.find((t) => genreLabel(t) === displayLabel);
+    if (!tag) return;
+    setFilter((prev) => {
+      const next = prev.genres.includes(tag)
+        ? prev.genres.filter((g) => g !== tag)
+        : [...prev.genres, tag];
+      return { ...prev, genres: next };
+    });
+  }, []);
 
-  // Highlight active genres in the slider
-  const genreSliderItems = useMemo(
-    () => GENRE_TAGS.map((t) => genreLabel(t)),
-    []
-  );
+  const genreSliderItems = useMemo(() => GENRE_TAGS.map((t) => genreLabel(t)), []);
 
   // ── Header content ───────────────────────────────────────────────
   const HeaderContent = (
@@ -145,20 +173,35 @@ export default function SearchScreen() {
         value={searchText}
         onChangeText={setSearchText}
         onSearchPress={() => fetchResults(true)}
-        placeholder="Search manga…"
+        placeholder="Try: high school romance with fantasy action…"
       />
+      {aiSummary ? (
+        <View
+          style={{
+            marginHorizontal: 12,
+            marginTop: 6,
+            paddingVertical: 6,
+            paddingHorizontal: 12,
+            backgroundColor: colors.deepPlum,
+            borderRadius: 8,
+          }}
+        >
+          <Text style={{ color: colors.paleLavender, fontSize: 12, fontWeight: '600' }}>
+            🤖 AI understood: {aiSummary}
+          </Text>
+        </View>
+      ) : null}
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
-        <GenreSlider
-          genres={genreSliderItems}
-          onGenrePress={handleGenrePress}
-        />
+        <GenreSlider genres={genreSliderItems} onGenrePress={handleGenrePress} />
       </View>
       {recentUpdates.length > 0 && (
         <CollapsibleSection title="Recently Updated" badgeCount={recentUpdates.length}>
           {recentUpdates.slice(0, 5).map((u) => (
             <Pressable
               key={u.mangaId}
-              onPress={() => (navigation as any).navigate('MangaInfoScreen', { mangaId: u.mangaId })}
+              onPress={() =>
+                (navigation as any).navigate('MangaInfoScreen', { mangaId: u.mangaId })
+              }
               style={[CardViewStyles.rowCard, { marginBottom: 6, alignItems: 'center' }]}
             >
               <View style={[CardViewStyles.placeholder, { width: 40, height: 56 }]} />
@@ -216,7 +259,7 @@ export default function SearchScreen() {
             ? error
             : searchText.trim() || hasActiveFilters(filter)
             ? 'No results found. Try adjusting your search or filters.'
-            : 'Start searching to discover manga!'
+            : 'Start searching to discover manga! Try natural language like "high school romance with fantasy action".'
         }
       />
       <Anchor scrollRef={listRef} isScrolling={isScrolling} />
