@@ -94,7 +94,7 @@ export default function SearchScreen() {
   );
 
   // ── Trigger search on filter / text changes (debounced) ──────────
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
