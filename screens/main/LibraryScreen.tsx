@@ -28,6 +28,9 @@ import {
 // Styles
 import { GeneralStyles, CardViewStyles } from '../../styles/global';
 
+// Theme
+import { useTheme } from '../../context/ThemeContext';
+
 // Filters
 import { FilterState, DEFAULT_FILTER_STATE } from '../../utils/filters';
 
@@ -39,6 +42,7 @@ export default function LibraryScreen() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const { isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
   const listRef = useRef<any>(null);
+  const { colors: theme } = useTheme();
 
   // ── Data state ────────────────────────────────────────────────────
   const [favorites, setFavorites] = useState<BookmarkedManga[]>([]);
@@ -157,9 +161,9 @@ export default function LibraryScreen() {
 
   // ── Render ────────────────────────────────────────────────────────
   return (
-    <View style={GeneralStyles.container}>
+    <View style={[GeneralStyles.container, { backgroundColor: theme.bg }]}>
       {loading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg }}>
           <ActivityIndicator size="large" color="#463B54" />
         </View>
       ) : (

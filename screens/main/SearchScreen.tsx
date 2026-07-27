@@ -17,6 +17,7 @@ import { getRecentFavoritesUpdates, MangaUpdate } from '../../services/favorites
 import { fetchMangaList, MangaListParams, Manga } from '../../services/mangaAPI';
 import { FilterState, DEFAULT_FILTER_STATE, hasActiveFilters, GENRE_TAGS, GENRE_TAG_IDS, GenreTag } from '../../utils/filters';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../../context/ThemeContext';
 
 const LIMIT = 20;
 
@@ -29,6 +30,7 @@ export default function SearchScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const { isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
+  const { colors: theme } = useTheme();
   const listRef = useRef<any>(null);
 
   // ── Search / filter state ────────────────────────────────────────
@@ -195,7 +197,7 @@ export default function SearchScreen() {
 
   // ── Render ───────────────────────────────────────────────────────
   return (
-    <View style={GeneralStyles.container}>
+    <View style={[GeneralStyles.container, { backgroundColor: theme.bg }]}>
       <CardView
         listRef={listRef}
         data={cardData}

@@ -19,6 +19,7 @@ import {
   type SyncState,
 } from '../../services/supabaseSyncService';
 import { colors } from '../../styles/tokens';
+import { useTheme, type ThemeMode } from '../../context/ThemeContext';
 
 type VerifyRow = { SECURITYLVL: SecurityLevel } | null;
 const isAdminLevel = (lvl: any) => lvl === SecurityLevel?.Admin || lvl === 1 || lvl === '1' || lvl === 'Admin';
@@ -100,7 +101,7 @@ const SyncGridItem = ({
 };
 
 export default function SettingsScreen() {
-  const [themeOn, setThemeOn] = useState(false);
+  const { mode: themeMode, cycleTheme, colors: theme } = useTheme();
   const [directionMode, setDirectionMode] = useState<'ltr' | 'rtl' | 'vertical'>('ltr');
   const [language, setLanguage] = useState<'en' | 'ja' | 'ko'>('en');
   const [alertsOn, setAlertsOn] = useState(true);
@@ -289,9 +290,9 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={GeneralStyles.section}>
+    <View style={[GeneralStyles.section, { backgroundColor: theme.bg }]}>
       <ScrollView ref={scrollRef} onScrollBeginDrag={handleScrollStart} onScrollEndDrag={handleScrollEnd} onMomentumScrollEnd={handleScrollEnd}>
-        <View style={[GeneralStyles.container, { paddingHorizontal: 12 }]}>
+        <View style={[GeneralStyles.container, { paddingHorizontal: 12, backgroundColor: theme.bg }]}>
           <Header />
 
           {/* ─── Cloud Sync & Backup Section ─────────────────────── */}
@@ -381,8 +382,10 @@ export default function SettingsScreen() {
 
           {/* ─── Original Settings Grid ──────────────────────────── */}
           <View style={SettingButtonStyles.grid}>
-            <GridItem label="Theme" onPress={() => setThemeOn(prev => !prev)}>
-              <Feather name={themeOn ? "moon" : "sun"} style={SettingButtonStyles.icon} />
+            <GridItem label={`Theme: ${themeMode}`} onPress={cycleTheme}>
+              {themeMode === 'light' && <Feather name="sun" style={SettingButtonStyles.icon} />}
+              {themeMode === 'dark' && <Feather name="moon" style={SettingButtonStyles.icon} />}
+              {themeMode === 'sepia' && <Feather name="coffee" style={SettingButtonStyles.icon} />}
             </GridItem>
             <GridItem label="Direction" onPress={() => setDirectionMode(prev => prev === 'ltr' ? 'rtl' : prev === 'rtl' ? 'vertical' : 'ltr')}>
               {directionMode === 'ltr' && <Feather name="chevrons-right" style={[SettingButtonStyles.icon, { fontSize: 35 }]} />}
