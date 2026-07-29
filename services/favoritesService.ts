@@ -104,6 +104,24 @@ export async function getAllUpdates(): Promise<MangaUpdate[]> {
   return getJson<MangaUpdate[]>(UPDATES_KEY, []);
 }
 
+export async function removeFavorites(ids: string[]): Promise<void> {
+  const idSet = new Set(ids);
+  const list = await getFavoritesRaw();
+  await setJson(STORAGE_KEY, list.filter((m) => !idSet.has(m.mangaId)));
+}
+
+export async function updateReadingStatusBatch(
+  ids: string[],
+  status: ReadingStatus,
+): Promise<void> {
+  const idSet = new Set(ids);
+  const list = await getFavoritesRaw();
+  const updated = list.map((m) =>
+    idSet.has(m.mangaId) ? { ...m, readingStatus: status } : m,
+  );
+  await setJson(STORAGE_KEY, updated);
+}
+
 export async function clearAllFavorites(): Promise<void> {
   await AsyncStorage.removeItem(STORAGE_KEY);
   await AsyncStorage.removeItem(UPDATES_KEY);

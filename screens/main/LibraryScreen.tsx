@@ -1,6 +1,6 @@
 // React & React Native
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, Alert } from 'react-native';
 
 // Navigation
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
@@ -12,6 +12,7 @@ import SearchBar from '../../components/layout/SearchBar';
 import MangaSlider from '../../components/cardLayouts/MangaSlider';
 import CardView, { ViewMode, CardItem } from '../../components/cardLayouts/CardView';
 import Filter from '../../components/layout/Filter';
+import SelectionActionBar from '../../components/layout/SelectionActionBar';
 
 // Scroll
 import { useScrollTracker } from '../../hooks/useScrollTracker';
@@ -23,6 +24,8 @@ import {
   getRecentFavoritesUpdates,
   BookmarkedManga,
   MangaUpdate,
+  removeFavorites,
+  updateReadingStatusBatch,
 } from '../../services/favoritesService';
 
 // Styles
@@ -50,6 +53,10 @@ export default function LibraryScreen() {
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER_STATE);
   const [loading, setLoading] = useState(true);
 
+  // ── Selection state ───────────────────────────────────────────────
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   // ── Fetch on focus ────────────────────────────────────────────────
   useFocusEffect(
     useCallback(() => {
@@ -76,6 +83,105 @@ export default function LibraryScreen() {
         active = false;
       };
     }, [])
+  );
+
+  // ── Selection handlers ─────────────────────────────────────────────
+  const enterSelectionMode = useCallback((item: CardItem) => {
+    setSelectionMode(true);
+    setSelectedIds((prev) => new Set(prev).add(String(item.id)));
+  }, []);
+
+  const toggleSelection = useCallback((item: CardItem) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      const id = String(item.id);
+      if (next.has(id)) {
+        next.delete(id);
+        // Exit selection mode if nothing is selected
+        if (next.size === 0) {
+          setSelectionMode(false);
+        }
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const cancelSelection = useCallback(() => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }, []);
+
+  const reloadFavorites = useCallback(async () => {
+    try {
+      const [favs, updates] = await Promise.all([
+        getFavorites(),
+        getRecentFavoritesUpdates(),
+      ]);
+      setFavorites(favs);
+      setRecentUpdates(updates);
+    } catch (e) {
+      console.error('Failed to reload library:', e);
+    }
+  }, []);
+
+  const handleBatchAction = useCallback(
+    (action: 'delete' | 'unlike' | 'markRead') => {
+      const ids = Array.from(selectedIds);
+      if (ids.length === 0) return;
+
+      const titles = ids
+        .map((id) => favorites.find((f) => f.mangaId === id)?.mangaTitle ?? 'Unknown')
+        .slice(0, 3);
+      const preview = titles.join(', ') + (ids.length > 3 ? ` and ${ids.length - 3} more` : '');
+
+      const actionLabels: Record<string, string> = {
+        delete: `Remove ${ids.length} manga from your library?`,
+        unlike: `Unlike ${ids.length} manga?`,
+        markRead: `Mark ${ids.length} manga as read?`,
+      };
+
+      Alert.alert(
+        'Confirm',
+        `${actionLabels[action]}\n\n${preview}`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: action === 'delete' ? 'Remove' : action === 'unlike' ? 'Unlike' : 'Mark Read',
+            style: action === 'delete' ? 'destructive' : 'default',
+            onPress: async () => {
+              try {
+                if (action === 'delete') {
+                  await removeFavorites(ids);
+                } else if (action === 'unlike') {
+                  await removeFavorites(ids);
+                } else if (action === 'markRead') {
+                  await updateReadingStatusBatch(ids, 'completed');
+                }
+                cancelSelection();
+                await reloadFavorites();
+              } catch (e) {
+                console.error(`Batch ${action} failed:`, e);
+              }
+            },
+          },
+        ],
+      );
+    },
+    [selectedIds, favorites, cancelSelection, reloadFavorites],
+  );
+
+  // ── Card press handler (depends on selection mode) ─────────────────
+  const handlePressItem = useCallback(
+    (item: CardItem) => {
+      if (selectionMode) {
+        toggleSelection(item);
+      } else {
+        navigation.navigate('MangaInfoScreen', { mangaId: String(item.id) });
+      }
+    },
+    [selectionMode, toggleSelection, navigation],
   );
 
   // ── Filter favorites ─────────────────────────────────────────────
@@ -171,9 +277,10 @@ export default function LibraryScreen() {
           listRef={listRef}
           data={cardData}
           viewMode={viewMode}
-          onPressItem={(item) =>
-            navigation.navigate('MangaInfoScreen', { mangaId: String(item.id) })
-          }
+          onPressItem={handlePressItem}
+          onLongPress={enterSelectionMode}
+          selectionMode={selectionMode}
+          selectedIds={selectedIds}
           headerComponent={HeaderContent}
           itemStyle={() => CardViewStyles.placeholder}
           onScrollBeginDrag={handleScrollStart}
@@ -182,6 +289,14 @@ export default function LibraryScreen() {
         />
       )}
       <Anchor scrollRef={listRef} isScrolling={isScrolling} />
+
+      {/* Batch selection action bar */}
+      <SelectionActionBar
+        visible={selectionMode}
+        selectedCount={selectedIds.size}
+        onAction={handleBatchAction}
+        onCancel={cancelSelection}
+      />
     </View>
   );
 }
