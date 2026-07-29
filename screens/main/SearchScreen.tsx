@@ -45,6 +45,8 @@ export default function SearchScreen() {
   const [searchText, setSearchText] = useState('');
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER_STATE);
   const [aiMode, setAiMode] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'relevance' | 'latest' | 'rating'>('relevance');
 
   // ── AI enhancer summary ──────────────────────────────────────────
   const [aiSummary, setAiSummary] = useState('');
@@ -95,10 +97,14 @@ export default function SearchScreen() {
       if (filter.contentRating) {
         params.contentRating = [filter.contentRating];
       }
+      if (sortOrder !== 'relevance') {
+        if (sortOrder === 'latest') params.order = { updatedAt: 'desc' };
+        else if (sortOrder === 'rating') params.order = { rating: 'desc' };
+      }
 
       return params;
     },
-    [searchText, filter, aiMode]
+    [searchText, filter, aiMode, sortOrder]
   );
 
   // ── Fetch from MangaDex ──────────────────────────────────────────
@@ -138,7 +144,7 @@ export default function SearchScreen() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [searchText, filter, aiMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchText, filter, aiMode, sortOrder]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Map Manga[] → CardItem[] ─────────────────────────────────────
   const cardData: CardItem[] = useMemo(
@@ -174,11 +180,13 @@ export default function SearchScreen() {
         value={searchText}
         onChangeText={setSearchText}
         onSearchPress={() => fetchResults(true)}
-        placeholder={
-          aiMode
-            ? 'Try: high school romance with fantasy action…'
-            : 'Search manga…'
-        }
+        onFilterPress={() => setShowFilter((prev) => !prev)}
+        onOpenOrder={() => {
+          const orders: Array<'relevance' | 'latest' | 'rating'> = ['relevance', 'latest', 'rating'];
+          const idx = orders.indexOf(sortOrder);
+          setSortOrder(orders[(idx + 1) % orders.length]);
+        }}
+        placeholder="Search items..."
       />
       {/* AI mode toggle */}
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 12, marginTop: 4 }}>
@@ -254,7 +262,7 @@ export default function SearchScreen() {
           ))}
         </CollapsibleSection>
       )}
-      <Filter filter={filter} onChange={setFilter} />
+      {showFilter && <Filter filter={filter} onChange={setFilter} />}
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
         <Text style={GeneralStyles.h1}>
           {hasActiveFilters(filter) || searchText.trim() ? 'Filtered Results' : 'Results'}

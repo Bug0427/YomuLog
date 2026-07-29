@@ -7,8 +7,9 @@ const GenreSliderStyles = StyleSheet.create({
         ...u.border2Cocoa,
         borderRadius: borders.br20, 
         marginRight: 8,
-        paddingHorizontal: 15, 
+        paddingHorizontal: spacing.p16,
         paddingVertical: 6,
+        flexShrink: 0,
     },
     genreSlider: {
         alignItems: 'flex-start', 

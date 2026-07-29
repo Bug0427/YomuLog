@@ -1,9 +1,10 @@
 // components/layout/Filter.tsx
-// Multi-criteria FilterBar: genres (multi-select), publication status, content rating, reading status.
+// Multi-criteria FilterBar: publication status, content rating, reading status.
+// Genre selection is handled by GenreSlider — no duplicate genre pills here.
 import React, { useState, useCallback } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { colors, borders, spacing, u } from '../../styles/tokens';
-import { GENRE_TAGS, GenreTag, PUB_STATUS_OPTIONS, PubStatusValue, CONTENT_RATING_OPTIONS, ContentRatingValue, FilterState, DEFAULT_FILTER_STATE } from '../../utils/filters';
+import { PUB_STATUS_OPTIONS, PubStatusValue, CONTENT_RATING_OPTIONS, ContentRatingValue, FilterState, DEFAULT_FILTER_STATE } from '../../utils/filters';
 import { ReadingStatus } from '../../services/favoritesService';
 
 type Props = { filter: FilterState; onChange: (s: FilterState) => void; showReadingStatus?: boolean; };
@@ -13,32 +14,14 @@ export default function Filter({ filter, onChange, showReadingStatus }: Props) {
   const [ratingOpen, setRatingOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
 
-  const toggleGenre = useCallback((g: GenreTag) => {
-    const next = filter.genres.includes(g) ? filter.genres.filter((x) => x !== g) : [...filter.genres, g];
-    onChange({ ...filter, genres: next });
-  }, [filter, onChange]);
-
   const setPub = useCallback((v: PubStatusValue | null) => { onChange({ ...filter, pubStatus: v }); setPubOpen(false); }, [filter, onChange]);
   const setRating = useCallback((v: ContentRatingValue | null) => { onChange({ ...filter, contentRating: v }); setRatingOpen(false); }, [filter, onChange]);
   const setReading = useCallback((v: ReadingStatus | null) => { onChange({ ...filter, readingStatus: v }); setStatusOpen(false); }, [filter, onChange]);
 
   const hasActive = filter.genres.length > 0 || filter.pubStatus !== null || filter.contentRating !== null || filter.readingStatus !== null;
-  const label = (g: GenreTag) => g.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
   return (
     <View style={{ paddingHorizontal: spacing.p12, paddingVertical: spacing.p8 }}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          {GENRE_TAGS.map((genre) => {
-            const active = filter.genres.includes(genre);
-            return (
-              <Pressable key={genre} onPress={() => toggleGenre(genre)} style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: borders.br20, borderWidth: borders.bw1, borderColor: active ? colors.deepPlum : colors.cocoa, backgroundColor: active ? colors.deepPlum : colors.sand }}>
-                <Text style={{ fontSize: 11, fontWeight: '600', color: active ? colors.paleLavender : colors.cocoa }}>{label(genre)}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </ScrollView>
 
       <View style={{ flexDirection: 'row', gap: 8, marginTop: spacing.p10 }}>
         <DropdownWrap>
