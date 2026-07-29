@@ -28,7 +28,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 
 const LIMIT = 20;
-const NLP_THRESHOLD = 4; // word count to trigger natural-language parsing
 
 /** Format genre tag slugs into display labels (e.g. "slice-of-life" → "Slice of Life") */
 function genreLabel(tag: GenreTag): string {
@@ -45,6 +44,7 @@ export default function SearchScreen() {
   // ── Search / filter state ────────────────────────────────────────
   const [searchText, setSearchText] = useState('');
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER_STATE);
+  const [aiMode, setAiMode] = useState(false);
 
   // ── AI enhancer summary ──────────────────────────────────────────
   const [aiSummary, setAiSummary] = useState('');
@@ -68,16 +68,15 @@ export default function SearchScreen() {
   // ── Build API params: NLP-enhanced search + manual filter merge ──
   const buildParams = useCallback(
     (pageOffset: number): MangaListParams => {
-      const wordCount = searchText.trim().split(/\s+/).filter(Boolean).length;
       let params: MangaListParams = { limit: LIMIT, offset: pageOffset };
 
-      if (wordCount >= NLP_THRESHOLD) {
-        // Natural-language mode: use AI enhancer as base
+      if (aiMode && searchText.trim()) {
+        // AI enhancer mode: use NLP parser
         const enhanced = enhanceSearch(searchText.trim(), LIMIT, pageOffset);
         params = enhanced.params;
         setAiSummary(enhanced.summary);
       } else {
-        // Simple mode: direct title search
+        // Normal mode: direct title search
         setAiSummary('');
         if (searchText.trim()) params.title = searchText.trim();
       }
@@ -99,7 +98,7 @@ export default function SearchScreen() {
 
       return params;
     },
-    [searchText, filter]
+    [searchText, filter, aiMode]
   );
 
   // ── Fetch from MangaDex ──────────────────────────────────────────
@@ -139,7 +138,7 @@ export default function SearchScreen() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [searchText, filter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchText, filter, aiMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Map Manga[] → CardItem[] ─────────────────────────────────────
   const cardData: CardItem[] = useMemo(
@@ -175,8 +174,44 @@ export default function SearchScreen() {
         value={searchText}
         onChangeText={setSearchText}
         onSearchPress={() => fetchResults(true)}
-        placeholder="Try: high school romance with fantasy action…"
+        placeholder={
+          aiMode
+            ? 'Try: high school romance with fantasy action…'
+            : 'Search manga…'
+        }
       />
+      {/* AI mode toggle */}
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 12, marginTop: 4 }}>
+        <Pressable
+          onPress={() => setAiMode((prev) => !prev)}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            paddingVertical: 5,
+            paddingHorizontal: 12,
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: aiMode ? theme.accent : theme.border,
+            backgroundColor: aiMode ? theme.accent : 'transparent',
+          }}
+        >
+          <MaterialCommunityIcons
+            name="robot"
+            size={14}
+            color={aiMode ? theme.textInverse : theme.textMuted}
+          />
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: '600',
+              color: aiMode ? theme.textInverse : theme.textMuted,
+            }}
+          >
+            {aiMode ? 'AI Enhancer ON' : 'AI Enhancer OFF'}
+          </Text>
+        </Pressable>
+      </View>
       {aiSummary ? (
         <View
           style={{
