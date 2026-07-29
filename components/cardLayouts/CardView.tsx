@@ -13,6 +13,7 @@ import {
   LayoutChangeEvent,
   ViewStyle,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { CardViewStyles } from '../../styles/global';
 import { useWindowWidth } from '../../utils/findDimensions';
 
@@ -56,6 +57,14 @@ type Props = {
 
   /** Optional per-media (thumbnail) style applied to image wrapper only */
   mediaStyle?: (item: CardItem) => any;
+
+  // ── Selection mode ──────────────────────────────────────────────
+  /** When true, tapping toggles selection and long-press is disabled */
+  selectionMode?: boolean;
+  /** Set of selected item IDs */
+  selectedIds?: Set<string>;
+  /** Called on long press of an item (enters selection mode) */
+  onLongPress?: (item: CardItem) => void;
 };
 
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
@@ -80,6 +89,9 @@ const CardView: React.FC<Props> = ({
   onMomentumScrollEnd,
   itemStyle,
   mediaStyle,
+  selectionMode = false,
+  selectedIds,
+  onLongPress,
 }) => {
   const safeData = data ?? [];
   const windowWidth = useWindowWidth();
@@ -127,16 +139,40 @@ const CardView: React.FC<Props> = ({
   const renderItem = ({ item, index }: { item: CardItem; index: number }) => {
     const isLastInRow = columns > 1 ? (index % columns) === columns - 1 : true;
     const marginRight = columns > 1 && !isLastInRow ? itemSpacing : 0;
+    const isSelected = selectionMode && selectedIds?.has(String(item.id));
+
+    // Selection checkmark overlay
+    const selectionOverlay = selectionMode ? (
+      <View
+        style={[
+          CardViewStyles.selectionOverlay,
+          isSelected && CardViewStyles.selectionOverlayActive,
+        ]}
+        pointerEvents="none"
+      >
+        {isSelected && (
+          <MaterialCommunityIcons
+            name="check-circle"
+            size={28}
+            color="#7bd88f"
+            style={CardViewStyles.selectionCheck}
+          />
+        )}
+      </View>
+    ) : null;
 
     if (viewMode === 'grid') {
       return (
         <Pressable
           onPress={() => onPressItem?.(item)}
+          onLongPress={() => !selectionMode && onLongPress?.(item)}
+          delayLongPress={400}
           style={[
             CardViewStyles.gridCard,
             { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight },
             CardViewStyles.gridItemFrame,
             itemStyle ? itemStyle(item) : undefined,
+            isSelected && CardViewStyles.selectedCard,
           ]}
         >
           <View style={[CardViewStyles.gridMedia, mediaStyle ? mediaStyle(item) : undefined]}>
@@ -149,6 +185,7 @@ const CardView: React.FC<Props> = ({
             ) : (
               <View style={[CardViewStyles.placeholder, CardViewStyles.mediaFull]} />
             )}
+            {selectionOverlay}
           </View>
           {item.title ? (
             <Text style={CardViewStyles.gridTitle} numberOfLines={1}>{item.title}</Text>
@@ -160,10 +197,13 @@ const CardView: React.FC<Props> = ({
     return (
       <Pressable
         onPress={() => onPressItem?.(item)}
+        onLongPress={() => !selectionMode && onLongPress?.(item)}
+        delayLongPress={400}
         style={[
           CardViewStyles.rowCard,
           { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight, alignItems: 'center' },
           itemStyle ? itemStyle(item) : undefined,
+          isSelected && CardViewStyles.selectedCard,
         ]}
       >
         <View style={[CardViewStyles.rowMediaBase, { width: rowThumbW, height: rowThumbH }, mediaStyle ? mediaStyle(item) : undefined]}>
@@ -176,6 +216,7 @@ const CardView: React.FC<Props> = ({
           ) : (
             <View style={[CardViewStyles.placeholder, CardViewStyles.mediaFull]} />
           )}
+          {selectionOverlay}
         </View>
         <View style={[CardViewStyles.rowTextWrap, CardViewStyles.rowTextCenter]}> 
           <Text style={CardViewStyles.rowTitle} numberOfLines={1}>{item.title}</Text>

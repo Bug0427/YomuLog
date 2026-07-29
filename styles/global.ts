@@ -51,7 +51,30 @@ const CardViewStyles = StyleSheet.create({
     mediaFull: { width: '100%', height: '100%' },
     rowMediaBase: { alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
     rowTextCenter: { flex: 1, justifyContent: 'center' },
-});
+    // ── Selection mode styles ──────────────────────────────────────
+    selectionOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      borderRadius: 8,
+      backgroundColor: 'rgba(0,0,0,0.15)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    selectionOverlayActive: {
+      backgroundColor: 'rgba(0,0,0,0.35)',
+    },
+    selectionCheck: {
+      // The check icon itself
+    },
+    selectedCard: {
+      borderWidth: 2,
+      borderColor: '#7bd88f',
+      borderRadius: 8,
+    },
+    });
 
 const SearchBarStyles = StyleSheet.create({
     searchBar: {...u.border2Cocoa, padding: spacing.p8, paddingHorizontal: 50,},
