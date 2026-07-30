@@ -5,6 +5,7 @@ import { Feather } from "@expo/vector-icons";
 import { useNavigation } from '@react-navigation/native';
 
 // Components
+import BackButton from '../../components/general/BackButton';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
 
 // Data & Styles
@@ -58,9 +59,7 @@ export default function FeedBackHome() {
         >
             <View style={[GeneralStyles.container, { paddingHorizontal: 12 }]}>
             <View style={FeedbackStyles.button}>
-                <Pressable onPress={() => navigation.goBack()}>
-                    <Text style={FeedbackStyles.text}>Back</Text>
-                </Pressable>
+                <BackButton onPress={() => navigation.goBack()} />
             </View>
             <View style={FeedbackStyles.grid}>
                 <GridItem label="Report a problem" onPress={() => (navigation as any).navigate('FileReport')}>

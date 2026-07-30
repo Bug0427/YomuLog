@@ -15,6 +15,7 @@ import {
 } from '../../utils/filters';
 import { ReadingStatus } from '../../services/favoritesService';
 import GenreFilterTags from './GenreFilterTags';
+import ClearAllButton from '../general/ClearAllButton';
 
 type Props = {
   filter: FilterState;
@@ -171,14 +172,7 @@ export default function Filter({
 
       {/* ── Clear all ───────────────────────────────────────────── */}
       {hasActive && (
-        <Pressable
-          onPress={() => onChange(DEFAULT_FILTER_STATE)}
-          style={{ alignSelf: 'flex-end', marginTop: spacing.p8 }}
-        >
-          <Text style={{ color: colors.error, fontSize: 12, fontWeight: '600' }}>
-            Clear all filters
-          </Text>
-        </Pressable>
+        <ClearAllButton onPress={() => onChange(DEFAULT_FILTER_STATE)} />
       )}
     </View>
   );

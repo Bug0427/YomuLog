@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, ViewStyle, TextStyle } from 'react-native';
 import { GeneralStyles, FeedbackStyles } from '../../styles/global';
+import BackButton from '../general/BackButton';
 
 
 export type FBHeaderProps = {
@@ -30,9 +31,7 @@ return (
     <View style={[FeedbackStyles.wrapper, containerStyle]}>      
     <View style={FeedbackStyles.headerRow}>
         {onBack ? (
-        <Pressable onPress={onBack} style={[FeedbackStyles.button, FeedbackStyles.buttonTight]} hitSlop={10}>
-            <Text style={FeedbackStyles.text}>{backLabel}</Text>
-        </Pressable>
+        <BackButton onPress={onBack} />
         ) : (
         <View style={FeedbackStyles.actionBtnPlaceholder} />
         )}

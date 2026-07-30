@@ -21,6 +21,7 @@ import { useRoute, useNavigation, RouteProp, NavigationProp } from '@react-navig
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import MarqueeText from '../../components/general/MarqueeText';
+import BackButton from '../../components/general/BackButton';
 import {
   fetchMangaById,
   getMangaFeed,
@@ -402,13 +403,7 @@ export default function MangaInfoScreen() {
       {/* ── Fixed Header Bar ──────────────────────────────────────── */}
       <View style={[styles.headerBar, { backgroundColor: theme.headerBg, borderBottomColor: theme.border, paddingTop: insets.top }]}>
         {/* Back */}
-        <Pressable
-          style={styles.headerBtn}
-          onPress={() => navigation.goBack()}
-          accessibilityLabel="Go back"
-        >
-          <Feather name="arrow-left" size={22} color={theme.textSecondary} />
-        </Pressable>
+        <BackButton onPress={() => navigation.goBack()} />
 
         {/* Title (truncated) */}
         <Text style={[styles.headerTitle, { color: theme.textPrimary }]} numberOfLines={1}>
@@ -937,7 +932,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.p4,
   },
 
-  // ── Chapters ──────────────────────────────────────────────────
+  // ── Chapters ──────────────────────────────────────────────���───
   chaptersSection: {
     marginBottom: spacing.p16,
   },

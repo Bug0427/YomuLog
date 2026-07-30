@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet } from
 import { useNavigation } from '@react-navigation/native';
 import { computeReadingStats, ReadingStats, fmtTime as formatReadingTime, fmtLastRead as formatLastRead } from '../../services/readingStatsService';
 import { colors, spacing, u, borders } from '../../styles/tokens';
+import BackButton from '../../components/general/BackButton';
 
 export default function ReadingStatsScreen() {
   const navigation = useNavigation();
@@ -25,9 +26,7 @@ export default function ReadingStatsScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.headerRow}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backBtnText}>←</Text>
-          </Pressable>
+          <BackButton onPress={() => navigation.goBack()} />
           <Text style={styles.title}>Reading Stats</Text>
           <View style={{ width: 40 }} />
         </View>
@@ -43,9 +42,7 @@ export default function ReadingStatsScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.headerRow}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backBtnText}>←</Text>
-          </Pressable>
+          <BackButton onPress={() => navigation.goBack()} />
           <Text style={styles.title}>Reading Stats</Text>
           <View style={{ width: 40 }} />
         </View>
@@ -65,9 +62,7 @@ export default function ReadingStatsScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.headerRow}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>←</Text>
-        </Pressable>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={styles.title}>Reading Stats</Text>
         <View style={{ width: 40 }} />
       </View>

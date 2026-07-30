@@ -8,6 +8,7 @@ import { useNavigation, RouteProp, useRoute } from '@react-navigation/native';
 import { getChapterPages, buildPageUrlsFromChapterData, getMangaFeed } from '../../services/mangaAPI';
 import { RootStackParamList } from '../../navigation/navigation';
 import { colors, spacing } from '../../styles/tokens';
+import BackButton from '../../components/general/BackButton';
 import {
   updateChapterProgress,
   markChapterRead,
@@ -299,9 +300,7 @@ export default function ReaderScreen() {
       <View style={[styles.container, { backgroundColor: THEME_BG[readerTheme] }]}>
         <StatusBar hidden />
         <Text style={styles.errorText}>{error || 'No pages found'}</Text>
-        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtnText}>Go Back</Text>
-        </Pressable>
+        <BackButton onPress={() => navigation.goBack()} />
       </View>
     );
   }

@@ -7,6 +7,8 @@ import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation
 import { RootStackParamList } from '../../navigation/navigation';
 
 // Components
+import BackButton from '../../components/general/BackButton';
+import ClearAllButton from '../../components/general/ClearAllButton';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
 import Anchor from '../../components/layout/Anchor';
 import CardView, { ViewMode, CardItem } from '../../components/cardLayouts/CardView';
@@ -122,23 +124,9 @@ export default function RecentlyUpdated() {
           backgroundColor: theme.bg,
         }}
       >
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-          accessibilityLabel="Go back"
-        >
-          <MaterialCommunityIcons name="chevron-left" size={26} color={colors.plum} />
-          <Text style={{ color: colors.plum, fontWeight: '600', fontSize: 14 }}>Back</Text>
-        </Pressable>
+        <BackButton onPress={() => navigation.goBack()} />
 
-        <Pressable
-          onPress={handleClearAll}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-          accessibilityLabel="Clear all"
-        >
-          <MaterialCommunityIcons name="delete-sweep-outline" size={20} color={colors.error} />
-          <Text style={{ color: colors.error, fontWeight: '600', fontSize: 12 }}>Clear All</Text>
-        </Pressable>
+        <ClearAllButton onPress={handleClearAll} />
       </View>
 
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 4 }]}>

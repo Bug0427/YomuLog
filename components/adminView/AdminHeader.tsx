@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { GeneralStyles, AdminTabStyles } from '../../styles/global';
 import { AdminHeaderStyles } from '../../styles/IndependentStyles/AdminHeaderStyles';
+import BackButton from '../general/BackButton';
 
 interface AdminHeaderProps {
   navigation: any;
@@ -23,12 +24,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
     <>
       <View style={AdminTabStyles.header}>
         {navigation?.goBack && (
-          <TouchableOpacity
-            style={AdminTabStyles.button}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={AdminHeaderStyles.backText}>Back</Text>
-          </TouchableOpacity>
+          <BackButton onPress={() => navigation.goBack()} />
         )}
         <Text style={[GeneralStyles.title, AdminHeaderStyles.titleCenter]}>Admin</Text>
         <View style={AdminHeaderStyles.spacer} />
