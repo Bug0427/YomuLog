@@ -1,5 +1,5 @@
 import React from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 
 import SplashScreen from '../screens/main/SplashScreen';
@@ -25,12 +25,19 @@ import LeaveReview from '../screens/feedback/LeaveReview';
 import ReadingStatsScreen from '../screens/main/ReadingStatsScreen';
 import { RootStackParamList } from '../navigation/navigation';
 
-const Stack = createStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
     return (
         <NavigationContainer>
-        <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+        <Stack.Navigator
+          initialRouteName="Splash"
+          screenOptions={{
+            headerShown: false,
+            animation: 'slide_from_right',
+            animationDuration: 250,
+          }}
+        >
             <Stack.Screen name="Splash" component={SplashScreen} />
             <Stack.Screen name="HomeScreen" component={HomeScreen} />
             <Stack.Screen name="SearchScreen" component={SearchScreen} />
