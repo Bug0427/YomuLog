@@ -5,7 +5,7 @@ import { colors, borders, spacing, u, ux, t } from '../styles/tokens';
 const GeneralStyles = StyleSheet.create({
     container: {
         ...u.bgLavender, ...u.full,
-        paddingTop: 52, paddingHorizontal: 7,
+        paddingTop: 0, paddingHorizontal: 7, // paddingTop standardized — Header handles own spacing
     },
     section: {
         ...u.bgLavender, ...u.full,
