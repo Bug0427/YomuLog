@@ -7,12 +7,10 @@ import { RootStackParamList } from '../../navigation/navigation';
 import Header from '../../components/layout/Header';
 import MangaSlider from '../../components/cardLayouts/MangaSlider';
 import RefreshCard from '../../components/cardLayouts/RefreshCard';
-import CollapsibleSection from '../../components/layout/CollapsibleSection';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
 import Anchor from '../../components/layout/Anchor';
-import { GeneralStyles, CardViewStyles } from '../../styles/global';
+import { GeneralStyles } from '../../styles/global';
 import { colors, spacing } from '../../styles/tokens';
-import { getRecentFavoritesUpdates, MangaUpdate } from '../../services/favoritesService';
 import { fetchMangaList, Manga } from '../../services/mangaAPI';
 import { GENRE_TAG_IDS, GenreTag } from '../../utils/filters';
 import { getPersonalisedRecommendations } from '../../services/metadataClassification';
@@ -69,7 +67,6 @@ export default function HomeScreen() {
   const { scrollRef, isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
   const { colors: theme } = useTheme();
 
-  const [recentUpdates, setRecentUpdates] = useState<MangaUpdate[]>([]);
   const [sliderDataMap, setSliderDataMap] = useState<SliderDataMap>({});
   const [failedSliders, setFailedSliders] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -100,9 +97,6 @@ export default function HomeScreen() {
     setLoading(true);
     setFailedSliders(new Set());
     try {
-      const updates = await getRecentFavoritesUpdates();
-      setRecentUpdates(updates);
-
       // Fetch sliders in batches of 5 with 500ms delay to avoid MangaDex rate-limiting
       const map: SliderDataMap = {};
       const failed = new Set<string>();
@@ -207,52 +201,6 @@ export default function HomeScreen() {
         <View style={{ paddingHorizontal: 12, backgroundColor: theme.bg }}>
           <Header />
         </View>
-
-        {/* Recently Updated collapsible section */}
-        {!loading && (
-          <CollapsibleSection
-            title="Recently Updated"
-            badgeCount={recentUpdates.length > 0 ? recentUpdates.length : undefined}
-            defaultExpanded={recentUpdates.length > 0}
-          >
-            {recentUpdates.length > 0 ? (
-              recentUpdates.slice(0, 5).map((u) => (
-                <Pressable
-                  key={u.mangaId}
-                  onPress={() => navigation.navigate('MangaInfoScreen', { mangaId: u.mangaId })}
-                  style={[CardViewStyles.rowCard, { marginBottom: 6, alignItems: 'center' }]}
-                >
-                  <View style={{ width: 40, height: 56, backgroundColor: colors.sand, borderRadius: 4 }} />
-                  <View style={[CardViewStyles.rowTextWrap, { flex: 1 }]}>
-                    <Text style={CardViewStyles.rowTitle} numberOfLines={1}>{u.mangaTitle}</Text>
-                    <Text style={{ fontSize: 11, color: colors.mutedPlum, marginTop: 2 }}>Ch. {u.chapterNumber}</Text>
-                  </View>
-                </Pressable>
-              ))
-            ) : (
-              <View style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingVertical: spacing.p20,
-                backgroundColor: colors.sand,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor: colors.cocoa,
-                marginBottom: spacing.p8,
-              }}>
-                <MaterialCommunityIcons name="check-circle-outline" size={36} color={colors.plum} />
-                <Text style={{
-                  color: colors.plum,
-                  fontSize: 15,
-                  fontWeight: '700',
-                  marginTop: spacing.p10,
-                }}>
-                  All up to date!
-                </Text>
-              </View>
-            )}
-          </CollapsibleSection>
-        )}
 
         {/* Loading */}
         {loading && (
