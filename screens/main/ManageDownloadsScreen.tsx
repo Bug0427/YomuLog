@@ -13,6 +13,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import Header from '../../components/layout/Header';
 import { colors, spacing, t } from '../../styles/tokens';
@@ -124,6 +125,7 @@ function formatBytesCompact(bytes: number): string {
 export default function ManageDownloadsScreen() {
   const navigation = useNavigation();
   const { colors: theme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [storageStats, setStorageStats] = useState<{
     totalBytes: number;
@@ -228,7 +230,7 @@ export default function ManageDownloadsScreen() {
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
       {/* Fixed header bar with back button */}
-      <View style={[styles.headerBar, { backgroundColor: theme.headerBg }]}>
+      <View style={[styles.headerBar, { backgroundColor: theme.headerBg, paddingTop: insets.top }]}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={12}>
           <Feather name="arrow-left" size={24} color={colors.deepPlum} />
         </Pressable>
@@ -372,7 +374,7 @@ const styles = StyleSheet.create({
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 52,
+    // paddingTop set dynamically via useSafeAreaInsets
     paddingBottom: 12,
     paddingHorizontal: 16,
     backgroundColor: colors.paleLavender,
