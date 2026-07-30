@@ -4,6 +4,7 @@ import AppNavigator from './navigation/AppNavigator';
 import { initDb } from './services/feedbackRepo';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from './context/ThemeContext';
+import { PremiumProvider } from './context/PremiumContext';
 
 /** Maximum width for desktop browsers to prevent stretching on ultrawide screens */
 const WEB_MAX_WIDTH = 1200;
@@ -33,9 +34,11 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <ResponsiveContainer>
-          <AppNavigator />
-        </ResponsiveContainer>
+        <PremiumProvider>
+          <ResponsiveContainer>
+            <AppNavigator />
+          </ResponsiveContainer>
+        </PremiumProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
