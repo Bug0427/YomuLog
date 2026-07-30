@@ -35,8 +35,8 @@ export default function AppNavigator() {
           initialRouteName="Splash"
           screenOptions={{
             headerShown: false,
-            animation: 'fade_from_bottom',
-            animationDuration: 350,
+            animation: 'fade',
+            animationDuration: 450,
           }}
         >
             <Stack.Screen name="Splash" component={SplashScreen} />
