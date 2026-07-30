@@ -18,7 +18,9 @@ import {
   FlatList,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import MarqueeText from '../../components/general/MarqueeText';
 import {
   fetchMangaById,
   getMangaFeed,
@@ -112,6 +114,7 @@ export default function MangaInfoScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const mangaId = route.params?.mangaId;
   const { colors: theme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [manga, setManga] = useState<Manga | null>(null);
   const [chapters, setChapters] = useState<ChapterWithDownload[]>([]);
@@ -394,7 +397,7 @@ export default function MangaInfoScreen() {
   return (
     <View style={[styles.screen, { backgroundColor: theme.bg }]}>
       {/* ── Fixed Header Bar ──────────────────────────────────────── */}
-      <View style={[styles.headerBar, { backgroundColor: theme.headerBg, borderBottomColor: theme.border }]}>
+      <View style={[styles.headerBar, { backgroundColor: theme.headerBg, borderBottomColor: theme.border, paddingTop: insets.top }]}>
         {/* Back */}
         <Pressable
           style={styles.headerBtn}
@@ -437,7 +440,10 @@ export default function MangaInfoScreen() {
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + HEADER_HEIGHT + spacing.p10 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Header row: cover + title/metadata ────────────────── */}
@@ -515,7 +521,9 @@ export default function MangaInfoScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {manga.altTitles.map((alt, idx) => (
                 <View key={`alt-${idx}`} style={styles.altTitleChip}>
-                  <Text style={styles.altTitleText} numberOfLines={1}>{alt}</Text>
+                  <MarqueeText style={styles.altTitleText} maxWidth={184}>
+                    {alt}
+                  </MarqueeText>
                 </View>
               ))}
             </ScrollView>
@@ -731,7 +739,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.p10,
-    paddingTop: 20, // safe area
+    // paddingTop set dynamically via useSafeAreaInsets
     borderBottomWidth: 1,
     zIndex: 100,
     backgroundColor: colors.lavender,
@@ -760,7 +768,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: HEADER_HEIGHT + spacing.p10,
+    // paddingTop set dynamically via useSafeAreaInsets
     paddingHorizontal: spacing.p16,
     paddingBottom: spacing.p24,
   },
