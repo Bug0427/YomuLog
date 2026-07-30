@@ -12,6 +12,7 @@ import SearchBar from '../../components/layout/SearchBar';
 import MangaSlider from '../../components/cardLayouts/MangaSlider';
 import CardView, { ViewMode, CardItem } from '../../components/cardLayouts/CardView';
 import SelectionActionBar from '../../components/layout/SelectionActionBar';
+import SortModal, { SortOption } from '../../components/general/SortModal';
 
 // Scroll
 import { useScrollTracker } from '../../hooks/useScrollTracker';
@@ -38,6 +39,12 @@ import { useTheme } from '../../context/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../../styles/tokens';
 
+const LIBRARY_SORT_OPTIONS: SortOption[] = [
+  { key: 'recently_added', label: 'Recently Added' },
+  { key: 'title_asc', label: 'A to Z' },
+  { key: 'title_desc', label: 'Z to A' },
+];
+
 export default function LibraryScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -50,6 +57,8 @@ export default function LibraryScreen() {
   const [recentUpdates, setRecentUpdates] = useState<MangaUpdate[]>([]);
   const [readingFilter, setReadingFilter] = useState<ReadingStatus | null>(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showSortModal, setShowSortModal] = useState(false);
+  const [sortOrder, setSortOrder] = useState<string>('recently_added');
   const [loading, setLoading] = useState(true);
 
   // ── Selection state ───────────────────────────────────────────────
@@ -190,11 +199,22 @@ export default function LibraryScreen() {
     [selectionMode, toggleSelection, navigation],
   );
 
-  // ── Filter favorites by reading status ─────────────────────────────
+  // ── Filter + Sort favorites ─────────────────────────────────────────
   const filteredFavorites = useMemo(() => {
-    if (!readingFilter) return favorites;
-    return favorites.filter((item) => item.readingStatus === readingFilter);
-  }, [favorites, readingFilter]);
+    let list = favorites;
+    if (readingFilter) {
+      list = list.filter((item) => item.readingStatus === readingFilter);
+    }
+    // Apply client-side sort
+    const sorted = [...list];
+    if (sortOrder === 'title_asc') {
+      sorted.sort((a, b) => a.mangaTitle.localeCompare(b.mangaTitle));
+    } else if (sortOrder === 'title_desc') {
+      sorted.sort((a, b) => b.mangaTitle.localeCompare(a.mangaTitle));
+    }
+    // 'recently_added' is default — already sorted by insertion order (last added = last in array)
+    return sorted;
+  }, [favorites, readingFilter, sortOrder]);
 
   // ── Map to CardItem[] for CardView ────────────────────────────────
   const cardData: CardItem[] = useMemo(
@@ -227,7 +247,10 @@ export default function LibraryScreen() {
   const HeaderContent = (
     <>
       <Header />
-      <SearchBar onFilterPress={() => setShowFilterModal(true)} />
+      <SearchBar
+        onFilterPress={() => setShowFilterModal(true)}
+        onOpenOrder={() => setShowSortModal(true)}
+      />
 
       {/* Active filter indicator */}
       {readingFilter && (
@@ -354,6 +377,15 @@ export default function LibraryScreen() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* ── Sort order modal ──────────────────────────────────────── */}
+      <SortModal
+        visible={showSortModal}
+        options={LIBRARY_SORT_OPTIONS}
+        selectedKey={sortOrder}
+        onSelect={setSortOrder}
+        onClose={() => setShowSortModal(false)}
+      />
 
       {/* Batch selection action bar */}
       <SelectionActionBar
