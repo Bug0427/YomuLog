@@ -266,7 +266,7 @@ const CardView: React.FC<Props> = ({
   const listContentStyle: ViewStyle = { paddingHorizontal: sidePad, paddingBottom: contentPadding };
 
   return (
-    <View onLayout={onLayout}>
+    <View onLayout={onLayout} style={{ flex: 1 }}>
       <FlatList<CardItem>
         data={safeData}
         key={columns}
