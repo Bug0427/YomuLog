@@ -23,6 +23,14 @@ function resolveIconSrc(iconId?: string | null): any | null {
     return found?.path ?? null; 
 }
 
+/** Mask email for display: u***r@email.com */
+function maskEmail(email: string): string {
+  if (!email || !email.includes('@')) return email || '';
+  const [local, domain] = email.split('@');
+  if (local.length <= 2) return `${local[0]}***@${domain}`;
+  return `${local[0]}***${local[local.length - 1]}@${domain}`;
+}
+
 export default function UserAccount() {
     const navigation = useNavigation<any>();
 
@@ -83,6 +91,9 @@ export default function UserAccount() {
     const [canEditPassword, setCanEditPassword] = useState(false);
     const [canEditEmail, setCanEditEmail] = useState(false);
 
+  // Email reveal toggle
+  const [emailRevealed, setEmailRevealed] = useState(false);
+
     const [showVerify, setShowVerify] = useState(false);
     const [verifyUserNm, setVerifyUserNm] = useState('');
     const [verifyPw, setVerifyPw] = useState('');
@@ -118,7 +129,7 @@ export default function UserAccount() {
             setEmail(row.EMAIL ?? '');
             setNewUsername(row.USERNM);
             setNewEmail(row.EMAIL ?? '');
-            setVerifyUserNm(row.USERNM || '');
+            // Do NOT pre-fill verifyUserNm — identity verification fields must start empty
             setPwLen((row.PSWD?.length ?? 0) || 8);
             setProfileIconId(row.PROFILEICON ?? null);
             (globalThis as any).currentProfileIconId = row.PROFILEICON ?? null;
@@ -164,6 +175,7 @@ export default function UserAccount() {
     setEditingField(field);
     setVerifyError(null);
     setVerifyPw('');
+    setVerifyUserNm(''); // Always start empty — identity verification
     setShowVerify(true);
     }
 
@@ -351,17 +363,25 @@ export default function UserAccount() {
                     <TextInput
                     ref={emailRef}
                     style={[FeedbackStyles.item, { flex: 1, minHeight: 44 }]}
-                    value={newEmail}
+                    value={canEditEmail ? newEmail : (emailRevealed ? email : maskEmail(email))}
                     onChangeText={setNewEmail}
                     placeholder="E‑mail"
                     autoCapitalize="none"
                     keyboardType="email-address"
                     editable={canEditEmail}
                     />
+                    {!canEditEmail && email ? (
+                      <Pressable
+                        onPress={() => setEmailRevealed(prev => !prev)}
+                        style={[FeedbackStyles.item, { marginLeft: 4, width: 44, alignItems: 'center', justifyContent: 'center' }]}
+                      >
+                        <Ionicons name={emailRevealed ? 'eye-off-outline' : 'eye-outline'} size={20} color="#463B54" />
+                      </Pressable>
+                    ) : null}
                     <Pressable
                     accessibilityRole="button"
                     onPress={() => (canEditEmail ? handleUpdateEmail() : openVerify('email'))}
-                    style={[FeedbackStyles.item, { marginLeft: 8, width: 50, alignItems: 'center', justifyContent: 'center' }]}
+                    style={[FeedbackStyles.item, { marginLeft: 4, width: 50, alignItems: 'center', justifyContent: 'center' }]}
                     >
                     <Ionicons name={canEditEmail ? 'checkmark-outline' : 'create-outline'} size={20} color="#463B54" />
                     </Pressable>
@@ -399,6 +419,8 @@ export default function UserAccount() {
                     placeholder="Username"
                     autoCapitalize="none"
                     autoCorrect={false}
+                    autoComplete="username"
+                    textContentType="username"
                 />
                 <TextInput
                     style={[FeedbackStyles.item, { marginBottom: 8, minHeight: 44 }]}
@@ -406,6 +428,8 @@ export default function UserAccount() {
                     onChangeText={setVerifyPw}
                     placeholder="Password"
                     secureTextEntry
+                    autoComplete="new-password"
+                    textContentType="newPassword"
                 />
                 {verifyError ? (<Text style={[FeedbackStyles.helper, { color: '#d33', marginBottom: 8 }]}>{verifyError}</Text>) : null}
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>

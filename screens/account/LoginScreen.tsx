@@ -106,6 +106,8 @@ return (
                 placeholderTextColor="#999"
                 autoCapitalize="none"
                 autoCorrect={false}
+                textContentType="username"
+                autoComplete="username"
                 returnKeyType="next"
                 />
 
@@ -117,6 +119,8 @@ return (
                 placeholder="password"
                 placeholderTextColor="#999"
                 secureTextEntry
+                textContentType="newPassword"
+                autoComplete="new-password"
                 returnKeyType="done"
                 onSubmitEditing={onSubmit}
                 />
