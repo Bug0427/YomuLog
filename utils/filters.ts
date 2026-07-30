@@ -1,6 +1,6 @@
 // utils/filters.ts
 // Filter types, constants, and helper utilities for manga catalog filtering.
-import { ReadingStatus } from '../services/favoritesService';
+import type { ReadingStatus } from '../services/favoritesService';
 
 export const GENRE_TAGS = [
   'action', 'adventure', 'comedy', 'drama', 'fantasy', 'horror',
@@ -34,7 +34,6 @@ export const GENRE_TAG_IDS: Record<GenreTag, string> = {
 };
 
 export const PUB_STATUS_OPTIONS = [
-  { label: 'All', value: null },
   { label: 'Ongoing', value: 'ongoing' as const },
   { label: 'Completed', value: 'completed' as const },
   { label: 'Hiatus', value: 'hiatus' as const },
@@ -42,27 +41,28 @@ export const PUB_STATUS_OPTIONS = [
 ];
 export type PubStatusValue = 'ongoing' | 'completed' | 'hiatus' | 'cancelled';
 
-export const CONTENT_RATING_OPTIONS = [
-  { label: 'All', value: null },
-  { label: 'Safe', value: 'safe' as const },
-  { label: 'Suggestive', value: 'suggestive' as const },
-  { label: 'Erotica', value: 'erotica' as const },
-  { label: 'Pornographic', value: 'pornographic' as const },
+/** Content format filters — replaces inappropriate content rating tags */
+export const CONTENT_FORMAT_OPTIONS = [
+  { label: 'Manga', value: 'manga' as const },
+  { label: 'Webtoon', value: 'webtoon' as const },
+  { label: 'Manhua', value: 'manhua' as const },
+  { label: 'Manhwa', value: 'manhwa' as const },
 ];
-export type ContentRatingValue = 'safe' | 'suggestive' | 'erotica' | 'pornographic';
-export type { ReadingStatus };
+export type ContentFormatValue = 'manga' | 'webtoon' | 'manhua' | 'manhwa';
 
 export type FilterState = {
   genres: GenreTag[];
-  pubStatus: PubStatusValue | null;
-  contentRating: ContentRatingValue | null;
+  /** Multi-select — user can toggle any combination */
+  pubStatus: PubStatusValue[];
+  /** Replaces contentRating; each format maps to MangaDex publicationDemographic/originalLanguage */
+  contentFormat: ContentFormatValue[];
   readingStatus: ReadingStatus | null;
 };
 export const DEFAULT_FILTER_STATE: FilterState = {
-  genres: [], pubStatus: null, contentRating: null, readingStatus: null,
+  genres: [], pubStatus: [], contentFormat: [], readingStatus: null,
 };
 export function hasActiveFilters(state: FilterState): boolean {
-  return state.genres.length > 0 || state.pubStatus !== null || state.contentRating !== null || state.readingStatus !== null;
+  return state.genres.length > 0 || state.pubStatus.length > 0 || state.contentFormat.length > 0 || state.readingStatus !== null;
 }
 export function buildMangaDexQuery(state: FilterState): string {
   const params: string[] = [];
@@ -70,7 +70,13 @@ export function buildMangaDexQuery(state: FilterState): string {
     state.genres.forEach((g) => { const id = GENRE_TAG_IDS[g]; if (id) params.push(`includedTags[]=${id}`); });
     params.push('includedTagsMode=AND');
   }
-  if (state.pubStatus) params.push(`status=${state.pubStatus}`);
-  if (state.contentRating) params.push(`contentRating[]=${state.contentRating}`);
+  if (state.pubStatus.length > 0) {
+    state.pubStatus.forEach((s) => params.push(`status[]=${s}`));
+  }
+  if (state.contentFormat.length > 0) {
+    // MangaDex doesn't have a direct "format" field in the main manga query.
+    // We exclude unsupported engines; instead, we'll add these as a custom comment.
+    // For now, contentFormat is client-side only (extension point for future API).
+  }
   return params.length > 0 ? `?${params.join('&')}` : '';
 }

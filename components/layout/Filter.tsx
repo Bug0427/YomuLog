@@ -1,57 +1,59 @@
 // components/layout/Filter.tsx
-// Multi-criteria FilterBar: dynamic genre filter tags, publication status,
-// content rating, and reading status.
+// Multi-criteria Filter modal: publication status (multi-select),
+// content format (multi-select), and reading status.
+// Genres are handled by the capsule bar on SearchScreen — no longer rendered here.
 import React, { useState, useCallback } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { colors, borders, spacing, u } from '../../styles/tokens';
+import { useTheme } from '../../contexts/ThemeContext';
 import {
   PUB_STATUS_OPTIONS,
   PubStatusValue,
-  CONTENT_RATING_OPTIONS,
-  ContentRatingValue,
+  CONTENT_FORMAT_OPTIONS,
+  ContentFormatValue,
   FilterState,
   DEFAULT_FILTER_STATE,
-  GenreTag,
 } from '../../utils/filters';
 import { ReadingStatus } from '../../services/favoritesService';
-import GenreFilterTags from './GenreFilterTags';
-import ClearAllButton from '../general/ClearAllButton';
 
 type Props = {
   filter: FilterState;
   onChange: (s: FilterState) => void;
   showReadingStatus?: boolean;
-  /** Dynamic genre suggestions (top-N from reading behaviour). */
-  suggestedGenres?: GenreTag[];
-  /** Called when a genre is removed from the suggestion set. */
-  onRemoveGenre?: (tag: GenreTag) => void;
 };
 
 export default function Filter({
   filter,
   onChange,
   showReadingStatus,
-  suggestedGenres,
-  onRemoveGenre,
 }: Props) {
+  const theme = useTheme();
   const [pubOpen, setPubOpen] = useState(false);
-  const [ratingOpen, setRatingOpen] = useState(false);
+  const [formatOpen, setFormatOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
 
-  const setPub = useCallback(
-    (v: PubStatusValue | null) => {
-      onChange({ ...filter, pubStatus: v });
-      setPubOpen(false);
+  /** Multi-select toggle for pub status */
+  const togglePub = useCallback(
+    (v: PubStatusValue) => {
+      const next = filter.pubStatus.includes(v)
+        ? filter.pubStatus.filter((s) => s !== v)
+        : [...filter.pubStatus, v];
+      onChange({ ...filter, pubStatus: next });
     },
     [filter, onChange],
   );
-  const setRating = useCallback(
-    (v: ContentRatingValue | null) => {
-      onChange({ ...filter, contentRating: v });
-      setRatingOpen(false);
+
+  /** Multi-select toggle for content format */
+  const toggleFormat = useCallback(
+    (v: ContentFormatValue) => {
+      const next = filter.contentFormat.includes(v)
+        ? filter.contentFormat.filter((f) => f !== v)
+        : [...filter.contentFormat, v];
+      onChange({ ...filter, contentFormat: next });
     },
     [filter, onChange],
   );
+
   const setReading = useCallback(
     (v: ReadingStatus | null) => {
       onChange({ ...filter, readingStatus: v });
@@ -60,80 +62,75 @@ export default function Filter({
     [filter, onChange],
   );
 
-  /** Toggle a genre in/out of the active filter. */
-  const handleGenreToggle = useCallback(
-    (tag: GenreTag) => {
-      const next = filter.genres.includes(tag)
-        ? filter.genres.filter((g) => g !== tag)
-        : [...filter.genres, tag];
-      onChange({ ...filter, genres: next });
-    },
-    [filter, onChange],
-  );
-
   const hasActive =
-    filter.genres.length > 0 ||
-    filter.pubStatus !== null ||
-    filter.contentRating !== null ||
+    filter.pubStatus.length > 0 ||
+    filter.contentFormat.length > 0 ||
     filter.readingStatus !== null;
 
-  return (
-    <View style={{ paddingHorizontal: spacing.p12, paddingVertical: spacing.p8 }}>
-      {/* ── Dynamic Genre Filter Tags (with remove mode) ───────── */}
-      {suggestedGenres && suggestedGenres.length > 0 && (
-        <GenreFilterTags
-          genres={suggestedGenres}
-          selected={filter.genres}
-          onToggle={handleGenreToggle}
-          onRemove={onRemoveGenre}
-        />
-      )}
+  /** Label for a multi-select dropdown button */
+  const pubLabel =
+    filter.pubStatus.length === 0
+      ? 'Status'
+      : filter.pubStatus.length === 1
+      ? filter.pubStatus[0]
+      : `${filter.pubStatus.length} selected`;
 
-      {/* ── Dropdown filters ───────────────────────────────────── */}
-      <View style={{ flexDirection: 'row', gap: 8, marginTop: spacing.p10 }}>
+  const formatLabel =
+    filter.contentFormat.length === 0
+      ? 'Format'
+      : filter.contentFormat.length === 1
+      ? filter.contentFormat[0]
+      : `${filter.contentFormat.length} selected`;
+
+  return (
+    <ScrollView
+      style={s.container}
+      contentContainerStyle={s.content}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* ── Dropdowns row ─────────────────────────────────────── */}
+      <View style={s.dropdownRow}>
+        {/* Pub status multi-select */}
         <DropdownWrap>
-          <DropdownBtn
-            label={
-              PUB_STATUS_OPTIONS.find((o) => o.value === filter.pubStatus)?.label ?? 'Status'
-            }
-            open={pubOpen}
-            onToggle={() => setPubOpen((o) => !o)}
-          />
+          <DropdownBtn label={pubLabel} open={pubOpen} onToggle={() => setPubOpen((o) => !o)} />
           {pubOpen && (
             <DropdownMenu>
               {PUB_STATUS_OPTIONS.map((opt) => (
                 <DropdownItem
-                  key={opt.label}
+                  key={opt.value}
                   label={opt.label}
-                  active={filter.pubStatus === opt.value}
-                  onPress={() => setPub(opt.value)}
+                  active={filter.pubStatus.includes(opt.value)}
+                  multi
+                  onPress={() => togglePub(opt.value)}
                 />
               ))}
             </DropdownMenu>
           )}
         </DropdownWrap>
+
+        {/* Content format multi-select */}
         <DropdownWrap>
           <DropdownBtn
-            label={
-              CONTENT_RATING_OPTIONS.find((o) => o.value === filter.contentRating)?.label ??
-              'Rating'
-            }
-            open={ratingOpen}
-            onToggle={() => setRatingOpen((o) => !o)}
+            label={formatLabel}
+            open={formatOpen}
+            onToggle={() => setFormatOpen((o) => !o)}
           />
-          {ratingOpen && (
+          {formatOpen && (
             <DropdownMenu>
-              {CONTENT_RATING_OPTIONS.map((opt) => (
+              {CONTENT_FORMAT_OPTIONS.map((opt) => (
                 <DropdownItem
-                  key={opt.label}
+                  key={opt.value}
                   label={opt.label}
-                  active={filter.contentRating === opt.value}
-                  onPress={() => setRating(opt.value)}
+                  active={filter.contentFormat.includes(opt.value)}
+                  multi
+                  onPress={() => toggleFormat(opt.value)}
                 />
               ))}
             </DropdownMenu>
           )}
         </DropdownWrap>
+
+        {/* Reading status (still single-select) */}
         {showReadingStatus && (
           <DropdownWrap>
             <DropdownBtn
@@ -170,15 +167,54 @@ export default function Filter({
         )}
       </View>
 
-      {/* ── Clear all ───────────────────────────────────────────── */}
+      {/* ── Clear All ────────────────────────────────────────── */}
       {hasActive && (
-        <ClearAllButton onPress={() => onChange(DEFAULT_FILTER_STATE)} />
+        <View style={s.clearArea}>
+          <View style={{ height: 1, backgroundColor: theme.border, marginBottom: spacing.p10 }} />
+          <ClearAllButton onPress={() => onChange(DEFAULT_FILTER_STATE)} theme={theme} />
+        </View>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
-// ── Internal sub-components (unchanged) ──────────────────────────
+// ── ClearAllButton (themed, inline) ──────────────────────────
+
+function ClearAllButton({
+  onPress,
+  theme,
+}: {
+  onPress: () => void;
+  theme: ReturnType<typeof useTheme>;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        alignSelf: 'center',
+        paddingVertical: spacing.p8,
+        paddingHorizontal: spacing.p16,
+        borderRadius: borders.br8,
+        borderWidth: 1,
+        borderColor: theme.borderLight,
+        backgroundColor: pressed ? theme.bgSecondary : 'transparent',
+        opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      <Text
+        style={{
+          fontSize: 14,
+          fontWeight: '600',
+          color: theme.textSecondary,
+        }}
+      >
+        Clear All
+      </Text>
+    </Pressable>
+  );
+}
+
+// ── Internal sub-components ──────────────────────────────────
 
 function DropdownWrap({ children }: { children: React.ReactNode }) {
   return <View style={{ flex: 1, zIndex: 10 }}>{children}</View>;
@@ -193,6 +229,7 @@ function DropdownBtn({
   open: boolean;
   onToggle: () => void;
 }) {
+  const theme = useTheme();
   return (
     <Pressable
       onPress={onToggle}
@@ -200,37 +237,48 @@ function DropdownBtn({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: spacing.p8,
-        paddingHorizontal: spacing.p10,
-        ...u.border2Cocoa,
+        paddingVertical: spacing.p10,
+        paddingHorizontal: spacing.p12,
+        borderWidth: 1.5,
+        borderColor: theme.borderLight,
         borderRadius: borders.br8,
-        backgroundColor: colors.sand,
+        backgroundColor: theme.bgCard,
+        minHeight: 42,
       }}
     >
       <Text
-        style={{ color: colors.cocoa, fontWeight: '600', fontSize: 12, flex: 1 }}
+        style={{ color: theme.textPrimary, fontWeight: '600', fontSize: 13, flex: 1 }}
         numberOfLines={1}
       >
         {label}
       </Text>
-      <Text style={{ color: colors.cocoa, fontSize: 10 }}>{open ? '▲' : '▼'}</Text>
+      <Text style={{ color: theme.textSecondary, fontSize: 10, marginLeft: 4 }}>
+        {open ? '▲' : '▼'}
+      </Text>
     </Pressable>
   );
 }
 
 function DropdownMenu({ children }: { children: React.ReactNode }) {
+  const theme = useTheme();
   return (
     <View
       style={{
-        marginTop: 2,
-        ...u.border2Cocoa,
+        marginTop: 4,
+        borderWidth: 1.5,
+        borderColor: theme.border,
         borderRadius: borders.br8,
-        backgroundColor: colors.paleLavender,
+        backgroundColor: theme.bgCard,
         overflow: 'hidden',
         position: 'absolute',
         left: 0,
         right: 0,
         zIndex: 100,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
       }}
     >
       {children}
@@ -241,26 +289,55 @@ function DropdownMenu({ children }: { children: React.ReactNode }) {
 function DropdownItem({
   label,
   active,
+  multi,
   onPress,
 }: {
   label: string;
   active: boolean;
+  multi?: boolean;
   onPress: () => void;
 }) {
+  const theme = useTheme();
   return (
     <Pressable
       onPress={onPress}
-      style={{
-        paddingVertical: spacing.p8,
-        paddingHorizontal: spacing.p10,
-        backgroundColor: active ? colors.deepPlum : 'transparent',
-      }}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: spacing.p10,
+        paddingHorizontal: spacing.p12,
+        backgroundColor: active
+          ? theme.accent + '22'
+          : pressed
+          ? theme.bgSecondary
+          : 'transparent',
+        minHeight: 44,
+      })}
     >
+      {multi && (
+        <View
+          style={{
+            width: 18,
+            height: 18,
+            borderRadius: 4,
+            borderWidth: 1.5,
+            borderColor: active ? theme.accent : theme.borderLight,
+            backgroundColor: active ? theme.accent : 'transparent',
+            marginRight: spacing.p8,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {active && (
+            <Text style={{ color: theme.bgCard, fontSize: 11, fontWeight: '700' }}>✓</Text>
+          )}
+        </View>
+      )}
       <Text
         style={{
           fontWeight: active ? '700' : '500',
-          color: active ? colors.paleLavender : colors.plum,
-          fontSize: 12,
+          color: active ? theme.accent : theme.textPrimary,
+          fontSize: 13,
         }}
       >
         {label}
@@ -268,3 +345,20 @@ function DropdownItem({
     </Pressable>
   );
 }
+
+const s = StyleSheet.create({
+  container: {
+    maxHeight: 420,
+  },
+  content: {
+    paddingHorizontal: spacing.p16,
+    paddingVertical: spacing.p12,
+  },
+  dropdownRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  clearArea: {
+    marginTop: spacing.p16,
+  },
+});
