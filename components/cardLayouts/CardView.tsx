@@ -7,7 +7,6 @@ import {
   FlatList,
   View,
   Text,
-  Image,
   Pressable,
   ActivityIndicator,
   LayoutChangeEvent,
@@ -16,6 +15,8 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { CardViewStyles } from '../../styles/global';
 import { useWindowWidth } from '../../utils/findDimensions';
+import FallbackImage from '../general/FallbackImage';
+import MarqueeTitle from '../general/MarqueeTitle';
 
 export type ViewMode = 'grid' | 'row';
 
@@ -176,19 +177,14 @@ const CardView: React.FC<Props> = ({
           ]}
         >
           <View style={[CardViewStyles.gridMedia, mediaStyle ? mediaStyle(item) : undefined]}>
-            {(item.image || item.imageUrl) ? (
-              <Image
-                source={toRNImageSource(item.image ?? item.imageUrl)}
-                style={CardViewStyles.mediaFull}
-                resizeMode="contain"
-              />
-            ) : (
-              <View style={[CardViewStyles.placeholder, CardViewStyles.mediaFull]} />
-            )}
+            <FallbackImage
+              source={toRNImageSource(item.image ?? item.imageUrl)}
+              style={CardViewStyles.mediaFull}
+            />
             {selectionOverlay}
           </View>
           {item.title ? (
-            <Text style={CardViewStyles.gridTitle} numberOfLines={1}>{item.title}</Text>
+            <MarqueeTitle title={item.title} style={CardViewStyles.gridTitle} />
           ) : null}
         </Pressable>
       );
@@ -207,19 +203,14 @@ const CardView: React.FC<Props> = ({
         ]}
       >
         <View style={[CardViewStyles.rowMediaBase, { width: rowThumbW, height: rowThumbH }, mediaStyle ? mediaStyle(item) : undefined]}>
-          {(item.image || item.imageUrl) ? (
-            <Image
-              source={toRNImageSource(item.image ?? item.imageUrl)}
-              style={[CardViewStyles.rowImage, CardViewStyles.mediaFull]}
-              resizeMode="contain"
-            />
-          ) : (
-            <View style={[CardViewStyles.placeholder, CardViewStyles.mediaFull]} />
-          )}
+          <FallbackImage
+            source={toRNImageSource(item.image ?? item.imageUrl)}
+            style={[CardViewStyles.rowImage, CardViewStyles.mediaFull]}
+          />
           {selectionOverlay}
         </View>
         <View style={[CardViewStyles.rowTextWrap, CardViewStyles.rowTextCenter]}> 
-          <Text style={CardViewStyles.rowTitle} numberOfLines={1}>{item.title}</Text>
+          <MarqueeTitle title={item.title} style={CardViewStyles.rowTitle} />
         </View>
       </Pressable>
     );
