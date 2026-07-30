@@ -265,7 +265,7 @@ export default function SearchScreen() {
         </View>
       ) : null}
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
-        <GenreSlider genres={genreSliderItems} onGenrePress={handleGenrePress} />
+        <GenreSlider genres={genreSliderItems} onGenrePress={handleGenrePress} selectedGenres={filter.genres.map(genreLabel)} />
       </View>
       {recentUpdates.length > 0 && (
         <CollapsibleSection title="Recently Updated" badgeCount={recentUpdates.length}>
