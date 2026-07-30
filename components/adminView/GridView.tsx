@@ -10,13 +10,14 @@ import RowView from './RowView';
 import { AdminCommonStyles, AdminTabStyles } from '../../styles/global';
 import { GridViewStyles } from '../../styles/IndependentStyles/GridViewStyles';
 import useDoubleTap from '../../hooks/admin/useDoubleTap';
+import { colors } from '../../styles/tokens';
 
 export type Align = 'left' | 'center' | 'right';
 
 export type Column<T> = {
   key: keyof T | string;
   title: string;
-  width?: number; // optional hint, not used when docked
+  width?: number;
   align?: Align;
   render?: (row: T, rowIndex: number) => React.ReactNode;
 };
@@ -30,19 +31,24 @@ export type GridViewProps<T> = {
   onEndReached?: () => void;
   isLoading?: boolean;
   commentKey?: keyof T | string;
-  /** Optional: prioritized column key; moves this column to position 1 and rotates others */
   priority?: string;
+  // ── Bulk selection ──────────────────────────────────────────────
+  /** Enable checkbox bulk selection on rows */
+  enableBulkSelect?: boolean;
+  /** Selected item IDs */
+  selectedIds?: Set<string>;
+  /** Called when a row's checkbox is toggled */
+  onToggleSelect?: (item: T) => void;
+  // ── Row modal ───────────────────────────────────────────────────
+  /** Called on long-press of a row (Accounts: RowEditorModal, Reports: RowViewerModal) */
+  onRowLongPress?: (item: T) => void;
 };
-
 
 function getCellAlign(align?: Align) {
   switch (align) {
-    case 'center':
-      return 'center';
-    case 'right':
-      return 'flex-end';
-    default:
-      return 'flex-start';
+    case 'center': return 'center';
+    case 'right': return 'flex-end';
+    default: return 'flex-start';
   }
 }
 
@@ -50,9 +56,9 @@ function reorderColumns<T>(cols: Column<T>[], priorityKey?: string): Column<T>[]
   if (!priorityKey) return cols;
   const idx = cols.findIndex(c => String(c.key) === String(priorityKey));
   if (idx < 0) return cols;
-  const left = cols.slice(0, idx);      // move to end in-order
+  const left = cols.slice(0, idx);
   const chosen = cols[idx];
-  const right = cols.slice(idx + 1);    // slides left
+  const right = cols.slice(idx + 1);
   return [chosen, ...right, ...left];
 }
 
@@ -75,10 +81,13 @@ export default function GridView<T extends Record<string, any>>({
   isLoading,
   commentKey,
   priority,
+  enableBulkSelect = false,
+  selectedIds,
+  onToggleSelect,
+  onRowLongPress,
 }: GridViewProps<T>) {
   const screenWidth = useWindowWidth();
   const [expandedKey, setExpandedKey] = useState<string | undefined>(undefined);
-  // When all visible columns naturally fit, default to expanded and allow collapsing per column
   const [collapsedSet, setCollapsedSet] = useState<Set<string>>(new Set());
   const orderedColumns = useMemo(() => reorderColumns(columns, priority), [columns, priority]);
   const naturalWidths = useMemo(() => computeNaturalWidths(orderedColumns as any, data as any), [orderedColumns, data]);
@@ -87,23 +96,47 @@ export default function GridView<T extends Record<string, any>>({
     () => computeColumnWidths(orderedColumns as any, data as any, screenWidth, expandedKey),
     [orderedColumns, data, screenWidth, expandedKey]
   );
-  const totalWidth = useMemo(() => {
-    const padding = 0;
-    return Math.max(320, screenWidth - padding);
-  }, [screenWidth]);
+
+  // ── Double-tap column header → expand/collapse ──────────────────
+  const handleHeaderDoubleTap = useDoubleTap<string>((keyStr: string) => {
+    if (allFit) {
+      setCollapsedSet((prev) => {
+        const next = new Set(prev);
+        if (next.has(keyStr)) next.delete(keyStr); else next.add(keyStr);
+        return next;
+      });
+    } else {
+      setExpandedKey((prev) => (prev === keyStr ? undefined : keyStr));
+    }
+  }, 300);
+
+  const totalWidth = useMemo(() => Math.max(320, screenWidth), [screenWidth]);
+
+  // ── Bulk select checkbox column width ───────────────────────────
+  const CHECK_COL = 36;
+
+  // ── Comment modal (existing) ─────────────────────────────────────
   const handleRowDoublePress = useDoubleTap<T>((item) => {
     if (!commentKey) return;
     const raw = (item as any)[commentKey];
-    // Normalize to string safely and trim whitespace
     const text = typeof raw === 'string' ? raw.trim() : (raw == null ? '' : String(raw));
-    if (!text || text.length === 0) return; // no-op if no comment
+    if (!text || text.length === 0) return;
     const sid = String((item as any)['sid'] ?? '');
     setModal({ visible: true, text, sid });
   }, 300);
   const [modal, setModal] = useState<{ visible: boolean; text: string; sid?: string }>({ visible: false, text: '' });
   const _keyExtractor = keyExtractor ?? ((item: T, i: number) => String((item as any).id ?? i));
+
+  // ── Header ──────────────────────────────────────────────────────
   const renderHeader = () => (
     <View style={[AdminCommonStyles.dataRow, GridViewStyles.headerRow, { height: headerHeight, width: totalWidth }]}>
+      {/* Bulk select header checkbox */}
+      {enableBulkSelect && (
+        <View style={[{ width: CHECK_COL, justifyContent: 'center', alignItems: 'center' }]}>
+          <Text style={[AdminTabStyles.text, { fontSize: 10 }]}>Sel</Text>
+        </View>
+      )}
+
       {orderedColumns.map((col, i) => {
         const keyStr = String(col.key);
         let displayTitle = col.title;
@@ -113,19 +146,11 @@ export default function GridView<T extends Record<string, any>>({
           <Pressable
             key={`h-${keyStr}-${i}`}
             style={[AdminCommonStyles.dataCell, { width: colWidths[i], justifyContent: getCellAlign(col.align) }]}
-            onPress={() => {
-              if (allFit) {
-                setCollapsedSet((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(keyStr)) next.delete(keyStr); else next.add(keyStr);
-                  return next;
-                });
-              } else {
-                setExpandedKey((prev) => (prev === keyStr ? undefined : keyStr));
-              }
-            }}
+            onPress={() => handleHeaderDoubleTap(keyStr as any)}
           >
-            <Text style={[AdminTabStyles.text, GridViewStyles.headerText]} numberOfLines={1} ellipsizeMode="tail">{displayTitle}</Text>
+            <Text style={[AdminTabStyles.text, GridViewStyles.headerText]} numberOfLines={1} ellipsizeMode="tail">
+              {displayTitle}
+            </Text>
           </Pressable>
         );
       })}
@@ -151,22 +176,30 @@ export default function GridView<T extends Record<string, any>>({
                 expandedKey={expandedKey}
                 allFit={allFit}
                 collapsedKeys={Array.from(collapsedSet)}
-                onPress={(index, item) => handleRowDoublePress(item)}
+                onPress={(idx, it) => {
+                  if (onRowLongPress) {
+                    onRowLongPress(it);
+                  } else {
+                    handleRowDoublePress(it);
+                  }
+                }}
+                onLongPress={onRowLongPress ? (idx, it) => onRowLongPress(it) : undefined}
+                enableBulkSelect={enableBulkSelect}
+                isSelected={selectedIds?.has(String(item.id ?? item.sid ?? '')) ?? false}
+                onToggleSelect={onToggleSelect ? () => onToggleSelect(item) : undefined}
+                bulkCheckWidth={CHECK_COL}
               />
             )}
             onEndReachedThreshold={0.2}
             onEndReached={onEndReached}
             ListEmptyComponent={
               isLoading ? null : (
-                <View style={[AdminCommonStyles.dataCell, { width: totalWidth, height: rowHeight * 3 }]}>
-                </View>
+                <View style={[AdminCommonStyles.dataCell, { width: totalWidth, height: rowHeight * 3 }]} />
               )
             }
             ListFooterComponent={
               <>
-                {isLoading ? (
-                  <LoadingRows widths={colWidths} count={3} height={rowHeight} />
-                ) : null}
+                {isLoading ? <LoadingRows widths={colWidths} count={3} height={rowHeight} /> : null}
                 <View style={[GridViewStyles.footerDivider, { width: totalWidth }]} />
               </>
             }
