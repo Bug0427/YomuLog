@@ -97,11 +97,11 @@ export default function HomeScreen() {
     setLoading(true);
     setFailedSliders(new Set());
     try {
-      // Fetch sliders in batches of 5 with 150ms delay to avoid MangaDex rate-limiting
+      // Fetch sliders in batches of 3 with 350ms delay — MangaDex allows ~5 req/s
       const map: SliderDataMap = {};
       const failed = new Set<string>();
 
-      await batchProcess(SLIDER_CONFIGS, 5, 150, async (config) => {
+      await batchProcess(SLIDER_CONFIGS, 3, 350, async (config) => {
         try {
           let result: Manga[] = [];
           if (config.type === 'order') {
@@ -181,11 +181,14 @@ export default function HomeScreen() {
     <View style={[GeneralStyles.section, { backgroundColor: theme.bg }]}>
       <ScrollView
         ref={scrollRef}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
         onScrollBeginDrag={handleScrollStart}
         onScrollEndDrag={handleScrollEnd}
         onMomentumScrollEnd={handleScrollEnd}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
+        removeClippedSubviews={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -215,8 +218,22 @@ export default function HomeScreen() {
             {SLIDER_CONFIGS.map((config, idx) => {
               const items = sliderDataMap[config.title];
               const isFailed = failedSliders.has(config.title);
-              // Skip only when no data AND no failure
-              if ((!items || items.length === 0) && !isFailed) return null;
+              // Show failed as retry card, empty as placeholder, or data as slider
+              if ((!items || items.length === 0) && !isFailed) {
+                // Show placeholder for empty sliders instead of hiding them
+                return (
+                  <View key={`${config.title}-${refreshKey}`}>
+                    <MangaSlider
+                      title={config.title}
+                      data={[]}
+                      onTitlePress={() => navigation.navigate('SearchScreen' as never)}
+                      footerComponent={
+                        isLast ? <RefreshCard onRefresh={handleRefresh} /> : undefined
+                      }
+                    />
+                  </View>
+                );
+              }
               const isLast = idx === SLIDER_CONFIGS.length - 1;
               return (
                 <View key={`${config.title}-${refreshKey}`}>
