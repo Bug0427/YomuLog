@@ -42,12 +42,17 @@ const LANGUAGE_FLAGS: Record<Language, string> = { en: '🇺🇸', ja: '🇯🇵
 const DIRECTIONS: DirectionMode[] = ['ltr', 'rtl', 'vertical'];
 
 const GridItem = ({ label, children, onPress }: { label: string; children?: React.ReactNode; onPress?: () => void }) => {
+  const { colors: theme } = useTheme();
   return (
     <View style={SettingButtonStyles.cell}>
-      <Pressable style={SettingButtonStyles.button} onPress={onPress} hitSlop={10}>
+      <Pressable
+        style={[SettingButtonStyles.button, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
+        onPress={onPress}
+        hitSlop={10}
+      >
         {children}
       </Pressable>
-      <Text style={SettingButtonStyles.cellLabel}>{label}</Text>
+      <Text style={[SettingButtonStyles.cellLabel, { color: theme.textSecondary }]}>{label}</Text>
     </View>
   );
 };
@@ -444,19 +449,19 @@ export default function SettingsScreen() {
           }} />
 
           {/* ─── Settings Grid ────────────────────────────────────── */}
-          <View style={SettingButtonStyles.grid}>
+          <View style={[SettingButtonStyles.grid, { backgroundColor: theme.bgSecondary }]}>
             <GridItem label={`Theme: ${themeMode}`} onPress={cycleTheme}>
-              {themeMode === 'light' && <Feather name="sun" style={SettingButtonStyles.icon} />}
-              {themeMode === 'dark' && <Feather name="moon" style={SettingButtonStyles.icon} />}
-              {themeMode === 'sepia' && <Feather name="coffee" style={SettingButtonStyles.icon} />}
+              {themeMode === 'light' && <Feather name="sun" style={[SettingButtonStyles.icon, { color: theme.accent }]} />}
+              {themeMode === 'dark' && <Feather name="moon" style={[SettingButtonStyles.icon, { color: theme.accent }]} />}
+              {themeMode === 'sepia' && <Feather name="coffee" style={[SettingButtonStyles.icon, { color: theme.accent }]} />}
             </GridItem>
             <GridItem label="Direction" onPress={cycleDirection}>
-              {directionMode === 'ltr' && <Feather name="chevrons-right" style={[SettingButtonStyles.icon, { fontSize: 35 }]} />}
-              {directionMode === 'rtl' && <Feather name="chevrons-left" style={[SettingButtonStyles.icon, { fontSize: 35 }]} />}
+              {directionMode === 'ltr' && <Feather name="chevrons-right" style={[SettingButtonStyles.icon, { fontSize: 35, color: theme.accent }]} />}
+              {directionMode === 'rtl' && <Feather name="chevrons-left" style={[SettingButtonStyles.icon, { fontSize: 35, color: theme.accent }]} />}
               {directionMode === 'vertical' && (
                 <View style={{ alignItems: 'center' }}>
-                  <Feather name="chevrons-up" style={SettingButtonStyles.icon} />
-                  <Feather name="chevrons-down" style={SettingButtonStyles.icon} />
+                  <Feather name="chevrons-up" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
+                  <Feather name="chevrons-down" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
                 </View>
               )}
             </GridItem>
@@ -464,37 +469,37 @@ export default function SettingsScreen() {
               <Text style={SettingButtonStyles.flag}>{LANGUAGE_FLAGS[language]}</Text>
             </GridItem>
             <GridItem label="Chapter alerts" onPress={toggleAlerts}>
-              <Feather name={alertsOn ? "bell" : "bell-off"} style={SettingButtonStyles.icon} />
+              <Feather name={alertsOn ? "bell" : "bell-off"} style={[SettingButtonStyles.icon, { color: theme.accent }]} />
             </GridItem>
             <GridItem label="Reading Stats" onPress={() => navigation.navigate('ReadingStatsScreen' as never)}>
-              <Feather name="bar-chart-2" style={SettingButtonStyles.icon} />
+              <Feather name="bar-chart-2" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
             </GridItem>
             <GridItem label="Refresh metadata" onPress={handleRefreshMetadata}>
-              <Feather name="refresh-ccw" style={SettingButtonStyles.icon} />
+              <Feather name="refresh-ccw" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
             </GridItem>
             <GridItem label="Clear cache" onPress={handleClearCache}>
-              <Feather name="trash-2" style={SettingButtonStyles.icon} />
+              <Feather name="trash-2" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
             </GridItem>
             <GridItem label="Reset AI recs" onPress={handleResetAI}>
-              <Feather name="rotate-ccw" style={SettingButtonStyles.icon} />
+              <Feather name="rotate-ccw" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
             </GridItem>
             <GridItem label="AI Search" onPress={toggleAISearch}>
-              <Feather name={aiSearchOn ? "cpu" : "cpu"} style={[SettingButtonStyles.icon, { opacity: aiSearchOn ? 1 : 0.4 }]} />
+              <Feather name={aiSearchOn ? "cpu" : "cpu"} style={[SettingButtonStyles.icon, { color: theme.accent, opacity: aiSearchOn ? 1 : 0.4 }]} />
             </GridItem>
             <GridItem label="Manage downloads" onPress={() => navigation.navigate('ManageDownloadsScreen' as never)}>
-              <Feather name="download" style={SettingButtonStyles.icon} />
+              <Feather name="download" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
             </GridItem>
             {isAdmin ? (
               <GridItem label="Admin" onPress={goAdmin}>
-                <Feather name="shield" style={SettingButtonStyles.icon} />
+                <Feather name="shield" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
               </GridItem>
             ) : (
               <GridItem label="Feedback" onPress={goFeedback}>
-                <Feather name="message-square" style={SettingButtonStyles.icon} />
+                <Feather name="message-square" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
               </GridItem>
             )}
             <GridItem label="Change password/username" onPress={goChangeLogin}>
-              <Feather name="lock" style={SettingButtonStyles.icon} />
+              <Feather name="lock" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
             </GridItem>
             {/* Log Out removed from Settings per BUG-12 — kept only in Account Profile */}
           </View>

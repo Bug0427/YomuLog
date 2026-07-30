@@ -10,7 +10,7 @@ export default function Header() {
     return (
         <View style={[GeneralStyles.section, { backgroundColor: theme.bg }]}>
         <View style={[GeneralStyles.header, { backgroundColor: theme.bg }]}>
-            <Text style={GeneralStyles.title}>YomuLog</Text>
+            <Text style={[GeneralStyles.title, { color: theme.textSecondary }]}>YomuLog</Text>
             <LoginIcon />
         </View>
         <NavBar />
