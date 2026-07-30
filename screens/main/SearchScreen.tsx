@@ -47,6 +47,7 @@ export default function SearchScreen() {
   const [aiMode, setAiMode] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [sortOrder, setSortOrder] = useState<'relevance' | 'latest' | 'rating'>('relevance');
+  const [refreshing, setRefreshing] = useState(false);
 
   // ── AI enhancer summary ──────────────────────────────────────────
   const [aiSummary, setAiSummary] = useState('');
@@ -145,6 +146,13 @@ export default function SearchScreen() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [searchText, filter, aiMode, sortOrder]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Pull-to-refresh ────────────────────────────────────────────
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchResults(true);
+    setRefreshing(false);
+  }, [fetchResults]);
 
   // ── Map Manga[] → CardItem[] ─────────────────────────────────────
   const cardData: CardItem[] = useMemo(
@@ -299,6 +307,8 @@ export default function SearchScreen() {
         isLoading={loading}
         hasMore={hasMore}
         onLoadMore={() => fetchResults(false)}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
         emptyMessage={
           error
             ? error

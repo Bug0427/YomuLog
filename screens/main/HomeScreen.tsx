@@ -1,6 +1,6 @@
 // screens/main/HomeScreen.tsx
 import React, { useState, useCallback } from 'react';
-import { View, ScrollView, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, ScrollView, Text, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
 import Header from '../../components/layout/Header';
@@ -15,6 +15,7 @@ import { getRecentFavoritesUpdates, MangaUpdate } from '../../services/favorites
 import { fetchMangaList, Manga } from '../../services/mangaAPI';
 import { GENRE_TAG_IDS, GenreTag } from '../../utils/filters';
 import { useTheme } from '../../context/ThemeContext';
+import MascotLoader from '../../components/general/MascotLoader';
 
 // ── Slider configuration ───────────────────────────────────────────
 type SliderConfig =
@@ -56,6 +57,7 @@ export default function HomeScreen() {
   const [sliderDataMap, setSliderDataMap] = useState<SliderDataMap>({});
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
   // ── Load all data ──────────────────────────────────────────────────
   const loadAll = useCallback(async () => {
@@ -101,9 +103,11 @@ export default function HomeScreen() {
   );
 
   // ── Refresh (re-fetch all) ─────────────────────────────────────────
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
     setRefreshKey((k) => k + 1);
-    loadAll();
+    setRefreshing(true);
+    await loadAll();
+    setRefreshing(false);
   }, [loadAll]);
 
   // ── Render ─────────────────────────────────────────────────────────
@@ -116,6 +120,17 @@ export default function HomeScreen() {
         onMomentumScrollEnd={handleScrollEnd}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="transparent"
+            colors={['transparent']}
+            progressViewOffset={20}
+          >
+            <MascotLoader />
+          </RefreshControl>
+        }
       >
         <View style={[GeneralStyles.container, { paddingHorizontal: 12, backgroundColor: theme.bg }]}>
           <Header />
