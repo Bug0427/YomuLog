@@ -1,6 +1,7 @@
 // screens/main/HomeScreen.tsx
 import React, { useState, useCallback } from 'react';
 import { View, ScrollView, Text, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
 import Header from '../../components/layout/Header';
@@ -10,7 +11,7 @@ import CollapsibleSection from '../../components/layout/CollapsibleSection';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
 import Anchor from '../../components/layout/Anchor';
 import { GeneralStyles, CardViewStyles } from '../../styles/global';
-import { colors } from '../../styles/tokens';
+import { colors, spacing } from '../../styles/tokens';
 import { getRecentFavoritesUpdates, MangaUpdate } from '../../services/favoritesService';
 import { fetchMangaList, Manga } from '../../services/mangaAPI';
 import { GENRE_TAG_IDS, GenreTag } from '../../utils/filters';
@@ -30,12 +31,25 @@ const SLIDER_CONFIGS: SliderConfig[] = [
   { title: 'Recommended for You', type: 'personalised' },
   { title: 'Updated',         type: 'order', order: { updatedAt: 'desc' } },
   { title: 'Action',          type: 'genre', genre: 'action' },
+  { title: 'Adventure',       type: 'genre', genre: 'adventure' },
   { title: 'Comedy',          type: 'genre', genre: 'comedy' },
+  { title: 'Drama',           type: 'genre', genre: 'drama' },
   { title: 'Fantasy',         type: 'genre', genre: 'fantasy' },
+  { title: 'Horror',          type: 'genre', genre: 'horror' },
+  { title: 'Mystery',         type: 'genre', genre: 'mystery' },
+  { title: 'Thriller',        type: 'genre', genre: 'thriller' },
   { title: 'Reincarnation',   type: 'genre', genre: 'isekai' },
   { title: 'Romance',         type: 'genre', genre: 'romance' },
   { title: 'Si-Fi',           type: 'genre', genre: 'sci-fi' },
   { title: 'Slice of Life',   type: 'genre', genre: 'slice-of-life' },
+  { title: 'Shounen',         type: 'genre', genre: 'shounen' },
+  { title: 'Shoujo',          type: 'genre', genre: 'shoujo' },
+  { title: 'Seinen',          type: 'genre', genre: 'seinen' },
+  { title: 'Josei',           type: 'genre', genre: 'josei' },
+  { title: 'Sports',          type: 'genre', genre: 'sports' },
+  { title: 'Supernatural',    type: 'genre', genre: 'supernatural' },
+  { title: 'Psychological',   type: 'genre', genre: 'psychological' },
+  { title: 'Historical',      type: 'genre', genre: 'historical' },
 ];
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -141,21 +155,48 @@ export default function HomeScreen() {
         </View>
 
         {/* Recently Updated collapsible section */}
-        {recentUpdates.length > 0 && (
-          <CollapsibleSection title="Recently Updated" badgeCount={recentUpdates.length}>
-            {recentUpdates.slice(0, 5).map((u) => (
-              <Pressable
-                key={u.mangaId}
-                onPress={() => navigation.navigate('MangaInfoScreen', { mangaId: u.mangaId })}
-                style={[CardViewStyles.rowCard, { marginBottom: 6, alignItems: 'center' }]}
-              >
-                <View style={{ width: 40, height: 56, backgroundColor: colors.sand, borderRadius: 4 }} />
-                <View style={[CardViewStyles.rowTextWrap, { flex: 1 }]}>
-                  <Text style={CardViewStyles.rowTitle} numberOfLines={1}>{u.mangaTitle}</Text>
-                  <Text style={{ fontSize: 11, color: colors.mutedPlum, marginTop: 2 }}>Ch. {u.chapterNumber}</Text>
-                </View>
-              </Pressable>
-            ))}
+        {!loading && (
+          <CollapsibleSection
+            title="Recently Updated"
+            badgeCount={recentUpdates.length > 0 ? recentUpdates.length : undefined}
+            defaultExpanded={recentUpdates.length > 0}
+          >
+            {recentUpdates.length > 0 ? (
+              recentUpdates.slice(0, 5).map((u) => (
+                <Pressable
+                  key={u.mangaId}
+                  onPress={() => navigation.navigate('MangaInfoScreen', { mangaId: u.mangaId })}
+                  style={[CardViewStyles.rowCard, { marginBottom: 6, alignItems: 'center' }]}
+                >
+                  <View style={{ width: 40, height: 56, backgroundColor: colors.sand, borderRadius: 4 }} />
+                  <View style={[CardViewStyles.rowTextWrap, { flex: 1 }]}>
+                    <Text style={CardViewStyles.rowTitle} numberOfLines={1}>{u.mangaTitle}</Text>
+                    <Text style={{ fontSize: 11, color: colors.mutedPlum, marginTop: 2 }}>Ch. {u.chapterNumber}</Text>
+                  </View>
+                </Pressable>
+              ))
+            ) : (
+              <View style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingVertical: spacing.p20,
+                backgroundColor: colors.sand,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: colors.cocoa,
+                marginBottom: spacing.p8,
+              }}>
+                <MaterialCommunityIcons name="check-circle-outline" size={36} color={colors.plum} />
+                <Text style={{
+                  color: colors.plum,
+                  fontSize: 15,
+                  fontWeight: '700',
+                  marginTop: spacing.p10,
+                }}>
+                  All up to date!
+                </Text>
+              </View>
+            )}
           </CollapsibleSection>
         )}
 
