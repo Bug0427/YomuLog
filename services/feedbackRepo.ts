@@ -13,22 +13,40 @@
 // =============================================================================
 
 // 0) Imports & constants ------------------------------------------------------
-import * as SQLite from 'expo-sqlite';
+import { openDatabase, type IDatabase } from './nativeDB';
 import { makeIdSafe, makeUserIdSafe } from '../utils/idGenerator';
 
 // Dev toggle: set true to clear all tables on app start (useful while iterating)
 const RESET_DB_ON_START = false; // flip to true temporarily when you want a clean slate
 
 // 1) DB open & low-level helpers ---------------------------------------------
-// Use the new typed API (SDK 51+): openDatabaseSync provides runAsync/execAsync helpers
-export const db = SQLite.openDatabaseSync('yomulog.db');
+// Lazy-init: call getDb() to obtain the platform-safe database instance.
+let _db: IDatabase | null = null;
+async function getDb(): Promise<IDatabase> {
+  if (!_db) _db = await openDatabase('yomulog.db');
+  return _db;
+}
 
 // Convenience wrapper – keep signature compatible with previous calls
-export const runAsync = (sql: string, params: any[] = []) => db.runAsync(sql, params);
+export const runAsync = async (sql: string, params: any[] = []) => {
+  const db = await getDb();
+  return db.runAsync(sql, params);
+};
+
+// Typed query helpers (also platform-safe)
+export const queryAll = async <T = any>(sql: string, params: any[] = []) => {
+  const db = await getDb();
+  return db.getAllAsync<T>(sql, params);
+};
+export const queryFirst = async <T = any>(sql: string, params: any[] = []) => {
+  const db = await getDb();
+  return db.getFirstAsync<T>(sql, params);
+};
 
 // 2) DB maintenance (reset, hard delete) -------------------------------------
 // Wipe all application tables (children first), then VACUUM to reclaim space
 export async function resetDb() {
+  const db = await getDb();
   await db.execAsync('BEGIN;');
   try {
     await db.execAsync('DELETE FROM ratings;');
@@ -47,7 +65,9 @@ export async function resetDb() {
 // Hard reset: delete the DB file completely; fallback to soft reset if API not available
 export async function deleteDbFile(dbName: string = 'yomulog.db') {
   try {
-    const maybeDelete = (SQLite as any)?.deleteDatabaseAsync;
+    const db = await getDb();
+    // Try native deleteDatabaseAsync if available (expo-sqlite specific)
+    const maybeDelete = (db as any)?.deleteDatabaseAsync;
     if (typeof maybeDelete === 'function') {
       await maybeDelete(dbName);
       console.log(`🧨 Deleted DB file: ${dbName}`);
@@ -69,6 +89,7 @@ export const deleteDatabase = deleteDbFile;
 
 // 3) Schema initialization & migrations --------------------------------------
 export async function initDb() {
+  const db = await getDb();
   // Optional: ensure pragmas you care about
   await db.execAsync('PRAGMA foreign_keys = ON;');
 
@@ -187,9 +208,8 @@ export async function seedDefaultUsers() {
     `INSERT OR IGNORE INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL) VALUES (?,?,?,?,?)`,
     ['mainAccount', 'buggy', 'regular@yomulog.test', 'P@22w0rd', 3]
   );
-  const rs = await runAsync(`SELECT ACCOUNTID, USERNM, EMAIL, SECURITYLVL FROM users ORDER BY USERNM`);
-  // @ts-ignore
-  console.log('🌱 After seed, users:', rs?.rows?._array ?? []);
+  const users = await queryAll(`SELECT ACCOUNTID, USERNM, EMAIL, SECURITYLVL FROM users ORDER BY USERNM`);
+  console.log('🌱 After seed, users:', users);
 }
 // 5) Inserts (reports, comments, ratings) ------------------------------------
 export async function insertReport(row: {
@@ -201,7 +221,7 @@ export async function insertReport(row: {
   const sid = await makeIdSafe('RPT'); // unique row id
   const capped = (row.comments ?? '').slice(0, 360);
 
-  await db.runAsync(
+  await runAsync(
     `INSERT INTO reports (SID, ACCOUNTID, MAINCAT, SUBCAT, COMMENTS)
      VALUES (?, ?, ?, ?, ?)`,
     [sid, row.accountId, row.mainCat, row.subCat, capped]
@@ -216,7 +236,7 @@ export async function insertComment(row: {
 }) {
   const sid = await makeIdSafe('CMT');
   const capped = (row.comments ?? '').slice(0, 160);
-  await db.runAsync(
+  await runAsync(
     `INSERT INTO comments (SID, ACCOUNTID, COMMENTS)
      VALUES (?, ?, ?)`,
     [sid, row.accountId, capped]
@@ -229,7 +249,7 @@ export async function insertRating(row: {
   rating: number; // 1..5
 }) {
   const sid = await makeIdSafe('RAT');
-  await db.runAsync(
+  await runAsync(
     `INSERT INTO ratings (SID, ACCOUNTID, RATING)
      VALUES (?, ?, ?)`,
     [sid, row.accountId, row.rating]
@@ -243,7 +263,7 @@ export async function insertReview(row: {
 }) {
   const sid = await makeIdSafe('REV');
   const capped = (row.comments ?? '').slice(0, 360);
-  await db.runAsync(
+  await runAsync(
     `INSERT INTO comments (SID, ACCOUNTID, COMMENTS)
      VALUES (?, ?, ?)`,
     [sid, row.accountId, capped]
@@ -275,7 +295,7 @@ export async function CreateNewUser(row: {
   // use username + level to generate a safe unique ID
   const accountId = await makeUserIdSafe(row.securityLvl, row.userNm);
 
-  await db.runAsync(
+  await runAsync(
     `INSERT INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL)
       VALUES (?, ?, ?, ?, ?)`,
     [accountId, row.userNm, row.email, row.pswd, row.securityLvl]
@@ -286,7 +306,7 @@ export async function CreateNewUser(row: {
 
 
 export async function createUser(row: UserRow) {
-  await db.runAsync(
+  await runAsync(
     `INSERT INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL)
     VALUES (?, ?, ?, ?, ?)`,
     [row.accountId, row.userNm, row.email, row.pswd, row.securityLvl]
@@ -296,13 +316,14 @@ export async function createUser(row: UserRow) {
 
 export async function upsertUser(row: UserRow) {
   // Try update first; if no row changed, insert
+  const db = await getDb();
   const res = await db.runAsync(
     `UPDATE users SET USERNM = ?, EMAIL = ?, PSWD = ?, SECURITYLVL = ? WHERE ACCOUNTID = ?`,
     [row.userNm, row.email, row.pswd, row.securityLvl, row.accountId]
   );
   // @ts-ignore rowsAffected exists on result for runAsync
   if (!res?.rowsAffected) {
-    await db.runAsync(
+    await runAsync(
       `INSERT INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL) VALUES (?,?,?,?,?)`,
       [row.accountId, row.userNm, row.email, row.pswd, row.securityLvl]
     );
@@ -311,33 +332,29 @@ export async function upsertUser(row: UserRow) {
 }
 
 export async function getUserByUsername(userNm: string) {
-  return await db.getFirstAsync(
+  return await queryFirst(
     `SELECT ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL FROM users WHERE USERNM = ? LIMIT 1`,
     [userNm]
   );
 }
 
 export async function setUserSecurityLevel(accountId: string, level: SecurityLevel) {
-  await db.runAsync(
+  await runAsync(
     `UPDATE users SET SECURITYLVL = ? WHERE ACCOUNTID = ?`,
     [level, accountId]
   );
 }
 
 export async function verifyUser(userNm: string, pswd: string) {
-  return await db.getFirstAsync(
+  return await queryFirst(
     `SELECT ACCOUNTID, USERNM, SECURITYLVL FROM users WHERE USERNM = ? AND PSWD = ? LIMIT 1`,
     [userNm, pswd]
   );
 }
 
 export async function updateProfileIcon(accountId: string, iconId: string) {
-  await db.runAsync(
+  await runAsync(
     `UPDATE users SET PROFILEICON = ? WHERE ACCOUNTID = ?`,
     [iconId, accountId]
   );
 }
-
-// 7) Typed query helpers ------------------------------------------------------
-export const queryAll = <T = any>(sql: string, params: any[] = []) => db.getAllAsync<T>(sql, params);
-export const queryFirst = <T = any>(sql: string, params: any[] = []) => db.getFirstAsync<T>(sql, params);
