@@ -1,6 +1,6 @@
 // screens/main/SearchScreen.tsx
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Modal, TouchableWithoutFeedback } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
 import Header from '../../components/layout/Header';
@@ -46,8 +46,10 @@ export default function SearchScreen() {
   const [searchText, setSearchText] = useState('');
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER_STATE);
   const [aiMode, setAiMode] = useState(false);
-  const [showFilter, setShowFilter] = useState(false);
+  const [showSortModal, setShowSortModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [sortOrder, setSortOrder] = useState<'relevance' | 'latest' | 'rating'>('relevance');
+  const [excludedGenres, setExcludedGenres] = useState<Set<GenreTag>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
 
   // ── AI enhancer summary ──────────────────────────────────────────
@@ -109,10 +111,15 @@ export default function SearchScreen() {
         const manualTagIds = filter.genres
           .map((g) => GENRE_TAG_IDS[g])
           .filter(Boolean);
-        // Union: keep AI-detected + add manual selections
         const existing = new Set(params.includedTags ?? []);
         manualTagIds.forEach((id) => existing.add(id));
         params.includedTags = Array.from(existing);
+      }
+      // Add excluded genre tag IDs
+      if (excludedGenres.size > 0) {
+        params.excludedTags = Array.from(excludedGenres)
+          .map((g) => GENRE_TAG_IDS[g])
+          .filter(Boolean);
       }
       if (filter.pubStatus) params.status = filter.pubStatus;
       if (filter.contentRating) {
@@ -125,7 +132,7 @@ export default function SearchScreen() {
 
       return params;
     },
-    [searchText, filter, aiMode, sortOrder]
+    [searchText, filter, aiMode, sortOrder, excludedGenres]
   );
 
   // ── Fetch from MangaDex ──────────────────────────────────────────
@@ -186,17 +193,30 @@ export default function SearchScreen() {
     [results]
   );
 
-  // ── Genre slider handlers ────────────────────────────────────────
+  // ── Genre three-state toggle: unselected → selected → excluded → unselected ──
   const handleGenrePress = useCallback((displayLabel: string) => {
     const tag = GENRE_TAGS.find((t) => genreLabel(t) === displayLabel);
     if (!tag) return;
-    setFilter((prev) => {
-      const next = prev.genres.includes(tag)
-        ? prev.genres.filter((g) => g !== tag)
-        : [...prev.genres, tag];
-      return { ...prev, genres: next };
-    });
-  }, []);
+
+    const isSelected = filter.genres.includes(tag);
+    const isExcluded = excludedGenres.has(tag);
+
+    if (!isSelected && !isExcluded) {
+      // 1st tap: unselected → selected
+      setFilter((prev) => ({ ...prev, genres: [...prev.genres, tag] }));
+    } else if (isSelected && !isExcluded) {
+      // 2nd tap: selected → excluded
+      setFilter((prev) => ({ ...prev, genres: prev.genres.filter((g) => g !== tag) }));
+      setExcludedGenres((prev) => new Set(prev).add(tag));
+    } else {
+      // 3rd tap: excluded → unselected
+      setExcludedGenres((prev) => {
+        const next = new Set(prev);
+        next.delete(tag);
+        return next;
+      });
+    }
+  }, [filter.genres, excludedGenres]);
 
   const genreSliderItems = useMemo(() => GENRE_TAGS.map((t) => genreLabel(t)), []);
 
@@ -208,12 +228,8 @@ export default function SearchScreen() {
         value={searchText}
         onChangeText={setSearchText}
         onSearchPress={() => fetchResults(true)}
-        onFilterPress={() => setShowFilter((prev) => !prev)}
-        onOpenOrder={() => {
-          const orders: Array<'relevance' | 'latest' | 'rating'> = ['relevance', 'latest', 'rating'];
-          const idx = orders.indexOf(sortOrder);
-          setSortOrder(orders[(idx + 1) % orders.length]);
-        }}
+        onFilterPress={() => setShowFilterModal(true)}
+        onOpenOrder={() => setShowSortModal(true)}
         placeholder="Search items..."
       />
       {/* AI mode toggle */}
@@ -265,7 +281,7 @@ export default function SearchScreen() {
         </View>
       ) : null}
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
-        <GenreSlider genres={genreSliderItems} onGenrePress={handleGenrePress} selectedGenres={filter.genres.map(genreLabel)} />
+        <GenreSlider genres={genreSliderItems} onGenrePress={handleGenrePress} selectedGenres={filter.genres.map(genreLabel)} excludedGenres={Array.from(excludedGenres).map(genreLabel)} />
       </View>
       {recentUpdates.length > 0 && (
         <CollapsibleSection title="Recently Updated" badgeCount={recentUpdates.length}>
@@ -290,14 +306,70 @@ export default function SearchScreen() {
           ))}
         </CollapsibleSection>
       )}
-      {showFilter && (
-        <Filter
-          filter={filter}
-          onChange={setFilter}
-          suggestedGenres={visibleGenres}
-          onRemoveGenre={handleRemoveGenre}
-        />
+      {showFilterModal && (
+        <Modal
+          visible={showFilterModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowFilterModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setShowFilterModal(false)}>
+            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={{ backgroundColor: colors.lavender, borderRadius: 12, padding: 16, width: '90%', maxHeight: '80%' }}>
+                  <Filter
+                    filter={filter}
+                    onChange={setFilter}
+                    suggestedGenres={visibleGenres}
+                    onRemoveGenre={handleRemoveGenre}
+                  />
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
       )}
+
+      {/* Sort order modal */}
+      <Modal
+        visible={showSortModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSortModal(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setShowSortModal(false)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={{ backgroundColor: colors.lavender, borderRadius: 12, padding: 16, width: '80%' }}>
+                <Text style={[GeneralStyles.h1, { marginBottom: 12 }]}>Sort Order</Text>
+                {(['relevance', 'latest', 'rating'] as const).map((opt) => (
+                  <Pressable
+                    key={opt}
+                    onPress={() => { setSortOrder(opt); setShowSortModal(false); }}
+                    style={{
+                      paddingVertical: 12,
+                      paddingHorizontal: 16,
+                      marginBottom: 4,
+                      borderRadius: 8,
+                      backgroundColor: sortOrder === opt ? colors.plum : colors.sand,
+                      borderWidth: 1,
+                      borderColor: colors.cocoa,
+                    }}
+                  >
+                    <Text style={{
+                      color: sortOrder === opt ? colors.creamWhite : colors.plum,
+                      fontWeight: sortOrder === opt ? '700' : '500',
+                      fontSize: 14,
+                    }}>
+                      {opt === 'relevance' ? 'Relevance' : opt === 'latest' ? 'Latest Updates' : 'Highest Rated'}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
         <Text style={GeneralStyles.h1}>
           {hasActiveFilters(filter) || searchText.trim() ? 'Filtered Results' : 'Results'}
