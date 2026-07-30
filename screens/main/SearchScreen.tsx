@@ -11,6 +11,7 @@ import Filter from '../../components/layout/Filter';
 import CollapsibleSection from '../../components/layout/CollapsibleSection';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
 import Anchor from '../../components/layout/Anchor';
+import SortModal, { SortOption } from '../../components/general/SortModal';
 import { GeneralStyles, CardViewStyles } from '../../styles/global';
 import { colors } from '../../styles/tokens';
 import { getRecentFavoritesUpdates, MangaUpdate } from '../../services/favoritesService';
@@ -35,6 +36,14 @@ function genreLabel(tag: GenreTag): string {
   return tag.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
+const SEARCH_SORT_OPTIONS: SortOption[] = [
+  { key: 'relevance', label: 'Relevance' },
+  { key: 'latest', label: 'Latest Updates' },
+  { key: 'rating', label: 'Highest Rated' },
+  { key: 'title_asc', label: 'A to Z' },
+  { key: 'title_desc', label: 'Z to A' },
+];
+
 export default function SearchScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -48,7 +57,7 @@ export default function SearchScreen() {
   const [aiMode, setAiMode] = useState(false);
   const [showSortModal, setShowSortModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
-  const [sortOrder, setSortOrder] = useState<'relevance' | 'latest' | 'rating'>('relevance');
+  const [sortOrder, setSortOrder] = useState<string>('relevance');
   const [excludedGenres, setExcludedGenres] = useState<Set<GenreTag>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
 
@@ -128,6 +137,8 @@ export default function SearchScreen() {
       if (sortOrder !== 'relevance') {
         if (sortOrder === 'latest') params.order = { updatedAt: 'desc' };
         else if (sortOrder === 'rating') params.order = { rating: 'desc' };
+        else if (sortOrder === 'title_asc') params.order = { title: 'asc' };
+        else if (sortOrder === 'title_desc') params.order = { title: 'desc' };
       }
 
       return params;
@@ -342,46 +353,14 @@ export default function SearchScreen() {
         </Modal>
       )}
 
-      {/* Sort order modal */}
-      <Modal
+      {/* Sort order modal — shared SortModal component */}
+      <SortModal
         visible={showSortModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowSortModal(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setShowSortModal(false)}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={{ backgroundColor: colors.lavender, borderRadius: 12, padding: 16, width: '80%' }}>
-                <Text style={[GeneralStyles.h1, { marginBottom: 12 }]}>Sort Order</Text>
-                {(['relevance', 'latest', 'rating'] as const).map((opt) => (
-                  <Pressable
-                    key={opt}
-                    onPress={() => { setSortOrder(opt); setShowSortModal(false); }}
-                    style={{
-                      paddingVertical: 12,
-                      paddingHorizontal: 16,
-                      marginBottom: 4,
-                      borderRadius: 8,
-                      backgroundColor: sortOrder === opt ? colors.plum : colors.sand,
-                      borderWidth: 1,
-                      borderColor: colors.cocoa,
-                    }}
-                  >
-                    <Text style={{
-                      color: sortOrder === opt ? colors.creamWhite : colors.plum,
-                      fontWeight: sortOrder === opt ? '700' : '500',
-                      fontSize: 14,
-                    }}>
-                      {opt === 'relevance' ? 'Relevance' : opt === 'latest' ? 'Latest Updates' : 'Highest Rated'}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+        options={SEARCH_SORT_OPTIONS}
+        selectedKey={sortOrder}
+        onSelect={setSortOrder}
+        onClose={() => setShowSortModal(false)}
+      />
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
         <Text style={GeneralStyles.h1}>
           {hasActiveFilters(filter) || searchText.trim() ? 'Filtered Results' : 'Results'}

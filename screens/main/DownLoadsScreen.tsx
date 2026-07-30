@@ -8,6 +8,7 @@ import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
 import Header from '../../components/layout/Header';
 import SearchBar from '../../components/layout/SearchBar';
+import SortModal, { SortOption } from '../../components/general/SortModal';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
 import Anchor from '../../components/layout/Anchor';
 import { GeneralStyles, CardViewStyles } from '../../styles/global';
@@ -25,6 +26,13 @@ import {
   clearCompleted,
   getDownloadStats,
 } from '../../services/downloadManager';
+
+const DOWNLOAD_SORT_OPTIONS: SortOption[] = [
+  { key: 'newest', label: 'Newest First' },
+  { key: 'oldest', label: 'Oldest First' },
+  { key: 'title_asc', label: 'A to Z' },
+  { key: 'title_desc', label: 'Z to A' },
+];
 
 // ─── Stat box component ────────────────────────────────────────────
 
@@ -148,6 +156,8 @@ export default function DownLoadsScreen() {
   const [queue, setQueue] = useState<DownloadJob[]>([]);
   const [stats, setStats] = useState({ total: 0, completed: 0, failed: 0, pending: 0, downloading: 0 });
   const [processing, setProcessing] = useState(false);
+  const [showSortModal, setShowSortModal] = useState(false);
+  const [sortOrder, setSortOrder] = useState<string>('newest');
 
   const refresh = useCallback(async () => {
     const [dl, q, s] = await Promise.all([
@@ -155,11 +165,20 @@ export default function DownLoadsScreen() {
       getDownloadQueue(),
       getDownloadStats(),
     ]);
-    dl.sort((a, b) => b.downloadedAt.localeCompare(a.downloadedAt));
+    // Sort by selected order
+    if (sortOrder === 'newest') {
+      dl.sort((a, b) => b.downloadedAt.localeCompare(a.downloadedAt));
+    } else if (sortOrder === 'oldest') {
+      dl.sort((a, b) => a.downloadedAt.localeCompare(b.downloadedAt));
+    } else if (sortOrder === 'title_asc') {
+      dl.sort((a, b) => a.mangaTitle.localeCompare(b.mangaTitle));
+    } else if (sortOrder === 'title_desc') {
+      dl.sort((a, b) => b.mangaTitle.localeCompare(a.mangaTitle));
+    }
     setDownloaded(dl);
     setQueue(q);
     setStats(s);
-  }, []);
+  }, [sortOrder]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -221,7 +240,7 @@ export default function DownLoadsScreen() {
         ListHeaderComponent={
           <>
             <Header />
-            <SearchBar />
+            <SearchBar onOpenOrder={() => setShowSortModal(true)} />
             <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
               <Text style={GeneralStyles.h1}>Downloads</Text>
             </View>
@@ -337,6 +356,15 @@ export default function DownLoadsScreen() {
         }
       />
       <Anchor scrollRef={scrollRef} isScrolling={isScrolling} />
+
+      {/* ── Sort order modal ──────────────────────────────────────── */}
+      <SortModal
+        visible={showSortModal}
+        options={DOWNLOAD_SORT_OPTIONS}
+        selectedKey={sortOrder}
+        onSelect={setSortOrder}
+        onClose={() => setShowSortModal(false)}
+      />
     </View>
   );
 }
