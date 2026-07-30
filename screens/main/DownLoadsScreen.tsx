@@ -2,12 +2,13 @@
 // Displays downloaded chapters and download queue with progress.
 // Tapping a downloaded chapter navigates to ReaderScreen.
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, FlatList } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, Pressable, FlatList, Modal, TouchableWithoutFeedback } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
 import Header from '../../components/layout/Header';
 import SearchBar from '../../components/layout/SearchBar';
+import Filter from '../../components/layout/Filter';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
 import Anchor from '../../components/layout/Anchor';
 import { GeneralStyles, CardViewStyles } from '../../styles/global';
@@ -25,6 +26,9 @@ import {
   clearCompleted,
   getDownloadStats,
 } from '../../services/downloadManager';
+
+import { FilterState, DEFAULT_FILTER_STATE, hasActiveFilters } from '../../utils/filters';
+import { getFavorites, BookmarkedManga } from '../../services/favoritesService';
 
 // ─── Stat box component ────────────────────────────────────────────
 
@@ -146,22 +150,34 @@ export default function DownLoadsScreen() {
 
   const [downloaded, setDownloaded] = useState<DownloadedChapter[]>([]);
   const [queue, setQueue] = useState<DownloadJob[]>([]);
+  const [favorites, setFavorites] = useState<BookmarkedManga[]>([]);
+  const [filterState, setFilterState] = useState<FilterState>(DEFAULT_FILTER_STATE);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [stats, setStats] = useState({ total: 0, completed: 0, failed: 0, pending: 0, downloading: 0 });
   const [processing, setProcessing] = useState(false);
 
   const refresh = useCallback(async () => {
-    const [dl, q, s] = await Promise.all([
+    const [dl, q, s, favs] = await Promise.all([
       getDownloadedChapters(),
       getDownloadQueue(),
       getDownloadStats(),
+      getFavorites(),
     ]);
     dl.sort((a, b) => b.downloadedAt.localeCompare(a.downloadedAt));
     setDownloaded(dl);
     setQueue(q);
+    setFavorites(favs);
     setStats(s);
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
+
+  // ── Filter downloaded chapters by reading status (cross-reference favorites) ──
+  const filteredDownloaded = useMemo(() => {
+    if (!filterState.readingStatus) return downloaded;
+    const favMap = new Map(favorites.map((f) => [f.mangaId, f.readingStatus]));
+    return downloaded.filter((ch) => favMap.get(ch.mangaId) === filterState.readingStatus);
+  }, [downloaded, favorites, filterState.readingStatus]);
 
   const handleProcessAll = useCallback(async () => {
     setProcessing(true);
@@ -212,7 +228,7 @@ export default function DownLoadsScreen() {
     <View style={[GeneralStyles.section, { backgroundColor: 'transparent' }]}>
       <FlatList
         ref={scrollRef as any}
-        data={downloaded}
+        data={filteredDownloaded}
         keyExtractor={(item) => item.chapterId}
         renderItem={({ item }) => <DownloadedRow item={item} onPress={handleChapterPress} />}
         onScrollBeginDrag={handleScrollStart}
@@ -221,7 +237,7 @@ export default function DownLoadsScreen() {
         ListHeaderComponent={
           <>
             <Header />
-            <SearchBar />
+            <SearchBar onFilterPress={() => setShowFilterModal(true)} />
             <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
               <Text style={GeneralStyles.h1}>Downloads</Text>
             </View>
@@ -337,6 +353,41 @@ export default function DownLoadsScreen() {
         }
       />
       <Anchor scrollRef={scrollRef} isScrolling={isScrolling} />
+
+      {/* ── Shared Filter Modal ────────────────────────────────── */}
+      <Modal
+        visible={showFilterModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFilterModal(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setShowFilterModal(false)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={{
+                backgroundColor: theme.bgCard,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: theme.border,
+                width: '100%',
+                maxWidth: 360,
+                overflow: 'hidden',
+              }}>
+                <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+                  <Text style={{ fontSize: 18, fontWeight: '800', color: theme.textPrimary, marginBottom: 4, textAlign: 'center' }}>
+                    Filters
+                  </Text>
+                </View>
+                <Filter
+                  filter={filterState}
+                  onChange={setFilterState}
+                  showReadingStatus
+                />
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }

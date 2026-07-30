@@ -9,6 +9,7 @@ import { RootStackParamList } from '../../navigation/navigation';
 // Components
 import Header from '../../components/layout/Header';
 import SearchBar from '../../components/layout/SearchBar';
+import Filter from '../../components/layout/Filter';
 import MangaSlider from '../../components/cardLayouts/MangaSlider';
 import CardView, { ViewMode, CardItem } from '../../components/cardLayouts/CardView';
 import SelectionActionBar from '../../components/layout/SelectionActionBar';
@@ -38,6 +39,9 @@ import { useTheme } from '../../context/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../../styles/tokens';
 
+// Filters
+import { FilterState, DEFAULT_FILTER_STATE, hasActiveFilters } from '../../utils/filters';
+
 export default function LibraryScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -48,7 +52,7 @@ export default function LibraryScreen() {
   // ── Data state ────────────────────────────────────────────────────
   const [favorites, setFavorites] = useState<BookmarkedManga[]>([]);
   const [recentUpdates, setRecentUpdates] = useState<MangaUpdate[]>([]);
-  const [readingFilter, setReadingFilter] = useState<ReadingStatus | null>(null);
+  const [filterState, setFilterState] = useState<FilterState>(DEFAULT_FILTER_STATE);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -192,9 +196,9 @@ export default function LibraryScreen() {
 
   // ── Filter favorites by reading status ─────────────────────────────
   const filteredFavorites = useMemo(() => {
-    if (!readingFilter) return favorites;
-    return favorites.filter((item) => item.readingStatus === readingFilter);
-  }, [favorites, readingFilter]);
+    if (!filterState.readingStatus) return favorites;
+    return favorites.filter((item) => item.readingStatus === filterState.readingStatus);
+  }, [favorites, filterState.readingStatus]);
 
   // ── Map to CardItem[] for CardView ────────────────────────────────
   const cardData: CardItem[] = useMemo(
@@ -220,8 +224,8 @@ export default function LibraryScreen() {
   );
 
   // ── Header content ────────────────────────────────────────────────
-  const filterLabel = readingFilter
-    ? readingFilter.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  const filterLabel = filterState.readingStatus
+    ? filterState.readingStatus.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
     : 'All';
 
   const HeaderContent = (
@@ -230,16 +234,16 @@ export default function LibraryScreen() {
       <SearchBar onFilterPress={() => setShowFilterModal(true)} />
 
       {/* Active filter indicator */}
-      {readingFilter && (
+      {hasActiveFilters(filterState) && (
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, marginTop: 4, gap: 6 }}>
-          <Text style={{ fontSize: 12, color: colors.mutedPlum, fontWeight: '600' }}>
-            Filtered: {filterLabel}
+          <Text style={{ fontSize: 12, color: theme.textSecondary, fontWeight: '600' }}>
+            Filtered: {filterState.readingStatus ? filterLabel : `${filterState.pubStatus.length} statuses`}
           </Text>
           <Pressable
-            onPress={() => setReadingFilter(null)}
-            style={{ paddingHorizontal: 8, paddingVertical: 2, backgroundColor: colors.error, borderRadius: 10 }}
+            onPress={() => setFilterState(DEFAULT_FILTER_STATE)}
+            style={{ paddingHorizontal: 8, paddingVertical: 2, backgroundColor: theme.borderLight, borderRadius: 10 }}
           >
-            <Text style={{ color: colors.creamWhite, fontSize: 10, fontWeight: '700' }}>✕ Clear</Text>
+            <Text style={{ color: theme.textPrimary, fontSize: 10, fontWeight: '700' }}>✕ Clear</Text>
           </Pressable>
         </View>
       )}
@@ -302,7 +306,7 @@ export default function LibraryScreen() {
       )}
       <Anchor scrollRef={listRef} isScrolling={isScrolling} />
 
-      {/* ── Reading Status Filter Modal ─────────────────────────── */}
+      {/* ── Shared Filter Modal ────────────────────────────────── */}
       <Modal
         visible={showFilterModal}
         transparent
@@ -311,44 +315,26 @@ export default function LibraryScreen() {
       >
         <TouchableWithoutFeedback onPress={() => setShowFilterModal(false)}>
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: 32 }}>
-            <TouchableWithoutFeedback>
+            <TouchableWithoutFeedback onPress={() => {}}>
               <View style={{
-                backgroundColor: colors.creamWhite,
+                backgroundColor: theme.bgCard,
                 borderRadius: 16,
-                borderWidth: 2,
-                borderColor: colors.plum,
-                padding: 24,
+                borderWidth: 1,
+                borderColor: theme.border,
                 width: '100%',
-                maxWidth: 320,
+                maxWidth: 360,
+                overflow: 'hidden',
               }}>
-                <Text style={{ fontSize: 18, fontWeight: '800', color: colors.plum, marginBottom: 16, textAlign: 'center' }}>
-                  Filter by Status
-                </Text>
-                {([{ label: 'All', value: null }, { label: 'Reading', value: 'reading' }, { label: 'Completed', value: 'completed' }, { label: 'On Hold', value: 'on_hold' }, { label: 'Dropped', value: 'dropped' }, { label: 'Plan to Read', value: 'plan_to_read' }] as const).map((opt) => (
-                  <Pressable
-                    key={opt.label}
-                    onPress={() => {
-                      setReadingFilter(opt.value as ReadingStatus | null);
-                      setShowFilterModal(false);
-                    }}
-                    style={{
-                      paddingVertical: 12,
-                      paddingHorizontal: 16,
-                      backgroundColor: readingFilter === opt.value ? colors.plum : 'transparent',
-                      borderRadius: 8,
-                      marginBottom: 4,
-                    }}
-                  >
-                    <Text style={{
-                      fontSize: 15,
-                      fontWeight: readingFilter === opt.value ? '800' : '600',
-                      color: readingFilter === opt.value ? colors.creamWhite : colors.cocoa,
-                      textAlign: 'center',
-                    }}>
-                      {opt.label}
-                    </Text>
-                  </Pressable>
-                ))}
+                <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+                  <Text style={{ fontSize: 18, fontWeight: '800', color: theme.textPrimary, marginBottom: 4, textAlign: 'center' }}>
+                    Filters
+                  </Text>
+                </View>
+                <Filter
+                  filter={filterState}
+                  onChange={setFilterState}
+                  showReadingStatus
+                />
               </View>
             </TouchableWithoutFeedback>
           </View>

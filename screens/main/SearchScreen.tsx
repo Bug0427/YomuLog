@@ -24,7 +24,6 @@ import {
   GENRE_TAG_IDS,
   GenreTag,
 } from '../../utils/filters';
-import { getSuggestedGenres } from '../../services/genreSuggestionService';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -71,25 +70,6 @@ export default function SearchScreen() {
     loadUpdates();
   }, [loadUpdates]);
 
-  // ── Dynamic genre suggestions from reading behaviour ────────────
-  const [suggestedGenres, setSuggestedGenres] = useState<GenreTag[]>([]);
-  const [hiddenGenres, setHiddenGenres] = useState<Set<GenreTag>>(new Set());
-  useEffect(() => {
-    getSuggestedGenres().then((tags) => setSuggestedGenres(tags));
-  }, []);
-
-  /** Effective visible genres: suggested minus user-hidden. */
-  const visibleGenres = suggestedGenres.filter((g) => !hiddenGenres.has(g));
-
-  const handleRemoveGenre = (tag: GenreTag) => {
-    setHiddenGenres((prev) => new Set(prev).add(tag));
-    // Also remove from active filter if currently selected
-    setFilter((prev) => ({
-      ...prev,
-      genres: prev.genres.filter((g) => g !== tag),
-    }));
-  };
-
   // ── Build API params: NLP-enhanced search + manual filter merge ──
   const buildParams = useCallback(
     (pageOffset: number): MangaListParams => {
@@ -121,9 +101,12 @@ export default function SearchScreen() {
           .map((g) => GENRE_TAG_IDS[g])
           .filter(Boolean);
       }
-      if (filter.pubStatus) params.status = filter.pubStatus;
-      if (filter.contentRating) {
-        params.contentRating = [filter.contentRating];
+      if (filter.pubStatus.length > 0) {
+        params.status = [...filter.pubStatus];
+      }
+      if (filter.contentFormat.length > 0) {
+        // MangaDex does not support a direct "format" parameter;
+        // contentFormat filters are applied client-side for now.
       }
       if (sortOrder !== 'relevance') {
         if (sortOrder === 'latest') params.order = { updatedAt: 'desc' };
@@ -328,12 +311,10 @@ export default function SearchScreen() {
           <TouchableWithoutFeedback onPress={() => setShowFilterModal(false)}>
             <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
               <TouchableWithoutFeedback onPress={() => {}}>
-                <View style={{ backgroundColor: colors.lavender, borderRadius: 12, padding: 16, width: '90%', maxHeight: '80%' }}>
+                <View style={{ backgroundColor: theme.bgCard, borderRadius: 12, padding: 0, width: '90%', maxHeight: '80%' }}>
                   <Filter
                     filter={filter}
                     onChange={setFilter}
-                    suggestedGenres={visibleGenres}
-                    onRemoveGenre={handleRemoveGenre}
                   />
                 </View>
               </TouchableWithoutFeedback>

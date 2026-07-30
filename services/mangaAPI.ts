@@ -40,7 +40,7 @@ export async function fetchTags(force?: boolean): Promise<MangaTag[]> {
 
 export function getCachedTags(): MangaTag[] { return tagCache ?? []; }
 
-export type MangaListParams = { limit?: number; offset?: number; title?: string; includedTags?: string[]; excludedTags?: string[]; status?: string; contentRating?: string[]; order?: Record<string, string>; };
+export type MangaListParams = { limit?: number; offset?: number; title?: string; includedTags?: string[]; excludedTags?: string[]; status?: string | string[]; contentRating?: string[]; order?: Record<string, string>; };
 
 export async function fetchMangaList(params: MangaListParams = {}): Promise<Manga[]> {
   const query = new URLSearchParams();
@@ -48,7 +48,10 @@ export async function fetchMangaList(params: MangaListParams = {}): Promise<Mang
   query.set('offset', String(params.offset ?? 0));
   query.set('includes[]', 'cover_art');
   if (params.title) query.set('title', params.title);
-  if (params.status) query.set('status', params.status);
+  if (params.status) {
+    const statuses = Array.isArray(params.status) ? params.status : [params.status];
+    statuses.forEach((s) => query.append('status[]', s));
+  }
   if (params.includedTags?.length) { params.includedTags.forEach((id) => query.append('includedTags[]', id)); query.set('includedTagsMode', 'AND'); }
   if (params.excludedTags?.length) { params.excludedTags.forEach((id) => query.append('excludedTags[]', id)); }
   if (params.contentRating?.length) { params.contentRating.forEach((r) => query.append('contentRating[]', r)); }
