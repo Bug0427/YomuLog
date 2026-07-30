@@ -300,7 +300,7 @@ export default function LibraryScreen() {
 
   // ── Render ────────────────────────────────────────────────────────
   return (
-    <View style={[GeneralStyles.section, { backgroundColor: theme.bg }]}>
+    <View style={[GeneralStyles.container, { backgroundColor: theme.bg }]}>
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg }}>
           <ActivityIndicator size="large" color="#463B54" />

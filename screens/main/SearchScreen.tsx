@@ -381,7 +381,7 @@ export default function SearchScreen() {
 
   // ── Render ───────────────────────────────────────────────────────
   return (
-    <View style={[GeneralStyles.section, { backgroundColor: theme.bg }]}>
+    <View style={[GeneralStyles.container, { backgroundColor: theme.bg }]}>
       <CardView
         listRef={listRef}
         data={cardData}
