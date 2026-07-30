@@ -10,8 +10,8 @@ export function useScrollTracker() {
     }, []);
 
     const handleScrollEnd = useCallback(() => {
-        // Snappy 150ms delay — anchors reappear near-instantly (was 500ms)
-        setTimeout(() => setIsScrolling(false), 150);
+        // Snappy 50ms delay — anchors reappear near-instantly (was 150ms)
+        setTimeout(() => setIsScrolling(false), 50);
     }, []);
 
     return {
