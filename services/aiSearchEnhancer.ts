@@ -178,6 +178,47 @@ const GENRE_KEYWORDS: Record<string, GenreTag> = {
   school: 'slice-of-life',
   college: 'slice-of-life',
   university: 'slice-of-life',
+
+  // ── Character / theme descriptors ─────────────────────────────
+  // Map descriptive phrases to the closest genre tag
+  'female lead': 'shoujo',
+  'female protagonist': 'shoujo',
+  'strong female': 'shoujo',
+  'male lead': 'shounen',
+  'male protagonist': 'shounen',
+  'dark fantasy': 'fantasy',
+  dark: 'horror', // "dark" alone suggests horror
+  feudal: 'historical',
+  japan: 'historical',
+  'feudal japan': 'historical',
+  ninja: 'action',
+  assassin: 'action',
+  'post apocalyptic': 'sci-fi',
+  'post-apocalyptic': 'sci-fi',
+  apocalyptic: 'sci-fi',
+  survival: 'thriller',
+  'battle royale': 'action',
+  'virtual reality': 'sci-fi',
+  vr: 'sci-fi',
+  gaming: 'sci-fi',
+  'video game': 'sci-fi',
+  'video games': 'sci-fi',
+  guild: 'adventure',
+  dungeon: 'adventure',
+  'dungeon crawling': 'adventure',
+  politics: 'drama',
+  political: 'drama',
+  war: 'action',
+  military: 'action',
+  music: 'slice-of-life',
+  cooking: 'slice-of-life',
+  food: 'slice-of-life',
+  healing: 'slice-of-life',
+  wholesome: 'slice-of-life',
+  'found family': 'drama',
+  friendship: 'drama',
+  betrayal: 'drama',
+  revenge: 'action',
 };
 
 // ─── Status keywords ─────────────────────────────────────────────────
@@ -248,7 +289,7 @@ export function parseNaturalLanguageQuery(query: string): ParsedQuery {
   }
 
   // Check if this looks like natural language (multiple words, conversational)
-  const isNaturalLanguage = normalized.split(/\s+/).length >= 4;
+  const isNaturalLanguage = normalized.split(/\s+/).length >= 3;
 
   // If it's a short query, just use it as a title search
   if (!isNaturalLanguage) {

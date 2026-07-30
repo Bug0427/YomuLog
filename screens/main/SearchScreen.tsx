@@ -56,7 +56,7 @@ export default function SearchScreen() {
   // ── Search / filter state ────────────────────────────────────────
   const [searchText, setSearchText] = useState('');
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER_STATE);
-  const [aiMode, setAiMode] = useState(false);
+  const [aiMode, setAiMode] = useState<'auto' | 'on' | 'off'>('auto');
   const [showSortModal, setShowSortModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -83,12 +83,16 @@ export default function SearchScreen() {
     loadUpdates();
   }, [loadUpdates]);
 
+  // ── Effective AI mode — auto-enables for natural language queries (3+ words)
+  const isNaturalLanguage = searchText.trim().split(/\s+/).length >= 3;
+  const effectiveAiMode = aiMode === 'on' || (aiMode === 'auto' && isNaturalLanguage);
+
   // ── Build API params: NLP-enhanced search + manual filter merge ──
   const buildParams = useCallback(
     (pageOffset: number): MangaListParams => {
       let params: MangaListParams = { limit: LIMIT, offset: pageOffset };
 
-      if (aiMode && searchText.trim()) {
+      if (effectiveAiMode && searchText.trim()) {
         // AI enhancer mode: use NLP parser
         const enhanced = enhanceSearch(searchText.trim(), LIMIT, pageOffset);
         params = enhanced.params;
@@ -130,7 +134,7 @@ export default function SearchScreen() {
 
       return params;
     },
-    [searchText, filter, aiMode, sortOrder, excludedGenres]
+    [searchText, filter, effectiveAiMode, sortOrder, excludedGenres]
   );
 
   // ── Fetch from MangaDex ──────────────────────────────────────────
@@ -174,7 +178,7 @@ export default function SearchScreen() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [searchText, filter, aiMode, sortOrder, excludedGenres]);
+  }, [searchText, filter, effectiveAiMode, sortOrder, excludedGenres]);
 
   // ── Pull-to-refresh ────────────────────────────────────────────
   const handleRefresh = useCallback(async () => {
@@ -247,7 +251,11 @@ export default function SearchScreen() {
         <Pressable
           onPress={() => {
             if (!isPremium) { setShowPremiumModal(true); return; }
-            setAiMode((prev) => !prev);
+            setAiMode((prev) => {
+              if (prev === 'auto') return 'on';
+              if (prev === 'on') return 'off';
+              return 'auto';
+            });
           }}
           style={{
             flexDirection: 'row',
@@ -257,23 +265,27 @@ export default function SearchScreen() {
             paddingHorizontal: 12,
             borderRadius: 16,
             borderWidth: 1,
-            borderColor: aiMode ? theme.accent : theme.border,
-            backgroundColor: aiMode ? theme.accent : 'transparent',
+            borderColor: effectiveAiMode ? theme.accent : theme.border,
+            backgroundColor: effectiveAiMode ? theme.accent : 'transparent',
           }}
         >
           <MaterialCommunityIcons
             name="robot"
             size={14}
-            color={aiMode ? theme.textInverse : theme.textMuted}
+            color={effectiveAiMode ? theme.textInverse : theme.textMuted}
           />
           <Text
             style={{
               fontSize: 11,
               fontWeight: '600',
-              color: aiMode ? theme.textInverse : theme.textMuted,
+              color: effectiveAiMode ? theme.textInverse : theme.textMuted,
             }}
           >
-            {aiMode ? 'AI Enhancer ON' : 'AI Enhancer OFF'}
+            {aiMode === 'auto'
+              ? (isNaturalLanguage ? '🤖 AI Auto (detected)' : '🤖 AI Auto (standby)')
+              : aiMode === 'on'
+                ? '🤖 AI Enhancer ON'
+                : 'AI Enhancer OFF'}
           </Text>
         </Pressable>
       </View>
@@ -282,13 +294,13 @@ export default function SearchScreen() {
           style={{
             marginHorizontal: 12,
             marginTop: 6,
-            paddingVertical: 6,
+            paddingVertical: 8,
             paddingHorizontal: 12,
             backgroundColor: colors.deepPlum,
             borderRadius: 8,
           }}
         >
-          <Text style={{ color: colors.paleLavender, fontSize: 12, fontWeight: '600' }}>
+          <Text style={{ color: colors.paleLavender, fontSize: 11, fontWeight: '600' }}>
             🤖 AI understood: {aiSummary}
           </Text>
         </View>
@@ -349,6 +361,11 @@ export default function SearchScreen() {
         onSelect={setSortOrder}
         onClose={() => setShowSortModal(false)}
       />
+      {/* Premium upgrade modal */}
+      <PremiumUpgradeModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+      />
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
         <Text style={GeneralStyles.h1}>
           {hasActiveFilters(filter) || searchText.trim() ? 'Filtered Results' : 'Results'}
@@ -396,11 +413,6 @@ export default function SearchScreen() {
         }
       />
       <Anchor scrollRef={listRef} isScrolling={isScrolling} />
-
-      <PremiumUpgradeModal
-        visible={showPremiumModal}
-        onClose={() => setShowPremiumModal(false)}
-      />
     </View>
   );
 }
