@@ -130,12 +130,23 @@ export async function getMangaFeed(mangaId: string, limit = 100, offset = 0): Pr
   query.set('offset', String(offset));
   query.set('translatedLanguage[]', 'en');
   query.set('order[chapter]', 'desc');
+  // Include all content ratings so erotica/pornographic manga chapters don't come back empty
   query.set('contentRating[]', 'safe');
   query.set('contentRating[]', 'suggestive');
+  query.set('contentRating[]', 'erotica');
+  query.set('contentRating[]', 'pornographic');
   query.set('includes[]', 'scanlation_group');
   try {
     const res = await fetch(`${BASE_URL}/manga/${mangaId}/feed?${query.toString()}`);
+    if (!res.ok) {
+      console.warn(`getMangaFeed HTTP ${res.status} for manga ${mangaId}`);
+      return { data: [], total: 0, limit, offset };
+    }
     const json = await res.json();
+    if (json.result !== 'ok') {
+      console.warn(`getMangaFeed API error for manga ${mangaId}:`, json.errors);
+      return { data: [], total: 0, limit, offset };
+    }
     const data: MangaChapter[] = (json?.data ?? []).map((item: any) => {
       const scanRel = (item.relationships ?? []).find((r: any) => r.type === 'scanlation_group');
       return {
@@ -150,7 +161,10 @@ export async function getMangaFeed(mangaId: string, limit = 100, offset = 0): Pr
       };
     });
     return { data, total: json?.total ?? data.length, limit, offset };
-  } catch { return { data: [], total: 0, limit, offset }; }
+  } catch (err) {
+    console.warn(`getMangaFeed network error for manga ${mangaId}:`, err);
+    return { data: [], total: 0, limit, offset };
+  }
 }
 
 // ─── Similar manga / recommendations ──────────────────────────────
