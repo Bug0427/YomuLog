@@ -26,13 +26,14 @@ const GeneralStyles = StyleSheet.create({
 });
 
 const CardViewStyles = StyleSheet.create({
-    gridCard: {overflow: 'hidden',},
+    gridCard: {overflow: 'hidden', padding: spacing.p3, flexDirection: 'column' as const,},
     gridImage: {flex: 1, ...u.bgSand,},
-    gridTitle: {marginTop: spacing.p6, ...t.label,},
+    gridTitle: {marginTop: spacing.p4, ...t.label, textAlign: 'center' as const,},
     rowCard: {...u.rowCenter, padding: spacing.p10, ...u.bgSand,},
     rowImage: {
-        borderColor: colors.creamWhite, width: 50,
-        backgroundColor: colors.cocoa, height: 70,
+        borderColor: colors.creamWhite,
+        backgroundColor: colors.cocoa,
+        borderRadius: 4,
     },
     rowTextWrap: {...u.full, marginLeft: 12,},
     rowTitle: {...t.body, fontWeight: '700', marginBottom: 2,},
@@ -45,8 +46,8 @@ const CardViewStyles = StyleSheet.create({
     // --- Centralized helpers for CardView
     gridItemFrame: {...u.center},
     gridMedia: {
-        width: '92%', height: '86%', alignItems: 'center',
-        justifyContent: 'center', borderRadius: 8,
+        flex: 1, width: '100%', alignItems: 'center',
+        justifyContent: 'center', borderRadius: 8, overflow: 'hidden',
     },
     mediaFull: { width: '100%', height: '100%' },
     rowMediaBase: { alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
