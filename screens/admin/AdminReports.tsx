@@ -1,26 +1,38 @@
 // screens/admin/AdminReports.tsx
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { View, Text, Pressable, Alert } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import GridView, { Column } from '../../components/adminView/GridView';
 import AdminSearchBar from '../../components/adminView/searchbar';
-import { queryAll } from '../../services/feedbackRepo';
+import { queryAll, runAsync } from '../../services/feedbackRepo';
 import usePagedTable from '../../hooks/admin/UsePagedTable';
-import{AdminSearchBarStyles, GeneralStyles} from '../../styles/global'
-import { u } from '../../styles/tokens'
+import RowEditorModal, { RowEditorField } from '../../components/adminView/RowEditorModal';
+import { AdminSearchBarStyles } from '../../styles/global';
+import { colors } from '../../styles/tokens';
 
 type CategoryType = typeof CATEGORY_OPTIONS[number];
-const CATEGORY_OPTIONS = ['Reported Issues','Reviews','Ratings'] as const;
+const CATEGORY_OPTIONS = ['Reported Issues', 'Reviews', 'Ratings'] as const;
 
 type ReportRow = {
-  sid?: string;          // submission id ("#")
-  id?: string;           // account/user id
+  sid?: string;
+  id?: string;
   username: string;
   category?: string;
   subcategory?: string;
   rating?: number;
   comments?: string;
 };
+
+function toEditorFields(row: ReportRow): RowEditorField[] {
+  const result: RowEditorField[] = [];
+  if (row.sid) result.push({ key: 'sid', label: 'SID', value: row.sid, editable: false });
+  if (row.id) result.push({ key: 'id', label: 'ID', value: row.id, editable: false });
+  if (row.category) result.push({ key: 'category', label: 'Category', value: row.category, editable: false });
+  if (row.subcategory) result.push({ key: 'subcategory', label: 'Sub Category', value: row.subcategory, editable: false });
+  if (row.rating !== undefined) result.push({ key: 'rating', label: 'Rating', value: String(row.rating), editable: false });
+  if (row.comments) result.push({ key: 'comments', label: 'Comments', value: row.comments, editable: false });
+  return result;
+}
 
 export default function AdminReports() {
   const [category, setCategory] = useState<CategoryType | null>(null);
@@ -38,8 +50,13 @@ export default function AdminReports() {
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
   const [priority, setPriority] = useState<string>('');
   const [activeField, setActiveField] = useState<string>('all');
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [detailText, setDetailText] = useState('');
+
+  // ── View-only modal ────────────────────────────────────────────────
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerFields, setViewerFields] = useState<RowEditorField[]>([]);
+
+  // ── Bulk selection ─────────────────────────────────────────────────
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const fields = useMemo(() => {
     if (category === 'Reported Issues') {
@@ -48,44 +65,25 @@ export default function AdminReports() {
         { key: 'id', label: 'ID' },
         { key: 'category', label: 'Main Cat' },
         { key: 'subcategory', label: 'Sub Cat' },
-        // comments are viewed via triple-tap, not a selectable field
       ];
     }
     if (category === 'Reviews') {
-      return [
-        { key: 'sid', label: 'SID' },
-        { key: 'id', label: 'ID' },
-        // comments via triple-tap
-      ];
+      return [{ key: 'sid', label: 'SID' }, { key: 'id', label: 'ID' }];
     }
     if (category === 'Ratings') {
-      return [
-        { key: 'sid', label: 'SID' },
-        { key: 'id', label: 'ID' },
-        { key: 'rating', label: 'Rating' },
-      ];
+      return [{ key: 'sid', label: 'SID' }, { key: 'id', label: 'ID' }, { key: 'rating', label: 'Rating' }];
     }
-    // Default before a category is chosen
-    return [
-      { key: 'sid', label: 'SID' },
-      { key: 'id', label: 'ID' },
-    ];
+    return [{ key: 'sid', label: 'SID' }, { key: 'id', label: 'ID' }];
   }, [category]);
 
   useEffect(() => {
     const allKeys = fields.map(f => f.key);
-    // Default: all filters checked when category/fields change
     setSelectedFields(allKeys);
-    // Default: no organizer selected unless current priority is valid for this category
-    if (!allKeys.includes(priority)) {
-      setPriority('');
-    }
+    if (!allKeys.includes(priority)) setPriority('');
   }, [category, fields]);
 
-  // Dynamic columns depending on category
   const [columns, setColumns] = useState<Column<ReportRow>[]>([]);
 
-  // Set columns when category changes
   useEffect(() => {
     if (category === 'Reported Issues') {
       setColumns([
@@ -93,13 +91,11 @@ export default function AdminReports() {
         { key: 'id', title: 'ID', width: 120, align: 'center' },
         { key: 'category', title: 'Main Cat', width: 160, align: 'center' },
         { key: 'subcategory', title: 'Sub Cat', width: 160, align: 'center' },
-        // comments are shown via triple‑tap, not a column
       ]);
     } else if (category === 'Reviews') {
       setColumns([
         { key: 'sid', title: 'SID', width: 100, align: 'center' },
         { key: 'id', title: 'ID', width: 120, align: 'center' },
-        // comments via triple‑tap
       ]);
     } else if (category === 'Ratings') {
       setColumns([
@@ -112,91 +108,79 @@ export default function AdminReports() {
     }
   }, [category]);
 
-  // Data fetching depending on category & query
-  useEffect(() => {
-    let mounted = true;
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        if (category === 'Reported Issues') {
-          try {
-            const dbRows = await queryAll<{
-              SID: string;
-              ACCOUNTID?: string;
-              MAINCAT: string;
-              SUBCAT: string;
-              COMMENTS?: string;
-            }>(
-              `SELECT SID, ACCOUNTID, MAINCAT, SUBCAT, COMMENTS FROM reports ORDER BY SID DESC`
-            );
-            if (!mounted) return;
-            const mapped: ReportRow[] = (dbRows || []).map((r) => ({
-              sid: (r as any).SID,
-              id: r.ACCOUNTID ?? '',
-              username: '',
-              category: r.MAINCAT,
-              subcategory: r.SUBCAT,
-              comments: r.COMMENTS ?? '',
-            }));
-            setRows(mapped);
-          } catch (err) {
-            setRows([]);
-          }
-        } else if (category === 'Reviews') {
-          try {
-            const dbRows = await queryAll<{
-              SID: string;
-              ACCOUNTID?: string;
-              COMMENTS?: string;
-            }>(
-              `SELECT SID, ACCOUNTID, COMMENTS FROM comments ORDER BY SID DESC`
-            );
-            if (!mounted) return;
-            const mapped: ReportRow[] = (dbRows || []).map((r) => ({
-              sid: r.SID,
-              id: r.ACCOUNTID ?? '',
-              username: '',
-              comments: r.COMMENTS ?? '',
-            }));
-            setRows(mapped);
-          } catch (err) {
-            console.warn('AdminReports Reviews query failed:', err);
-            setRows([]);
-          }
-        } else if (category === 'Ratings') {
-          try {
-            const dbRows = await queryAll<{
-              SID: string;
-              ACCOUNTID?: string;
-              RATING: number;
-            }>(
-              `SELECT SID, ACCOUNTID, RATING FROM ratings ORDER BY SID DESC`
-            );
-            if (!mounted) return;
-            const mapped: ReportRow[] = (dbRows || []).map((r) => ({
-              sid: r.SID,
-              id: r.ACCOUNTID ?? '',
-              username: '',
-              rating: r.RATING,
-            }));
-            setRows(mapped);
-          } catch (err) {
-            console.warn('AdminReports Ratings query failed:', err);
-            setRows([]);
-          }
-        } else {
-          setRows([]);
-        }
-      } finally {
-        if (mounted) setLoading(false);
+  // ── Data fetching ──────────────────────────────────────────────────
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      if (category === 'Reported Issues') {
+        const dbRows = await queryAll<{ SID: string; ACCOUNTID?: string; MAINCAT: string; SUBCAT: string; COMMENTS?: string }>(
+          `SELECT SID, ACCOUNTID, MAINCAT, SUBCAT, COMMENTS FROM reports ORDER BY SID DESC`
+        );
+        setRows((dbRows || []).map((r: any) => ({
+          sid: r.SID, id: r.ACCOUNTID ?? '', username: '', category: r.MAINCAT, subcategory: r.SUBCAT, comments: r.COMMENTS ?? '',
+        })));
+      } else if (category === 'Reviews') {
+        const dbRows = await queryAll<{ SID: string; ACCOUNTID?: string; COMMENTS?: string }>(
+          `SELECT SID, ACCOUNTID, COMMENTS FROM comments ORDER BY SID DESC`
+        );
+        setRows((dbRows || []).map((r: any) => ({
+          sid: r.SID, id: r.ACCOUNTID ?? '', username: '', comments: r.COMMENTS ?? '',
+        })));
+      } else if (category === 'Ratings') {
+        const dbRows = await queryAll<{ SID: string; ACCOUNTID?: string; RATING: number }>(
+          `SELECT SID, ACCOUNTID, RATING FROM ratings ORDER BY SID DESC`
+        );
+        setRows((dbRows || []).map((r: any) => ({
+          sid: r.SID, id: r.ACCOUNTID ?? '', username: '', rating: r.RATING,
+        })));
+      } else {
+        setRows([]);
       }
-    };
-    if (category) fetchData();
-    else setRows([]);
-    return () => { mounted = false; };
-  }, [category, query]);
+    } catch (e) { console.warn('Reports fetch error:', e); setRows([]); }
+    finally { setLoading(false); }
+  }, [category]);
 
-  // Client-side paging (sorting preserved by SQL, but we keep a stable key extractor)
+  useEffect(() => { if (category) fetchData(); else setRows([]); }, [category, fetchData]);
+
+  // ── Long-press → view-only modal ──────────────────────────────────
+  const handleRowLongPress = useCallback((row: ReportRow) => {
+    setViewerFields(toEditorFields(row));
+    setViewerVisible(true);
+  }, []);
+
+  // ── Bulk selection / delete ──────────────────────────────────────
+  const handleToggleSelect = useCallback((item: ReportRow) => {
+    const id = item.sid ?? item.id ?? '';
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleBulkDelete = useCallback(() => {
+    if (selectedIds.size === 0) return;
+    Alert.alert('Confirm Bulk Delete', `Permanently delete ${selectedIds.size} selected records?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: `Delete ${selectedIds.size}`,
+        style: 'destructive',
+        onPress: async () => {
+          const ids = Array.from(selectedIds);
+          const placeholders = ids.map(() => '?').join(',');
+          const tableMap: Record<string, string> = { 'Reported Issues': 'reports', Reviews: 'comments', Ratings: 'ratings' };
+          const table = tableMap[category ?? ''] ?? '';
+          if (!table) return;
+          try {
+            await runAsync(`DELETE FROM ${table} WHERE SID IN (${placeholders})`, ids);
+            setSelectedIds(new Set());
+            await fetchData();
+          } catch (e) { console.error('Bulk delete failed:', e); }
+        },
+      },
+    ]);
+  }, [selectedIds, category, fetchData]);
+
   const { rows: pageRows, onEndReached, keyExtractor } = usePagedTable<ReportRow>(rows, {
     pageSize: 50,
     filter: (r: ReportRow) => {
@@ -204,13 +188,12 @@ export default function AdminReports() {
       if (!q) return true;
       const keys = activeField === 'all' ? selectedFields : [activeField];
       for (const key of keys) {
-        const v = String((r as any)[key] ?? '').toLowerCase();
-        if (v.includes(q)) return true;
+        if (String((r as any)[key] ?? '').toLowerCase().includes(q)) return true;
       }
       return false;
     },
     sortCompare: (a: ReportRow, b: ReportRow) => {
-      if (!priority) return 0; // no organizer selected: keep order
+      if (!priority) return 0;
       const k = priority as keyof ReportRow;
       const av = (a[k] ?? '') as any;
       const bv = (b[k] ?? '') as any;
@@ -221,7 +204,7 @@ export default function AdminReports() {
   });
 
   let visibleColumns: Column<ReportRow>[] = columns.filter(c => selectedFields.includes(String(c.key)));
-  if (visibleColumns.length === 0) visibleColumns = columns; // fallback so user can recover
+  if (visibleColumns.length === 0) visibleColumns = columns;
 
   return (
     <View style={[{ flex: 1 }]}>
@@ -236,58 +219,59 @@ export default function AdminReports() {
         activeField={activeField}
         onChangeActiveField={setActiveField}
       />
+
       {/* Category Picker Row */}
-      <View style={{ marginHorizontal: 24, marginTop: 12, marginBottom: 8, zIndex: 500, borderRadius: 0 }}>
+      <View style={{ marginHorizontal: 24, marginTop: 12, marginBottom: 8, zIndex: 500 }}>
         <DropDownPicker
-          open={catOpen}
-          value={catValue}
-          items={catItems}
-          setOpen={setCatOpen}
-          setValue={setCatValue as any}
-          setItems={setCatItems}
-          placeholder="Select an option"
-          searchable={false}
-          listMode="SCROLLVIEW"
-          zIndex={500}
-          zIndexInverse={400}
-          // Style to match your search bar colors
-          style={[AdminSearchBarStyles.dropdown, { minHeight: 36,}]}
+          open={catOpen} value={catValue} items={catItems} setOpen={setCatOpen}
+          setValue={setCatValue as any} setItems={setCatItems}
+          placeholder="Select an option" searchable={false} listMode="SCROLLVIEW"
+          zIndex={500} zIndexInverse={400} closeAfterSelecting
+          style={[AdminSearchBarStyles.dropdown, { minHeight: 36 }]}
           dropDownContainerStyle={AdminSearchBarStyles.dropdown}
           textStyle={{ color: '#412d5cff', fontWeight: '600' }}
           placeholderStyle={{ color: '#595360' }}
-          selectedItemLabelStyle={{ fontWeight: '900', }}
-          closeAfterSelecting
+          selectedItemLabelStyle={{ fontWeight: '900' }}
         />
       </View>
-        <GridView<ReportRow>
-          columns={visibleColumns}
-          data={pageRows}
-          isLoading={loading}
-          onEndReached={onEndReached}
-          keyExtractor={keyExtractor}
-          commentKey="comments"   // <-- required for double-tap modal
-/>
-      {/* Comments detail modal */}
-      {detailOpen && (
-        <View style={[u.absFill, { justifyContent: 'center', alignItems: 'center' }]}>
-          <View style={[u.absFill, { backgroundColor: 'rgba(0,0,0,0.35)' }]} />
-          <View style={{ width: '82%', maxHeight: '70%', backgroundColor: '#bfb9deff', borderColor: '#412d5cff', borderWidth: 1, padding: 12 }}>
-            <View style={{ marginBottom: 8 }}>
-              <View style={{ height: 1, backgroundColor: '#412d5cff' }} />
-            </View>
-            <View style={{ maxHeight: 320 }}>
-              <ScrollView>
-                <View style={{ paddingVertical: 8 }}>
-                  <Text style={{ color: '#412d5cff' }}>{detailText}</Text>
-                </View>
-              </ScrollView>
-            </View>
-            <View style={{ marginTop: 10 }}>
-              <Pressable onPress={() => setDetailOpen(false)}><Text style={{color:'#412d5cff', fontWeight:'bold', textAlign:'center'}}>Close</Text></Pressable>
-            </View>
-          </View>
-        </View>
+
+      {/* Bulk delete floating button */}
+      {selectedIds.size > 0 && (
+        <Pressable
+          onPress={handleBulkDelete}
+          style={{
+            position: 'absolute', bottom: 20, right: 20, zIndex: 100,
+            backgroundColor: colors.error, paddingHorizontal: 18, paddingVertical: 12,
+            borderRadius: 8, elevation: 5,
+          }}
+        >
+          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>
+            Delete Selected ({selectedIds.size})
+          </Text>
+        </Pressable>
       )}
+
+      <GridView<ReportRow>
+        columns={visibleColumns}
+        data={pageRows}
+        isLoading={loading}
+        onEndReached={onEndReached}
+        keyExtractor={keyExtractor}
+        commentKey="comments"
+        enableBulkSelect
+        selectedIds={selectedIds}
+        onToggleSelect={handleToggleSelect}
+        onRowLongPress={handleRowLongPress}
+      />
+
+      {/* View-only modal for Reports */}
+      <RowEditorModal
+        visible={viewerVisible}
+        title="Report Details"
+        fields={viewerFields}
+        onClose={() => setViewerVisible(false)}
+        readOnly
+      />
     </View>
   );
 }
