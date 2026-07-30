@@ -32,7 +32,7 @@ export const buttonActions = {
     enableAISearch: () => { console.log('🤖 Enable AI search');},
     logOut: (navigation?: any) => { logout(navigation); },
     openFeedback: (navigation?: any) => { console.log('💬 Open feedback'); navigation?.navigate('FeedBackHome'); },
-    openDownloads: (navigation?: any) => { console.log('⬇️ Open downloads'); navigation?.navigate('DownLoadsScreen'); },
+    openDownloads: (navigation?: any) => { console.log('⬇️ Open downloads'); navigation?.navigate('ManageDownloadsScreen'); },
     openAccountSettings: () => {console.log('🔒 Open account settings');},
     openReadingStats: (navigation?: any) => { console.log('📊 Open reading stats'); navigation?.navigate('ReadingStatsScreen'); },
 };

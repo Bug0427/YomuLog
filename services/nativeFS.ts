@@ -101,6 +101,19 @@ export async function deleteFileAsync(
   }
 }
 
+// ─── File size ────────────────────────────────────────────────────────
+
+export async function getFileSizeAsync(path: string): Promise<number> {
+  if (isWeb) return 0; // web: no real filesystem access
+  try {
+    const mod = await import('expo-file-system/legacy');
+    const info = await mod.getInfoAsync(path);
+    return (info as any)?.size ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 // ─── Legacy constants ─────────────────────────────────────────────────
 
 /** Absolute download base directory. Returns a web-safe path on web. */
