@@ -204,7 +204,7 @@ export default function DownLoadsScreen() {
   const isEmpty = downloaded.length === 0 && queue.length === 0;
 
   return (
-    <View style={GeneralStyles.container}>
+    <View style={[GeneralStyles.container, { paddingTop: spacing.p12 }]}>
       <FlatList
         ref={scrollRef as any}
         data={downloaded}
