@@ -56,6 +56,7 @@ export default function LibraryScreen() {
   // ── Selection state ───────────────────────────────────────────────
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
 
   // ── Fetch on focus ────────────────────────────────────────────────
   useFocusEffect(
@@ -125,6 +126,12 @@ export default function LibraryScreen() {
       console.error('Failed to reload library:', e);
     }
   }, []);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await reloadFavorites();
+    setRefreshing(false);
+  }, [reloadFavorites]);
 
   const handleBatchAction = useCallback(
     (action: 'delete' | 'unlike' | 'markRead') => {
@@ -304,6 +311,8 @@ export default function LibraryScreen() {
           itemStyle={() => CardViewStyles.placeholder}
           onScrollBeginDrag={handleScrollStart}
           onMomentumScrollEnd={handleScrollEnd}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
           emptyMessage="No bookmarked manga yet. Start adding favorites!"
         />
       )}

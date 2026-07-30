@@ -1,6 +1,6 @@
 // screens/main/HomeScreen.tsx
 import React, { useState, useCallback } from 'react';
-import { View, ScrollView, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, ScrollView, Text, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
 import Header from '../../components/layout/Header';
@@ -14,17 +14,20 @@ import { colors } from '../../styles/tokens';
 import { getRecentFavoritesUpdates, MangaUpdate } from '../../services/favoritesService';
 import { fetchMangaList, Manga } from '../../services/mangaAPI';
 import { GENRE_TAG_IDS, GenreTag } from '../../utils/filters';
+import { getPersonalisedRecommendations } from '../../services/metadataClassification';
 import { useTheme } from '../../context/ThemeContext';
+import MascotLoader from '../../components/general/MascotLoader';
 
 // ── Slider configuration ───────────────────────────────────────────
 type SliderConfig =
   | { title: string; type: 'order'; order: Record<string, string> }
-  | { title: string; type: 'genre'; genre: GenreTag };
+  | { title: string; type: 'genre'; genre: GenreTag }
+  | { title: string; type: 'personalised' };
 
 const SLIDER_CONFIGS: SliderConfig[] = [
   { title: 'New Manga',       type: 'order', order: { latestUploadedChapter: 'desc' } },
   { title: 'Popular Picks',   type: 'order', order: { followedCount: 'desc' } },
-  { title: 'Recommended',     type: 'order', order: { rating: 'desc' } },
+  { title: 'Recommended for You', type: 'personalised' },
   { title: 'Updated',         type: 'order', order: { updatedAt: 'desc' } },
   { title: 'Action',          type: 'genre', genre: 'action' },
   { title: 'Comedy',          type: 'genre', genre: 'comedy' },
@@ -56,6 +59,7 @@ export default function HomeScreen() {
   const [sliderDataMap, setSliderDataMap] = useState<SliderDataMap>({});
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
   // ── Load all data ──────────────────────────────────────────────────
   const loadAll = useCallback(async () => {
@@ -72,11 +76,13 @@ export default function HomeScreen() {
             let result: Manga[] = [];
             if (config.type === 'order') {
               result = await fetchMangaList({ limit: 10, order: config.order });
-            } else {
+            } else if (config.type === 'genre') {
               const tagId = GENRE_TAG_IDS[config.genre];
               if (tagId) {
                 result = await fetchMangaList({ limit: 10, includedTags: [tagId] });
               }
+            } else if (config.type === 'personalised') {
+              result = await getPersonalisedRecommendations(10);
             }
             if (result.length) {
               map[config.title] = result.map((m) => toSliderItem(m, navigation));
@@ -101,9 +107,11 @@ export default function HomeScreen() {
   );
 
   // ── Refresh (re-fetch all) ─────────────────────────────────────────
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
     setRefreshKey((k) => k + 1);
-    loadAll();
+    setRefreshing(true);
+    await loadAll();
+    setRefreshing(false);
   }, [loadAll]);
 
   // ── Render ─────────────────────────────────────────────────────────
@@ -116,6 +124,17 @@ export default function HomeScreen() {
         onMomentumScrollEnd={handleScrollEnd}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="transparent"
+            colors={['transparent']}
+            progressViewOffset={20}
+          >
+            <MascotLoader />
+          </RefreshControl>
+        }
       >
         <View style={[GeneralStyles.container, { paddingHorizontal: 12, backgroundColor: theme.bg }]}>
           <Header />

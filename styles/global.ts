@@ -246,8 +246,9 @@ const AdminSearchBarStyles = StyleSheet.create({
         height: 2, backgroundColor: colors.deepPlum,
     },
     queryBox: {
-        ...u.full, backgroundColor: colors.paleLavender,
+        ...u.full, 
         borderWidth: 1, borderColor: colors.deepPlum,
+        borderRadius: 0, overflow: 'hidden',
     },
     iconBtn: {
         width: 34, borderColor: colors.deepPlum,
@@ -259,7 +260,7 @@ const AdminSearchBarStyles = StyleSheet.create({
     // --- Centralized row and dropdown styles for admin search bar
     queryRow: { flexDirection: 'row', alignItems: 'center', gap: 10, zIndex: 700 },
     fieldRow: { flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 },
-    fieldPickerWrap: { width: 104, zIndex: 3000 },
+    fieldPickerWrap: { width: 80, zIndex: 3000 },
     ddText: { color: colors.deepPlum, fontWeight: '600' as const, fontSize: 12 },
     ddPlaceholder: { color: colors.mutedPlum },
     ddSelectedContainer: { backgroundColor: colors.paleLavender, borderTopWidth: 1, borderBottomWidth: 1 },

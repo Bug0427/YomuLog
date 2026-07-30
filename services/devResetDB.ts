@@ -1,6 +1,6 @@
-import * as SQLite from 'expo-sqlite';
-import { db, runAsync, initDb } from './feedbackRepo';
 import { DeviceEventEmitter } from 'react-native';
+import { initDb, runAsync } from './feedbackRepo';
+import { openDatabase } from './nativeDB';
 
 // Tables present in feedbackRepo.ts
 const TABLES = [
@@ -26,6 +26,7 @@ function clearAllSessions() {
  */
 export async function resetDatabase(): Promise<void> {
     try {
+    const db = await openDatabase();
     // Disable FKs to avoid drop order issues
     await db.execAsync('PRAGMA foreign_keys = OFF;');
 
@@ -53,7 +54,8 @@ export async function resetDatabase(): Promise<void> {
  */
 export async function deleteDbFile(dbName: string = 'yomulog.db') {
 try {
-    const maybeDelete = (SQLite as any)?.deleteDatabaseAsync;
+    const db = await openDatabase();
+    const maybeDelete = (db as any)?.deleteDatabaseAsync;
     if (typeof maybeDelete === 'function') {
     await maybeDelete(dbName);
     console.log(`🧨 Deleted DB file: ${dbName}`);

@@ -2,17 +2,18 @@
 // Queue-based offline chapter download manager with background recovery.
 // Supports concurrency pool (2-3 pages), interrupted download recovery,
 // and API aliases for a clean external interface.
+// On web: gracefully degrades — downloads are simulated (no crash).
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-  documentDirectory,
-  makeDirectoryAsync,
-  downloadAsync,
-  getInfoAsync,
-  deleteAsync,
-  readDirectoryAsync,
-} from 'expo-file-system/legacy';
+  getDownloadBaseDir,
+  makeDirAsync,
+  downloadFileAsync,
+  listDirAsync,
+  deleteFileAsync,
+} from './nativeFS';
 import { getChapterPages, buildPageUrlsFromChapterData } from './mangaAPI';
+import { isWeb } from '../utils/platformUtils';
 
 // ─── Types ─────────────────────────────────────────────────────────
 
@@ -52,9 +53,16 @@ export type DownloadedChapter = {
 const DOWNLOAD_QUEUE_KEY = '@YomuLog:downloadQueue';
 const DOWNLOADED_CHAPTERS_KEY = '@YomuLog:downloadedChapters';
 const MAX_RETRIES = 3;
-const DOWNLOAD_BASE_DIR = `${documentDirectory}yomulog/downloads/`;
 /** Maximum concurrent page downloads */
 const CONCURRENCY_LIMIT = 3;
+
+let _downloadBaseDir: string | null = null;
+async function resolveBaseDir(): Promise<string> {
+  if (!_downloadBaseDir) {
+    _downloadBaseDir = await getDownloadBaseDir();
+  }
+  return _downloadBaseDir;
+}
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
@@ -164,7 +172,7 @@ export async function deleteDownloadedChapter(chapterId: string): Promise<void> 
 
   // Clean up local files
   if (chapterToDelete?.localDir) {
-    await deleteAsync(chapterToDelete.localDir, { idempotent: true }).catch(() => {});
+    await deleteFileAsync(chapterToDelete.localDir, { idempotent: true }).catch(() => {});
   }
 }
 
@@ -173,7 +181,7 @@ export async function deleteDownloadedChapter(chapterId: string): Promise<void> 
 /** Download a single page and return whether it succeeded. */
 async function downloadPage(url: string, dest: string): Promise<boolean> {
   try {
-    const result = await downloadAsync(url, dest);
+    const result = await downloadFileAsync(url, dest);
     return result.status === 200;
   } catch {
     return false;
@@ -206,8 +214,9 @@ export async function processNextDownload(): Promise<boolean> {
     const pageUrls = buildPageUrlsFromChapterData(chapterData, 'data-saver');
 
     // 2. Create local directory
-    const localDir = `${DOWNLOAD_BASE_DIR}${job.mangaId}/${job.chapterId}/`;
-    await makeDirectoryAsync(localDir, { intermediates: true });
+    const baseDir = await resolveBaseDir();
+    const localDir = `${baseDir}${job.mangaId}/${job.chapterId}/`;
+    await makeDirAsync(localDir, { intermediates: true });
 
     // 3. Download pages concurrently in batches of CONCURRENCY_LIMIT
     let downloaded = 0;
@@ -264,7 +273,8 @@ export async function processNextDownload(): Promise<boolean> {
   } catch (err: any) {
     job.status = 'failed';
     job.errorMessage = err?.message ?? 'Unknown error';
-    job.localDir = `${DOWNLOAD_BASE_DIR}${job.mangaId}/${job.chapterId}/`;
+    const baseDir = await resolveBaseDir();
+    job.localDir = `${baseDir}${job.mangaId}/${job.chapterId}/`;
     await saveQueue(queue);
     return false;
   }
@@ -292,12 +302,13 @@ export async function resumeInterruptedDownloads(): Promise<number> {
   for (const job of queue) {
     if (job.status !== 'downloading' && job.status !== 'pending') continue;
 
-    const localDir = job.localDir || `${DOWNLOAD_BASE_DIR}${job.mangaId}/${job.chapterId}/`;
+    const baseDir = await resolveBaseDir();
+    const localDir = job.localDir || `${baseDir}${job.mangaId}/${job.chapterId}/`;
 
-    // Scan for existing pages using readDirectoryAsync (faster than sequential getInfoAsync)
+    // Scan for existing pages using listDirAsync (faster than sequential getInfoAsync)
     let highestCompletedPage = 0;
     try {
-      const files = await readDirectoryAsync(localDir);
+      const files = await listDirAsync(localDir);
       const pageNumbers = files
         .filter((f) => /^page_\d+\.(jpg|png|webp)$/i.test(f))
         .map((f) => parseInt(f.match(/\d+/)?.[0] ?? '0', 10))
@@ -404,7 +415,7 @@ export async function getLocalPageUris(chapterId: string): Promise<string[] | nu
   if (!chapter) return null;
 
   try {
-    const files = await readDirectoryAsync(chapter.localDir);
+    const files = await listDirAsync(chapter.localDir);
     const pageFiles = files
       .filter((f) => /^page_(\d+)\.(jpg|png|webp)$/i.test(f))
       .sort((a, b) => {
@@ -440,7 +451,8 @@ export async function getDownloadStats(): Promise<{
 /** Clear all download data (for testing / user reset). */
 export async function clearAllDownloads(): Promise<void> {
   await AsyncStorage.removeMany([DOWNLOAD_QUEUE_KEY, DOWNLOADED_CHAPTERS_KEY]);
-  await deleteAsync(DOWNLOAD_BASE_DIR, { idempotent: true });
+  const baseDir = await resolveBaseDir();
+  await deleteFileAsync(baseDir, { idempotent: true });
 }
 
 /** Remove a specific job from the queue. */
@@ -455,4 +467,97 @@ export async function clearCompleted(): Promise<void> {
   let queue = await getDownloadQueue();
   queue = queue.filter((j) => j.status !== 'completed');
   await saveQueue(queue);
+}
+
+// ─── Storage stats ──────────────────────────────────────────────────
+
+/** Estimated average size per manga page in bytes (JPEG data-saver quality) */
+const ESTIMATED_PAGE_BYTES = 50_000; // ~50 KB
+
+export type MangaStorageStat = {
+  mangaId: string;
+  mangaTitle: string;
+  chapterCount: number;
+  totalPages: number;
+  /** Estimated storage in bytes (actual on native, estimated on web) */
+  storageBytes: number;
+  /** Human-readable storage string (e.g. "12.3 MB") */
+  storageLabel: string;
+};
+
+export async function getStorageStats(): Promise<{
+  totalBytes: number;
+  totalLabel: string;
+  byManga: MangaStorageStat[];
+}> {
+  const chapters = await getDownloadedChaptersRaw();
+
+  // Group by manga
+  const byManga = new Map<string, MangaStorageStat>();
+
+  for (const ch of chapters) {
+    let stat = byManga.get(ch.mangaId);
+    if (!stat) {
+      stat = {
+        mangaId: ch.mangaId,
+        mangaTitle: ch.mangaTitle,
+        chapterCount: 0,
+        totalPages: 0,
+        storageBytes: 0,
+        storageLabel: '',
+      };
+      byManga.set(ch.mangaId, stat);
+    }
+    stat.chapterCount += 1;
+    stat.totalPages += ch.totalPages;
+
+    // Try to get actual file sizes from local filesystem
+    let chapterBytes = 0;
+    try {
+      const { getFileSizeAsync, listDirAsync } = await import('./nativeFS');
+      const files = await listDirAsync(ch.localDir);
+      for (const f of files) {
+        if (/^page_\d+\.(jpg|png|webp)$/i.test(f)) {
+          chapterBytes += await getFileSizeAsync(`${ch.localDir}${f}`);
+        }
+      }
+    } catch {
+      // Fallback to estimate
+    }
+    if (chapterBytes === 0) {
+      chapterBytes = ch.totalPages * ESTIMATED_PAGE_BYTES;
+    }
+    stat.storageBytes += chapterBytes;
+  }
+
+  // Calculate totals and format labels
+  let totalBytes = 0;
+  const results: MangaStorageStat[] = [];
+
+  for (const stat of byManga.values()) {
+    totalBytes += stat.storageBytes;
+    stat.storageLabel = formatBytes(stat.storageBytes);
+    results.push(stat);
+  }
+
+  // Sort by storage (largest first)
+  results.sort((a, b) => b.storageBytes - a.storageBytes);
+
+  return {
+    totalBytes,
+    totalLabel: formatBytes(totalBytes),
+    byManga: results,
+  };
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let unitIdx = 0;
+  let size = bytes;
+  while (size >= 1024 && unitIdx < units.length - 1) {
+    size /= 1024;
+    unitIdx++;
+  }
+  return `${size.toFixed(unitIdx === 0 ? 0 : 1)} ${units[unitIdx]}`;
 }
