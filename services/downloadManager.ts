@@ -468,3 +468,96 @@ export async function clearCompleted(): Promise<void> {
   queue = queue.filter((j) => j.status !== 'completed');
   await saveQueue(queue);
 }
+
+// ─── Storage stats ──────────────────────────────────────────────────
+
+/** Estimated average size per manga page in bytes (JPEG data-saver quality) */
+const ESTIMATED_PAGE_BYTES = 50_000; // ~50 KB
+
+export type MangaStorageStat = {
+  mangaId: string;
+  mangaTitle: string;
+  chapterCount: number;
+  totalPages: number;
+  /** Estimated storage in bytes (actual on native, estimated on web) */
+  storageBytes: number;
+  /** Human-readable storage string (e.g. "12.3 MB") */
+  storageLabel: string;
+};
+
+export async function getStorageStats(): Promise<{
+  totalBytes: number;
+  totalLabel: string;
+  byManga: MangaStorageStat[];
+}> {
+  const chapters = await getDownloadedChaptersRaw();
+
+  // Group by manga
+  const byManga = new Map<string, MangaStorageStat>();
+
+  for (const ch of chapters) {
+    let stat = byManga.get(ch.mangaId);
+    if (!stat) {
+      stat = {
+        mangaId: ch.mangaId,
+        mangaTitle: ch.mangaTitle,
+        chapterCount: 0,
+        totalPages: 0,
+        storageBytes: 0,
+        storageLabel: '',
+      };
+      byManga.set(ch.mangaId, stat);
+    }
+    stat.chapterCount += 1;
+    stat.totalPages += ch.totalPages;
+
+    // Try to get actual file sizes from local filesystem
+    let chapterBytes = 0;
+    try {
+      const { getFileSizeAsync, listDirAsync } = await import('./nativeFS');
+      const files = await listDirAsync(ch.localDir);
+      for (const f of files) {
+        if (/^page_\d+\.(jpg|png|webp)$/i.test(f)) {
+          chapterBytes += await getFileSizeAsync(`${ch.localDir}${f}`);
+        }
+      }
+    } catch {
+      // Fallback to estimate
+    }
+    if (chapterBytes === 0) {
+      chapterBytes = ch.totalPages * ESTIMATED_PAGE_BYTES;
+    }
+    stat.storageBytes += chapterBytes;
+  }
+
+  // Calculate totals and format labels
+  let totalBytes = 0;
+  const results: MangaStorageStat[] = [];
+
+  for (const stat of byManga.values()) {
+    totalBytes += stat.storageBytes;
+    stat.storageLabel = formatBytes(stat.storageBytes);
+    results.push(stat);
+  }
+
+  // Sort by storage (largest first)
+  results.sort((a, b) => b.storageBytes - a.storageBytes);
+
+  return {
+    totalBytes,
+    totalLabel: formatBytes(totalBytes),
+    byManga: results,
+  };
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let unitIdx = 0;
+  let size = bytes;
+  while (size >= 1024 && unitIdx < units.length - 1) {
+    size /= 1024;
+    unitIdx++;
+  }
+  return `${size.toFixed(unitIdx === 0 ? 0 : 1)} ${units[unitIdx]}`;
+}

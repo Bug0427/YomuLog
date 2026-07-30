@@ -7,6 +7,7 @@ import HomeScreen from '../screens/main/HomeScreen';
 import SearchScreen from '../screens/main/SearchScreen';
 import LibraryScreen from '../screens/main/LibraryScreen';
 import DownLoadsScreen from '../screens/main/DownLoadsScreen';
+import ManageDownloadsScreen from '../screens/main/ManageDownloadsScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
 import RecentlyUpdated from '../screens/main/RecentlyUpdated'
 import RecentlyReadScreen from '../screens/main/RecentlyReadScreen'
@@ -45,6 +46,7 @@ export default function AppNavigator() {
             <Stack.Screen name="RecentlyUpdated" component={RecentlyUpdated} />
             <Stack.Screen name="RecentlyReadScreen" component={RecentlyReadScreen} />
             <Stack.Screen name="DownLoadsScreen" component={DownLoadsScreen} />
+            <Stack.Screen name="ManageDownloadsScreen" component={ManageDownloadsScreen} />
             <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
             <Stack.Screen name="ReadingStatsScreen" component={ReadingStatsScreen} />
             <Stack.Screen name="FeedBackHome" component={FeedBackHome} />

@@ -5,6 +5,7 @@ export type RootStackParamList = {
     SearchScreen: undefined;
     LibraryScreen: undefined;
     DownLoadsScreen: undefined;
+    ManageDownloadsScreen: undefined;
     ReaderScreen: { chapterId: string; mangaId: string; chapterNum: string } | undefined;
     SettingsScreen: undefined;
     ReadingStatsScreen: undefined;
