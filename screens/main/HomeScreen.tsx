@@ -1,6 +1,6 @@
 // screens/main/HomeScreen.tsx
 import React, { useState, useCallback } from 'react';
-import { View, ScrollView, Text, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, ScrollView, Text, Pressable, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
@@ -71,42 +71,66 @@ export default function HomeScreen() {
 
   const [recentUpdates, setRecentUpdates] = useState<MangaUpdate[]>([]);
   const [sliderDataMap, setSliderDataMap] = useState<SliderDataMap>({});
+  const [failedSliders, setFailedSliders] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
+  // ── Batch helper: process array in chunks with delay ──────────────
+  async function batchProcess<T, R>(
+    items: T[],
+    batchSize: number,
+    delayMs: number,
+    fn: (item: T) => Promise<R>,
+  ): Promise<R[]> {
+    const results: R[] = [];
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize);
+      const batchResults = await Promise.all(batch.map(fn));
+      results.push(...batchResults);
+      if (i + batchSize < items.length) {
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
+    }
+    return results;
+  }
+
   // ── Load all data ──────────────────────────────────────────────────
   const loadAll = useCallback(async () => {
     setLoading(true);
+    setFailedSliders(new Set());
     try {
       const updates = await getRecentFavoritesUpdates();
       setRecentUpdates(updates);
 
-      // Fetch all sliders in parallel
+      // Fetch sliders in batches of 5 with 500ms delay to avoid MangaDex rate-limiting
       const map: SliderDataMap = {};
-      await Promise.all(
-        SLIDER_CONFIGS.map(async (config) => {
-          try {
-            let result: Manga[] = [];
-            if (config.type === 'order') {
-              result = await fetchMangaList({ limit: 10, order: config.order });
-            } else if (config.type === 'genre') {
-              const tagId = GENRE_TAG_IDS[config.genre];
-              if (tagId) {
-                result = await fetchMangaList({ limit: 10, includedTags: [tagId] });
-              }
-            } else if (config.type === 'personalised') {
-              result = await getPersonalisedRecommendations(10);
+      const failed = new Set<string>();
+
+      await batchProcess(SLIDER_CONFIGS, 5, 500, async (config) => {
+        try {
+          let result: Manga[] = [];
+          if (config.type === 'order') {
+            result = await fetchMangaList({ limit: 10, order: config.order });
+          } else if (config.type === 'genre') {
+            const tagId = GENRE_TAG_IDS[config.genre];
+            if (tagId) {
+              result = await fetchMangaList({ limit: 10, includedTags: [tagId] });
             }
-            if (result.length) {
-              map[config.title] = result.map((m) => toSliderItem(m, navigation));
-            }
-          } catch (e) {
-            console.warn(`Failed to load slider "${config.title}":`, e);
+          } else if (config.type === 'personalised') {
+            result = await getPersonalisedRecommendations(10);
           }
-        })
-      );
+          if (result.length) {
+            map[config.title] = result.map((m) => toSliderItem(m, navigation));
+          }
+        } catch (e) {
+          console.warn(`Failed to load slider "${config.title}":`, e);
+          failed.add(config.title);
+        }
+      });
+
       setSliderDataMap(map);
+      setFailedSliders(failed);
     } catch (e) {
       console.error('Failed to load home data:', e);
     } finally {
@@ -119,6 +143,36 @@ export default function HomeScreen() {
       loadAll();
     }, [loadAll])
   );
+
+  // ── Retry a single failed slider ────────────────────────────────────
+  const retrySlider = useCallback(async (config: SliderConfig) => {
+    try {
+      let result: Manga[] = [];
+      if (config.type === 'order') {
+        result = await fetchMangaList({ limit: 10, order: config.order });
+      } else if (config.type === 'genre') {
+        const tagId = GENRE_TAG_IDS[config.genre];
+        if (tagId) {
+          result = await fetchMangaList({ limit: 10, includedTags: [tagId] });
+        }
+      } else if (config.type === 'personalised') {
+        result = await getPersonalisedRecommendations(10);
+      }
+      if (result.length) {
+        setSliderDataMap((prev) => ({
+          ...prev,
+          [config.title]: result.map((m) => toSliderItem(m, navigation)),
+        }));
+      }
+      setFailedSliders((prev) => {
+        const next = new Set(prev);
+        next.delete(config.title);
+        return next;
+      });
+    } catch (e) {
+      console.warn(`Retry failed for "${config.title}":`, e);
+    }
+  }, [navigation]);
 
   // ── Refresh (re-fetch all) ─────────────────────────────────────────
   const handleRefresh = useCallback(async () => {
@@ -212,24 +266,43 @@ export default function HomeScreen() {
           <View key={`sliders-${refreshKey}`}>
             {SLIDER_CONFIGS.map((config, idx) => {
               const items = sliderDataMap[config.title];
-              if (!items || items.length === 0) return null;
+              const isFailed = failedSliders.has(config.title);
+              // Skip only when no data AND no failure
+              if ((!items || items.length === 0) && !isFailed) return null;
               const isLast = idx === SLIDER_CONFIGS.length - 1;
               return (
-                <MangaSlider
-                  key={`${config.title}-${refreshKey}`}
-                  title={config.title}
-                  data={items}
-                  onTitlePress={() => navigation.navigate('SearchScreen' as never)}
-                  seeMoreOnPress={() =>
-                    (navigation as any).navigate('SearchScreen', {
-                      presetGenre: config.type === 'genre' ? config.genre : undefined,
-                      presetOrder: config.type === 'order' ? config.order : undefined,
-                    })
-                  }
-                  footerComponent={
-                    isLast ? <RefreshCard onRefresh={handleRefresh} /> : undefined
-                  }
-                />
+                <View key={`${config.title}-${refreshKey}`}>
+                  {isFailed ? (
+                    /* Retry card for failed slider */
+                    <View style={retryCardStyles.wrapper}>
+                      <View style={retryCardStyles.header}>
+                        <Text style={retryCardStyles.title}>{config.title}</Text>
+                      </View>
+                      <Pressable
+                        style={retryCardStyles.retryBtn}
+                        onPress={() => retrySlider(config)}
+                      >
+                        <MaterialCommunityIcons name="refresh" size={18} color={colors.plum} />
+                        <Text style={retryCardStyles.retryText}>Tap to retry</Text>
+                      </Pressable>
+                    </View>
+                  ) : items ? (
+                    <MangaSlider
+                      title={config.title}
+                      data={items}
+                      onTitlePress={() => navigation.navigate('SearchScreen' as never)}
+                      seeMoreOnPress={() =>
+                        (navigation as any).navigate('SearchScreen', {
+                          presetGenre: config.type === 'genre' ? config.genre : undefined,
+                          presetOrder: config.type === 'order' ? config.order : undefined,
+                        })
+                      }
+                      footerComponent={
+                        isLast ? <RefreshCard onRefresh={handleRefresh} /> : undefined
+                      }
+                    />
+                  ) : null}
+                </View>
               );
             })}
           </View>
@@ -239,3 +312,35 @@ export default function HomeScreen() {
     </View>
   );
 }
+
+const retryCardStyles = StyleSheet.create({
+  wrapper: {
+    marginBottom: spacing.p20,
+    paddingHorizontal: spacing.p12,
+  },
+  header: {
+    marginBottom: spacing.p8,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.plum,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: spacing.p16,
+    backgroundColor: colors.sand,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.cocoa,
+    borderStyle: 'dashed',
+  },
+  retryText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.plum,
+  },
+});
