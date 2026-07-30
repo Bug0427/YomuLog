@@ -18,7 +18,7 @@ import {
   formatSyncTimestamp,
   type SyncState,
 } from '../../services/supabaseSyncService';
-import { colors, spacing } from '../../styles/tokens';
+import { colors } from '../../styles/tokens';
 import { useTheme, type ThemeMode } from '../../context/ThemeContext';
 import {
   loadAllPreferences,
@@ -356,7 +356,7 @@ export default function SettingsScreen() {
   return (
     <View style={[GeneralStyles.section, { backgroundColor: theme.bg }]}>
       <ScrollView ref={scrollRef} onScrollBeginDrag={handleScrollStart} onScrollEndDrag={handleScrollEnd} onMomentumScrollEnd={handleScrollEnd}>
-        <View style={[GeneralStyles.container, { paddingHorizontal: 12, backgroundColor: theme.bg, paddingTop: spacing.p12 }]}>
+        <View style={{ paddingHorizontal: 12, backgroundColor: theme.bg }}>
           <Header />
 
           {/* ─── Cloud Sync & Backup Section ─────────────────────── */}
