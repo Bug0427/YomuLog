@@ -446,6 +446,7 @@ export default function MangaInfoScreen() {
           { paddingTop: insets.top + HEADER_HEIGHT + spacing.p10 },
         ]}
         showsVerticalScrollIndicator={false}
+        pointerEvents="box-none"
       >
         {/* ── Header row: cover + title/metadata ────────────────── */}
         <View style={styles.headerRow}>
