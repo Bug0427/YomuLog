@@ -23,8 +23,9 @@ export type MangaUpdate = {
 
 const STORAGE_KEY = '@YomuLog:favorites';
 const UPDATES_KEY = '@YomuLog:recentUpdates';
-const MAX_UPDATES = 20;
-const MAX_FAVORITES_BANNER = 5;
+const MAX_UPDATES = 50;
+const MAX_FAVORITES_BANNER = 10;
+const MAX_UPDATE_AGE_DAYS = 14;
 
 // ─── Helpers ───────────────────────────────────────────────────────
 async function getJson<T>(key: string, fallback: T): Promise<T> {
@@ -91,17 +92,46 @@ export async function recordUpdate(
   const filtered = list.filter((u) => u.mangaId !== mangaId);
   filtered.push({ mangaId, mangaTitle, mangaImage, updatedAt: new Date().toISOString(), chapterNumber });
   filtered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  // Enforce 50-item cap
   await setJson(UPDATES_KEY, filtered.slice(0, MAX_UPDATES));
+}
+
+// Auto-purge: remove updates older than MAX_UPDATE_AGE_DAYS and mark completed items for removal
+function pruneUpdates(list: MangaUpdate[], completedIds: Set<string>): MangaUpdate[] {
+  const cutoff = Date.now() - MAX_UPDATE_AGE_DAYS * 24 * 60 * 60 * 1000;
+  return list.filter((u) => {
+    if (completedIds.has(u.mangaId)) return false;
+    if (new Date(u.updatedAt).getTime() < cutoff) return false;
+    return true;
+  });
 }
 
 export async function getRecentFavoritesUpdates(): Promise<MangaUpdate[]> {
   const [favs, updates] = await Promise.all([getFavoritesRaw(), getJson<MangaUpdate[]>(UPDATES_KEY, [])]);
   const favIds = new Set(favs.map((f) => f.mangaId));
-  return updates.filter((u) => favIds.has(u.mangaId)).slice(0, MAX_FAVORITES_BANNER);
+  const completedIds = new Set(favs.filter((f) => f.readingStatus === 'completed').map((f) => f.mangaId));
+  const relevant = updates.filter((u) => favIds.has(u.mangaId));
+  const pruned = pruneUpdates(relevant, completedIds);
+  // Persist pruned list
+  if (pruned.length !== updates.length) {
+    // Only update the stored list for favorited items
+    const nonFavUpdates = updates.filter((u) => !favIds.has(u.mangaId));
+    await setJson(UPDATES_KEY, [...pruned, ...nonFavUpdates].slice(0, MAX_UPDATES));
+  }
+  return pruned.slice(0, MAX_FAVORITES_BANNER);
 }
 
 export async function getAllUpdates(): Promise<MangaUpdate[]> {
   return getJson<MangaUpdate[]>(UPDATES_KEY, []);
+}
+
+export async function removeFromRecentUpdates(mangaId: string): Promise<void> {
+  const list = await getJson<MangaUpdate[]>(UPDATES_KEY, []);
+  await setJson(UPDATES_KEY, list.filter((u) => u.mangaId !== mangaId));
+}
+
+export async function clearRecentUpdates(): Promise<void> {
+  await AsyncStorage.removeItem(UPDATES_KEY);
 }
 
 export async function removeFavorites(ids: string[]): Promise<void> {

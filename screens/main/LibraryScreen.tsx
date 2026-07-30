@@ -212,19 +212,37 @@ export default function LibraryScreen() {
     [filteredFavorites]
   );
 
-  // ── Slider data (most recent bookmarks, sorted by bookmarkedAt) ───
+  // ── Slider data (top 10 recent updates) ───────────────────────────
   const sliderData = useMemo(
     () =>
-      [...favorites]
-        .sort((a, b) => b.bookmarkedAt.localeCompare(a.bookmarkedAt))
-        .slice(0, 10)
-        .map((fav) => ({
-          id: fav.mangaId,
-          title: fav.mangaTitle,
-          image: fav.mangaImage || '',
-          onPress: () => navigation.navigate('MangaInfoScreen', { mangaId: fav.mangaId }),
-        })),
-    [favorites, navigation]
+      recentUpdates.slice(0, 10).map((fav) => ({
+        id: fav.mangaId,
+        title: fav.mangaTitle,
+        image: fav.mangaImage || '',
+        onPress: () => navigation.navigate('MangaInfoScreen', { mangaId: fav.mangaId }),
+      })),
+    [recentUpdates, navigation]
+  );
+
+  // "View More" footer card for the slider
+  const ViewMoreFooter = useMemo(
+    () =>
+      recentUpdates.length > 10 ? (
+        <Pressable
+          onPress={() => navigation.navigate('RecentlyUpdated' as never)}
+          style={{
+            width: 80, alignItems: 'center', justifyContent: 'center',
+            borderWidth: 2, borderColor: '#543C27', backgroundColor: '#E3D3BD',
+            padding: 5, marginRight: 0,
+          }}
+        >
+          <MaterialCommunityIcons name="chevron-right-circle" size={28} color="#463B54" />
+          <Text style={{ color: '#463B54', fontSize: 11, fontWeight: '700', marginTop: 4, textAlign: 'center' }}>
+            View{'\n'}More
+          </Text>
+        </Pressable>
+      ) : undefined,
+    [recentUpdates, navigation]
   );
 
   // ── Header content ────────────────────────────────────────────────
@@ -237,6 +255,7 @@ export default function LibraryScreen() {
         title="Updated"
         data={sliderData}
         onTitlePress={() => navigation.navigate('RecentlyUpdated' as never)}
+        footerComponent={ViewMoreFooter}
       />
 
       <Filter filter={filter} onChange={setFilter} showReadingStatus />
