@@ -29,7 +29,7 @@ export default function Anchor({ scrollRef, isScrolling }: AnchorProps) {
         if (isScrolling) {
             Animated.timing(scrollOpacity, {
                 toValue: 0,
-                duration: 10,
+                duration: 150,
                 useNativeDriver: true,
                 easing: Easing.out(Easing.ease),
             }).start();
@@ -37,12 +37,12 @@ export default function Anchor({ scrollRef, isScrolling }: AnchorProps) {
             scrollTimeoutRef.current = setTimeout(() => {
                 Animated.timing(scrollOpacity, {
                     toValue: 1,
-                    duration: 10,
+                    duration: 200,
                     useNativeDriver: true,
                     easing: Easing.in(Easing.ease),
                 }).start();
                 scrollTimeoutRef.current = null;
-            }, 60);
+            }, 20);
         }
     }, [isScrolling, scrollOpacity]);
 
