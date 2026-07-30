@@ -31,7 +31,6 @@ import {
   toggleFavorite,
   isFavorite,
 } from '../../services/favoritesService';
-import { onFavoriteAdded, onFavoriteRemoved } from '../../services/metadataClassification';
 import {
   enqueueDownload,
   isChapterDownloaded,
@@ -194,12 +193,6 @@ export default function MangaInfoScreen() {
         manga.genres,
       );
       setBookmarked(newState);
-      // Record for personalised recommendation engine
-      if (newState) {
-        onFavoriteAdded(manga.id, manga.title, manga.genres);
-      } else {
-        onFavoriteRemoved(manga.id);
-      }
     } catch (e) {
       Alert.alert('Error', 'Failed to update favorites. Please try again.');
     }
