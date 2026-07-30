@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, Text, StyleSheet } from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 import { borders, spacing } from '../../styles/tokens';
 
 interface ClearAllButtonProps {
