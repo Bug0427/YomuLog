@@ -9,6 +9,7 @@ import {
   Text,
   Pressable,
   ActivityIndicator,
+  RefreshControl,
   LayoutChangeEvent,
   ViewStyle,
 } from 'react-native';
@@ -17,6 +18,7 @@ import { CardViewStyles } from '../../styles/global';
 import { useWindowWidth } from '../../utils/findDimensions';
 import FallbackImage from '../general/FallbackImage';
 import MarqueeTitle from '../general/MarqueeTitle';
+import MascotLoader from '../general/MascotLoader';
 
 export type ViewMode = 'grid' | 'row';
 
@@ -66,6 +68,12 @@ type Props = {
   selectedIds?: Set<string>;
   /** Called on long press of an item (enters selection mode) */
   onLongPress?: (item: CardItem) => void;
+
+  // ── Pull-to-refresh ─────────────────────────────────────────────
+  /** Whether the pull-to-refresh spinner is active */
+  refreshing?: boolean;
+  /** Called when user pulls down to refresh */
+  onRefresh?: () => void;
 };
 
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
@@ -93,6 +101,8 @@ const CardView: React.FC<Props> = ({
   selectionMode = false,
   selectedIds,
   onLongPress,
+  refreshing = false,
+  onRefresh,
 }) => {
   const safeData = data ?? [];
   const windowWidth = useWindowWidth();
@@ -276,6 +286,19 @@ const CardView: React.FC<Props> = ({
         onScrollEndDrag={onScrollEndDrag}
         onMomentumScrollEnd={onMomentumScrollEnd}
         scrollEventThrottle={16}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="transparent"
+              colors={['transparent']}
+              progressViewOffset={20}
+            >
+              <MascotLoader />
+            </RefreshControl>
+          ) : undefined
+        }
       />
     </View>
   );
