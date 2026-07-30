@@ -24,6 +24,7 @@ import {
   GENRE_TAG_IDS,
   GenreTag,
 } from '../../utils/filters';
+import { getSuggestedGenres } from '../../services/genreSuggestionService';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -67,6 +68,25 @@ export default function SearchScreen() {
   useEffect(() => {
     loadUpdates();
   }, [loadUpdates]);
+
+  // ── Dynamic genre suggestions from reading behaviour ────────────
+  const [suggestedGenres, setSuggestedGenres] = useState<GenreTag[]>([]);
+  const [hiddenGenres, setHiddenGenres] = useState<Set<GenreTag>>(new Set());
+  useEffect(() => {
+    getSuggestedGenres().then((tags) => setSuggestedGenres(tags));
+  }, []);
+
+  /** Effective visible genres: suggested minus user-hidden. */
+  const visibleGenres = suggestedGenres.filter((g) => !hiddenGenres.has(g));
+
+  const handleRemoveGenre = (tag: GenreTag) => {
+    setHiddenGenres((prev) => new Set(prev).add(tag));
+    // Also remove from active filter if currently selected
+    setFilter((prev) => ({
+      ...prev,
+      genres: prev.genres.filter((g) => g !== tag),
+    }));
+  };
 
   // ── Build API params: NLP-enhanced search + manual filter merge ──
   const buildParams = useCallback(
@@ -270,7 +290,14 @@ export default function SearchScreen() {
           ))}
         </CollapsibleSection>
       )}
-      {showFilter && <Filter filter={filter} onChange={setFilter} />}
+      {showFilter && (
+        <Filter
+          filter={filter}
+          onChange={setFilter}
+          suggestedGenres={visibleGenres}
+          onRemoveGenre={handleRemoveGenre}
+        />
+      )}
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
         <Text style={GeneralStyles.h1}>
           {hasActiveFilters(filter) || searchText.trim() ? 'Filtered Results' : 'Results'}
