@@ -193,6 +193,7 @@ export default function MangaInfoScreen() {
 
   const handleToggleBookmark = async () => {
     if (!manga) return;
+    console.log('[BUG-10] handleToggleBookmark fired', { mangaId: manga.id, currentlyBookmarked: bookmarked });
     try {
       const newState = await toggleFavorite(
         manga.id,
@@ -200,6 +201,7 @@ export default function MangaInfoScreen() {
         manga.coverImageUrl,
         manga.genres,
       );
+      console.log('[BUG-10] toggleFavorite returned', { newState });
       setBookmarked(newState);
       // Record for personalised recommendation engine
       if (newState) {
@@ -208,11 +210,13 @@ export default function MangaInfoScreen() {
         onFavoriteRemoved(manga.id);
       }
     } catch (e) {
+      console.warn('[BUG-10] handleToggleBookmark error:', e);
       Alert.alert('Error', 'Failed to update favorites. Please try again.');
     }
   };
 
   const handleDownloadAll = async () => {
+    console.log('[BUG-10] handleDownloadAll fired', { mangaId: manga?.id, chaptersLength: chapters.length });
     if (!manga || chapters.length === 0) {
       Alert.alert('No Chapters', 'No chapters available to download.');
       return;
@@ -420,6 +424,8 @@ export default function MangaInfoScreen() {
             style={styles.headerBtn}
             onPress={handleDownloadAll}
             accessibilityLabel="Download all chapters"
+            android_ripple={{ color: 'rgba(0,0,0,0.1)', borderless: true }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Feather name="download-cloud" size={20} color={theme.accent} />
           </Pressable>
@@ -429,6 +435,8 @@ export default function MangaInfoScreen() {
             style={styles.headerBtn}
             onPress={handleToggleBookmark}
             accessibilityLabel={bookmarked ? 'Remove bookmark' : 'Add bookmark'}
+            android_ripple={{ color: 'rgba(0,0,0,0.1)', borderless: true }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <MaterialCommunityIcons
               name={bookmarked ? 'heart' : 'heart-outline'}
@@ -447,6 +455,7 @@ export default function MangaInfoScreen() {
         ]}
         showsVerticalScrollIndicator={false}
         pointerEvents="box-none"
+        keyboardShouldPersistTaps="handled"
       >
         {/* ── Header row: cover + title/metadata ────────────────── */}
         <View style={styles.headerRow}>
@@ -762,6 +771,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 20,
+    backgroundColor: 'transparent',
   },
   headerTitle: {
     flex: 1,
@@ -920,7 +930,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // ── Description ───────────────────────────────────────────────
+  // ── Description ───────────���───────────────────────────────────
   descSection: {
     marginBottom: spacing.p16,
   },
