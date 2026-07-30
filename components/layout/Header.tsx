@@ -8,7 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 export default function Header() {
     const { colors: theme } = useTheme();
     return (
-        <View style={[GeneralStyles.section, { backgroundColor: theme.bg }]}>
+        <View style={{ backgroundColor: theme.bg }}>
         <View style={[GeneralStyles.header, { backgroundColor: theme.bg }]}>
             <Text style={[GeneralStyles.title, { color: theme.textSecondary }]}>YomuLog</Text>
             <LoginIcon />
