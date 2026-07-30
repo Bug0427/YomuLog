@@ -1,9 +1,10 @@
 // screens/main/MangaInfoScreen.tsx
 // Full manga details screen — displays metadata, chapter list,
-// offline download status, and bookmark toggle.
+// offline download status, bookmark toggle, duplicate chapter
+// filtering with source switching, alt titles, and similar manga slider.
 // Fetches real data from MangaDex API using mangaId route param.
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,14 +15,21 @@ import {
   Alert,
   StyleSheet,
   Dimensions,
+  FlatList,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
-import { fetchMangaById, getMangaFeed, type Manga, type MangaChapter } from '../../services/mangaAPI';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import {
+  fetchMangaById,
+  getMangaFeed,
+  fetchSimilarManga,
+  type Manga,
+  type MangaChapter,
+  type SimilarManga,
+} from '../../services/mangaAPI';
+import {
+  toggleFavorite,
   isFavorite,
-  addFavorite,
-  removeFavorite,
 } from '../../services/favoritesService';
 import {
   enqueueDownload,
@@ -44,10 +52,57 @@ type ChapterWithDownload = MangaChapter & {
   downloadStatus: DownloadStatus | null;
 };
 
+/** A grouped set: primary chapter + alternate sources */
+type ChapterGroup = {
+  chapterNum: string;
+  primary: ChapterWithDownload;
+  alternates: ChapterWithDownload[];
+};
+
 // ─── Constants ───────────────────────────────────────────────────────
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const COVER_SIZE = SCREEN_W * 0.4;
+const HEADER_HEIGHT = 56;
+const SIMILAR_ITEM_W = 110;
+
+// ─── Duplicate scoring ───────────────────────────────────────────────
+
+/** Score a chapter: +10 if it has a title, +5 per page (proxy for popularity) */
+function scoreChapter(ch: ChapterWithDownload): number {
+  let s = 0;
+  if (ch.title && ch.title.trim().length > 0) s += 10;
+  s += Math.min(ch.pages, 50) * 0.1; // cap at +5 for 50+ pages
+  return s;
+}
+
+/** Group chapters by chapter number, selecting the highest-scored as primary */
+function groupChapters(chapters: ChapterWithDownload[]): ChapterGroup[] {
+  const map = new Map<string, ChapterWithDownload[]>();
+  for (const ch of chapters) {
+    const num = ch.chapter;
+    if (!map.has(num)) map.set(num, []);
+    map.get(num)!.push(ch);
+  }
+
+  const groups: ChapterGroup[] = [];
+  for (const [, chs] of map) {
+    // Sort by score descending
+    chs.sort((a, b) => scoreChapter(b) - scoreChapter(a));
+    groups.push({
+      chapterNum: chs[0].chapter,
+      primary: chs[0],
+      alternates: chs.slice(1),
+    });
+  }
+  // Sort groups by chapter number descending (newest first)
+  groups.sort((a, b) => {
+    const na = parseFloat(a.chapterNum) || 0;
+    const nb = parseFloat(b.chapterNum) || 0;
+    return nb - na;
+  });
+  return groups;
+}
 
 // ─── Component ───────────────────────────────────────────────────────
 
@@ -64,6 +119,8 @@ export default function MangaInfoScreen() {
   const [error, setError] = useState<string | null>(null);
   const [descExpanded, setDescExpanded] = useState(false);
   const [downloadingIds, setDownloadingIds] = useState<Set<string>>(new Set());
+  const [similar, setSimilar] = useState<SimilarManga[]>([]);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // ─── Fetch data ──────────────────────────────────────────────────
 
@@ -78,10 +135,11 @@ export default function MangaInfoScreen() {
     setError(null);
 
     try {
-      const [mangaData, feedResult, fav] = await Promise.all([
+      const [mangaData, feedResult, fav, similarData] = await Promise.all([
         fetchMangaById(mangaId),
         getMangaFeed(mangaId, 100, 0),
         isFavorite(mangaId),
+        fetchSimilarManga(mangaId, 10),
       ]);
 
       if (!mangaData) {
@@ -92,6 +150,7 @@ export default function MangaInfoScreen() {
 
       setManga(mangaData);
       setBookmarked(fav);
+      setSimilar(similarData);
 
       // Check download status for each chapter
       const chs: ChapterWithDownload[] = await Promise.all(
@@ -117,21 +176,92 @@ export default function MangaInfoScreen() {
     loadData();
   }, [loadData]);
 
+  // ─── Chapter groups (deduplicated) ───────────────────────────────
+
+  const chapterGroups = useMemo(() => groupChapters(chapters), [chapters]);
+  const duplicateCount = chapters.length - chapterGroups.length;
+
   // ─── Handlers ────────────────────────────────────────────────────
 
   const handleToggleBookmark = async () => {
     if (!manga) return;
     try {
-      if (bookmarked) {
-        await removeFavorite(manga.id);
-        setBookmarked(false);
-      } else {
-        await addFavorite(manga.id, manga.title, manga.coverImageUrl, manga.genres);
-        setBookmarked(true);
-      }
+      const newState = await toggleFavorite(
+        manga.id,
+        manga.title,
+        manga.coverImageUrl,
+        manga.genres,
+      );
+      setBookmarked(newState);
     } catch (e) {
-      Alert.alert('Error', 'Failed to update favorites.');
+      Alert.alert('Error', 'Failed to update favorites. Please try again.');
     }
+  };
+
+  const handleDownloadAll = async () => {
+    if (!manga || chapters.length === 0) {
+      Alert.alert('No Chapters', 'No chapters available to download.');
+      return;
+    }
+
+    Alert.alert(
+      'Download All',
+      `Queue all ${chapters.length} chapters for download?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Download',
+          onPress: async () => {
+            try {
+              const ids = new Set<string>();
+              for (const ch of chapters) {
+                if (!ch.isDownloaded && ch.downloadStatus !== 'downloading') {
+                  ids.add(ch.id);
+                }
+              }
+              if (ids.size === 0) {
+                Alert.alert('Info', 'All chapters are already downloaded or queued.');
+                return;
+              }
+
+              setDownloadingIds(ids);
+
+              for (const ch of chapters) {
+                if (ids.has(ch.id)) {
+                  await enqueueDownload(
+                    ch.id,
+                    manga.id,
+                    manga.title,
+                    ch.chapter,
+                    ch.title,
+                  );
+                }
+              }
+
+              processAllDownloads().catch(() => {});
+              Alert.alert('Queued', `${ids.size} chapters queued for download.`);
+
+              // Refresh statuses
+              const refreshed = await Promise.all(
+                chapters.map(async (ch) => {
+                  if (!ids.has(ch.id)) return ch;
+                  const [downloaded, status] = await Promise.all([
+                    isChapterDownloaded(ch.id),
+                    getChapterDownloadStatus(ch.id),
+                  ]);
+                  return { ...ch, isDownloaded: downloaded, downloadStatus: status };
+                }),
+              );
+              setChapters(refreshed);
+            } catch (e) {
+              Alert.alert('Error', 'Failed to queue downloads.');
+            } finally {
+              setDownloadingIds(new Set());
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleDownloadChapter = async (chapter: ChapterWithDownload) => {
@@ -148,10 +278,7 @@ export default function MangaInfoScreen() {
         chapter.title,
       );
 
-      // Trigger background processing
       processAllDownloads().catch(() => {});
-
-      Alert.alert('Download Queued', `Chapter ${chapter.chapter} has been queued for download.`);
 
       // Refresh download status
       const status = await getChapterDownloadStatus(chapter.id);
@@ -175,7 +302,6 @@ export default function MangaInfoScreen() {
   const handleReadChapter = async (chapter: ChapterWithDownload) => {
     if (!manga) return;
 
-    // Record reading progress before navigating
     await updateChapterProgress({
       chapterId: chapter.id,
       mangaId: manga.id,
@@ -193,6 +319,16 @@ export default function MangaInfoScreen() {
     });
   };
 
+  // Toggle alternate source dropdown for a chapter group
+  const toggleGroupExpanded = (chapterNum: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(chapterNum)) next.delete(chapterNum);
+      else next.add(chapterNum);
+      return next;
+    });
+  };
+
   // ─── Status helpers ──────────────────────────────────────────────
 
   const statusColor = (status?: string): string => {
@@ -205,7 +341,10 @@ export default function MangaInfoScreen() {
     }
   };
 
-  const downloadIcon = (ch: ChapterWithDownload, isDownloading: boolean): { name: keyof typeof Feather.glyphMap; color: string } => {
+  const downloadIcon = (
+    ch: ChapterWithDownload,
+    isDownloading: boolean,
+  ): { name: keyof typeof Feather.glyphMap; color: string } => {
     if (isDownloading || ch.downloadStatus === 'downloading') {
       return { name: 'loader', color: colors.mutedPlum };
     }
@@ -247,6 +386,48 @@ export default function MangaInfoScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.bg }]}>
+      {/* ── Fixed Header Bar ──────────────────────────────────────── */}
+      <View style={[styles.headerBar, { backgroundColor: theme.headerBg, borderBottomColor: theme.border }]}>
+        {/* Back */}
+        <Pressable
+          style={styles.headerBtn}
+          onPress={() => navigation.goBack()}
+          accessibilityLabel="Go back"
+        >
+          <Feather name="arrow-left" size={22} color={theme.textSecondary} />
+        </Pressable>
+
+        {/* Title (truncated) */}
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]} numberOfLines={1}>
+          {manga.title}
+        </Text>
+
+        {/* Actions */}
+        <View style={styles.headerActions}>
+          {/* Download All */}
+          <Pressable
+            style={styles.headerBtn}
+            onPress={handleDownloadAll}
+            accessibilityLabel="Download all chapters"
+          >
+            <Feather name="download-cloud" size={20} color={theme.accent} />
+          </Pressable>
+
+          {/* Heart bookmark */}
+          <Pressable
+            style={styles.headerBtn}
+            onPress={handleToggleBookmark}
+            accessibilityLabel={bookmarked ? 'Remove bookmark' : 'Add bookmark'}
+          >
+            <MaterialCommunityIcons
+              name={bookmarked ? 'heart' : 'heart-outline'}
+              size={22}
+              color={bookmarked ? colors.error : theme.textSecondary}
+            />
+          </Pressable>
+        </View>
+      </View>
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -320,23 +501,19 @@ export default function MangaInfoScreen() {
           </View>
         )}
 
-        {/* ── Action buttons row ─────────────────────────────────── */}
-        <View style={styles.actionsRow}>
-          {/* Bookmark toggle */}
-          <Pressable
-            style={[styles.actionBtn, bookmarked && styles.actionBtnActive]}
-            onPress={handleToggleBookmark}
-          >
-            <Feather
-              name={bookmarked ? 'bookmark' : 'bookmark'}
-              size={18}
-              color={bookmarked ? colors.creamWhite : colors.plum}
-            />
-            <Text style={[styles.actionBtnText, bookmarked && styles.actionBtnTextActive]}>
-              {bookmarked ? 'Bookmarked' : 'Bookmark'}
-            </Text>
-          </Pressable>
-        </View>
+        {/* ── Alternative Titles ─────────────────────────────────── */}
+        {manga.altTitles && manga.altTitles.length > 0 && (
+          <View style={styles.altTitlesSection}>
+            <Text style={styles.sectionTitle}>Also Known As</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {manga.altTitles.map((alt, idx) => (
+                <View key={`alt-${idx}`} style={styles.altTitleChip}>
+                  <Text style={styles.altTitleText} numberOfLines={1}>{alt}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* ── Description ────────────────────────────────────────── */}
         {manga.description ? (
@@ -360,68 +537,170 @@ export default function MangaInfoScreen() {
 
         {/* ── Chapters section ───────────────────────────────────── */}
         <View style={styles.chaptersSection}>
-          <Text style={styles.sectionTitle}>
-            Chapters ({chapters.length})
-          </Text>
+          <View style={styles.chapterHeaderRow}>
+            <Text style={styles.sectionTitle}>
+              Chapters ({chapterGroups.length})
+            </Text>
+            {duplicateCount > 0 && (
+              <Text style={styles.dupeNote}>
+                +{duplicateCount} alt sources hidden
+              </Text>
+            )}
+          </View>
 
-          {chapters.length === 0 ? (
+          {chapterGroups.length === 0 ? (
             <Text style={styles.emptyText}>No chapters available.</Text>
           ) : (
-            chapters.map((chapter) => {
-              const isDownloading = downloadingIds.has(chapter.id);
-              const dlIcon = downloadIcon(chapter, isDownloading);
+            chapterGroups.map((group) => {
+              const ch = group.primary;
+              const isDownloading = downloadingIds.has(ch.id);
+              const dlIcon = downloadIcon(ch, isDownloading);
 
               return (
-                <View key={chapter.id} style={styles.chapterRow}>
-                  {/* Read button — tap to open reader */}
-                  <Pressable
-                    style={styles.chapterInfo}
-                    onPress={() => handleReadChapter(chapter)}
-                  >
-                    <View style={styles.chapterNumBadge}>
-                      <Text style={styles.chapterNumText}>
-                        Ch. {chapter.chapter}
-                      </Text>
-                    </View>
-                    <View style={styles.chapterTextCol}>
-                      {chapter.title ? (
-                        <Text style={styles.chapterTitle} numberOfLines={1}>
-                          {chapter.title}
+                <View key={`${ch.chapter}-${ch.id}`}>
+                  {/* Primary chapter row */}
+                  <View style={styles.chapterRow}>
+                    <Pressable
+                      style={styles.chapterInfo}
+                      onPress={() => handleReadChapter(ch)}
+                    >
+                      <View style={styles.chapterNumBadge}>
+                        <Text style={styles.chapterNumText}>
+                          Ch. {ch.chapter}
                         </Text>
-                      ) : null}
-                      {chapter.volume ? (
-                        <Text style={styles.chapterVol}>Vol. {chapter.volume}</Text>
-                      ) : null}
-                      <Text style={styles.chapterMeta}>
-                        {chapter.pages > 0 ? `${chapter.pages} pages` : ''}
-                        {chapter.updatedAt
-                          ? ` · ${new Date(chapter.updatedAt).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}`
-                          : ''}
-                      </Text>
-                    </View>
-                  </Pressable>
+                      </View>
+                      <View style={styles.chapterTextCol}>
+                        {ch.title ? (
+                          <Text style={styles.chapterTitle} numberOfLines={1}>
+                            {ch.title}
+                          </Text>
+                        ) : null}
+                        {ch.volume ? (
+                          <Text style={styles.chapterVol}>Vol. {ch.volume}</Text>
+                        ) : null}
+                        <Text style={styles.chapterMeta}>
+                          {ch.pages > 0 ? `${ch.pages} pages` : ''}
+                          {ch.scanlationGroup ? ` · ${ch.scanlationGroup}` : ''}
+                          {ch.updatedAt
+                            ? ` · ${new Date(ch.updatedAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}`
+                            : ''}
+                        </Text>
+                      </View>
+                    </Pressable>
 
-                  {/* Download button */}
-                  <Pressable
-                    style={styles.downloadBtn}
-                    onPress={() => handleDownloadChapter(chapter)}
-                    disabled={isDownloading || chapter.downloadStatus === 'downloading'}
-                  >
-                    {isDownloading || chapter.downloadStatus === 'downloading' ? (
-                      <ActivityIndicator size="small" color={colors.mutedPlum} />
-                    ) : (
-                      <Feather name={dlIcon.name} size={18} color={dlIcon.color} />
+                    {/* Switch source dropdown toggle (if alternates exist) */}
+                    {group.alternates.length > 0 && (
+                      <Pressable
+                        style={styles.sourceToggle}
+                        onPress={() => toggleGroupExpanded(group.chapterNum)}
+                        accessibilityLabel="Switch source"
+                      >
+                        <MaterialCommunityIcons
+                          name={expandedGroups.has(group.chapterNum) ? 'chevron-up' : 'source-branch'}
+                          size={16}
+                          color={colors.mutedPlum}
+                        />
+                        <Text style={styles.sourceToggleText}>
+                          {group.alternates.length}
+                        </Text>
+                      </Pressable>
                     )}
-                  </Pressable>
+
+                    {/* Download button */}
+                    <Pressable
+                      style={styles.downloadBtn}
+                      onPress={() => handleDownloadChapter(ch)}
+                      disabled={isDownloading || ch.downloadStatus === 'downloading'}
+                    >
+                      {isDownloading || ch.downloadStatus === 'downloading' ? (
+                        <ActivityIndicator size="small" color={colors.mutedPlum} />
+                      ) : (
+                        <Feather name={dlIcon.name} size={18} color={dlIcon.color} />
+                      )}
+                    </Pressable>
+                  </View>
+
+                  {/* Alternate sources dropdown */}
+                  {expandedGroups.has(group.chapterNum) && group.alternates.length > 0 && (
+                    <View style={styles.altSources}>
+                      <Text style={styles.altSourcesLabel}>Other sources:</Text>
+                      {group.alternates.map((alt) => {
+                        const altDl = downloadIcon(alt, downloadingIds.has(alt.id));
+                        return (
+                          <View key={alt.id} style={styles.altRow}>
+                            <Pressable
+                              style={styles.altChapterInfo}
+                              onPress={() => handleReadChapter(alt)}
+                            >
+                              <Text style={styles.altSourceName} numberOfLines={1}>
+                                {alt.scanlationGroup ?? 'Unknown group'}
+                              </Text>
+                              <Text style={styles.altMeta}>
+                                {alt.pages > 0 ? `${alt.pages}p` : ''}
+                                {alt.title ? ` — ${alt.title}` : ''}
+                              </Text>
+                            </Pressable>
+                            <Pressable
+                              style={styles.altDownloadBtn}
+                              onPress={() => handleDownloadChapter(alt)}
+                              disabled={downloadingIds.has(alt.id)}
+                            >
+                              <Feather name={altDl.name} size={16} color={altDl.color} />
+                            </Pressable>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
                 </View>
               );
             })
           )}
         </View>
+
+        {/* ── Similar Manga Slider ────────────────────────────────── */}
+        {similar.length > 0 && (
+          <View style={styles.similarSection}>
+            <Text style={styles.sectionTitle}>Similar Manga</Text>
+            <FlatList
+              horizontal
+              data={similar}
+              keyExtractor={(item) => item.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.similarList}
+              renderItem={({ item: sim }) => (
+                <Pressable
+                  style={styles.similarCard}
+                  onPress={() =>
+                    navigation.navigate('MangaInfoScreen', { mangaId: sim.id })
+                  }
+                >
+                  {sim.coverImageUrl ? (
+                    <Image
+                      source={{ uri: sim.coverImageUrl }}
+                      style={styles.similarCover}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={[styles.similarCover, styles.similarCoverPlaceholder]}>
+                      <Feather name="image" size={20} color={colors.mutedPlum} />
+                    </View>
+                  )}
+                  <Text style={styles.similarTitle} numberOfLines={2}>
+                    {sim.title}
+                  </Text>
+                </Pressable>
+              )}
+            />
+          </View>
+        )}
+
+        {/* Bottom spacer for safe area */}
+        <View style={{ height: 40 }} />
       </ScrollView>
     </View>
   );
@@ -434,11 +713,47 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.lavender,
   },
+
+  // ── Header bar ──────────────────────────────────────────────────
+  headerBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: HEADER_HEIGHT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.p10,
+    paddingTop: 20, // safe area
+    borderBottomWidth: 1,
+    zIndex: 100,
+    backgroundColor: colors.lavender,
+  },
+  headerBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+  },
+  headerTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '800',
+    marginHorizontal: spacing.p8,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.p4,
+  },
+
+  // ── Scroll ──────────────────────────────────────────────────────
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 52,
+    paddingTop: HEADER_HEIGHT + spacing.p10,
     paddingHorizontal: spacing.p16,
     paddingBottom: spacing.p24,
   },
@@ -558,34 +873,24 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // ── Action buttons ────────────────────────────────────────────
-  actionsRow: {
-    flexDirection: 'row',
-    gap: spacing.p10,
+  // ── Alt titles ─────────────────────────────────────────────────
+  altTitlesSection: {
     marginBottom: spacing.p16,
   },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.p6,
-    paddingVertical: spacing.p10,
-    paddingHorizontal: spacing.p16,
-    borderRadius: borders.br8,
-    borderWidth: borders.bw2,
+  altTitleChip: {
+    paddingVertical: spacing.p6,
+    paddingHorizontal: spacing.p12,
+    backgroundColor: colors.creamWhite,
+    borderRadius: 8,
+    borderWidth: 1,
     borderColor: colors.plum,
-    backgroundColor: colors.sand,
+    marginRight: spacing.p8,
+    maxWidth: 200,
   },
-  actionBtnActive: {
-    backgroundColor: colors.plum,
-    borderColor: colors.deepPlum,
-  },
-  actionBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.plum,
-  },
-  actionBtnTextActive: {
-    color: colors.creamWhite,
+  altTitleText: {
+    fontSize: 13,
+    color: colors.cocoa,
+    fontWeight: '600',
   },
 
   // ── Description ───────────────────────────────────────────────
@@ -613,6 +918,17 @@ const styles = StyleSheet.create({
   // ── Chapters ──────────────────────────────────────────────────
   chaptersSection: {
     marginBottom: spacing.p16,
+  },
+  chapterHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginBottom: spacing.p8,
+  },
+  dupeNote: {
+    fontSize: 12,
+    color: colors.mutedPlum,
+    fontStyle: 'italic',
   },
   emptyText: {
     fontSize: 14,
@@ -676,5 +992,99 @@ const styles = StyleSheet.create({
     backgroundColor: colors.sand,
     borderWidth: 1,
     borderColor: colors.plum,
+  },
+
+  // ── Source switching ──────────────────────────────────────────
+  sourceToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: spacing.p6,
+    paddingVertical: spacing.p4,
+    borderRadius: 6,
+    backgroundColor: colors.sand,
+    borderWidth: 1,
+    borderColor: colors.mutedPlum,
+    marginRight: spacing.p8,
+  },
+  sourceToggleText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.mutedPlum,
+  },
+  altSources: {
+    backgroundColor: colors.creamWhite,
+    borderRadius: borders.br8,
+    borderWidth: 1,
+    borderColor: colors.plum,
+    marginTop: -spacing.p4,
+    marginBottom: spacing.p8,
+    padding: spacing.p10,
+    marginLeft: spacing.p16,
+  },
+  altSourcesLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.mutedPlum,
+    marginBottom: spacing.p6,
+  },
+  altRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.p6,
+    borderTopWidth: 1,
+    borderTopColor: colors.sand,
+  },
+  altChapterInfo: {
+    flex: 1,
+  },
+  altSourceName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.plum,
+  },
+  altMeta: {
+    fontSize: 11,
+    color: colors.mutedPlum,
+    marginTop: 1,
+  },
+  altDownloadBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.sand,
+  },
+
+  // ── Similar manga slider ──────────────────────────────────────
+  similarSection: {
+    marginBottom: spacing.p16,
+  },
+  similarList: {
+    gap: spacing.p10,
+    paddingRight: spacing.p16,
+  },
+  similarCard: {
+    width: SIMILAR_ITEM_W,
+  },
+  similarCover: {
+    width: SIMILAR_ITEM_W,
+    height: SIMILAR_ITEM_W * 1.45,
+    borderRadius: borders.br8,
+    borderWidth: 1,
+    borderColor: colors.plum,
+  },
+  similarCoverPlaceholder: {
+    backgroundColor: colors.sand,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  similarTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.plum,
+    marginTop: spacing.p6,
+    textAlign: 'center',
   },
 });

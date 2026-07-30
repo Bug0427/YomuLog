@@ -8,8 +8,15 @@ export type Manga = {
 export type MangaChapter = {
   id: string; mangaId: string; chapter: string; title?: string;
   volume?: string; pages: number; updatedAt?: string; language: string; readStatus?: 'read' | 'unread';
+  scanlationGroup?: string; // scanlation group name for source identification
 };
 export type MangaTag = { id: string; name: string; group: string; };
+
+export type SimilarManga = {
+  id: string;
+  title: string;
+  coverImageUrl: string;
+};
 
 const BASE_URL = 'https://api.mangadex.org';
 const COVER_BASE = 'https://uploads.mangadex.org/covers';
@@ -61,8 +68,48 @@ export async function fetchMangaList(params: MangaListParams = {}): Promise<Mang
 }
 
 export async function fetchMangaById(id: string): Promise<Manga | null> {
-  try { const res = await fetch(`${BASE_URL}/manga/${id}?includes[]=cover_art`); const json = await res.json(); if (!json?.data) return null; const d = json.data; const a = d.attributes ?? {}; const coverRel = (d.relationships ?? []).find((r: any) => r.type === 'cover_art'); const tags: string[] = (a.tags ?? []).map((t: any) => t.attributes?.name?.en ?? 'Unknown'); return { id: d.id, title: extractTitle(a), coverImageUrl: coverRel?.attributes?.fileName ? `${COVER_BASE}/${d.id}/${coverRel.attributes.fileName}.256.jpg` : '', genres: tags, status: a.status, description: a.description?.en, year: a.year, contentRating: a.contentRating, updatedAt: a.updatedAt, }; }
-  catch (err) { console.warn(`Failed to fetch manga ${id}:`, err); return null; }
+  try {
+    const res = await fetch(`${BASE_URL}/manga/${id}?includes[]=cover_art&includes[]=author&includes[]=artist`);
+    const json = await res.json();
+    if (!json?.data) return null;
+    const d = json.data;
+    const a = d.attributes ?? {};
+    const rels = d.relationships ?? [];
+
+    const coverRel = rels.find((r: any) => r.type === 'cover_art');
+    const authorRel = rels.find((r: any) => r.type === 'author');
+    const artistRel = rels.find((r: any) => r.type === 'artist');
+    const tags: string[] = (a.tags ?? []).map((t: any) => t.attributes?.name?.en ?? 'Unknown');
+
+    // Extract alt titles
+    const altTitles: string[] = [];
+    if (Array.isArray(a.altTitles)) {
+      for (const t of a.altTitles) {
+        const val = Object.values(t)[0];
+        if (val && typeof val === 'string') altTitles.push(val);
+      }
+    }
+
+    return {
+      id: d.id,
+      title: extractTitle(a),
+      altTitles: altTitles.length > 0 ? altTitles : undefined,
+      author: authorRel?.attributes?.name ?? undefined,
+      artist: artistRel?.attributes?.name ?? undefined,
+      coverImageUrl: coverRel?.attributes?.fileName
+        ? `${COVER_BASE}/${d.id}/${coverRel.attributes.fileName}.256.jpg`
+        : '',
+      genres: tags,
+      status: a.status,
+      description: a.description?.en,
+      year: a.year,
+      contentRating: a.contentRating,
+      updatedAt: a.updatedAt,
+    };
+  } catch (err) {
+    console.warn(`Failed to fetch manga ${id}:`, err);
+    return null;
+  }
 }
 
 export async function fetchChapters(mangaId: string, limit = 100, offset = 0): Promise<MangaChapter[]> {
@@ -85,20 +132,57 @@ export async function getMangaFeed(mangaId: string, limit = 100, offset = 0): Pr
   query.set('order[chapter]', 'desc');
   query.set('contentRating[]', 'safe');
   query.set('contentRating[]', 'suggestive');
+  query.set('includes[]', 'scanlation_group');
   try {
     const res = await fetch(`${BASE_URL}/manga/${mangaId}/feed?${query.toString()}`);
     const json = await res.json();
-    const data: MangaChapter[] = (json?.data ?? []).map((item: any) => ({
-      id: item.id, mangaId,
-      chapter: item.attributes?.chapter ?? '0',
-      title: item.attributes?.title,
-      volume: item.attributes?.volume,
-      pages: item.attributes?.pages ?? 0,
-      updatedAt: item.attributes?.updatedAt,
-      language: item.attributes?.translatedLanguage ?? 'en',
-    }));
+    const data: MangaChapter[] = (json?.data ?? []).map((item: any) => {
+      const scanRel = (item.relationships ?? []).find((r: any) => r.type === 'scanlation_group');
+      return {
+        id: item.id, mangaId,
+        chapter: item.attributes?.chapter ?? '0',
+        title: item.attributes?.title,
+        volume: item.attributes?.volume,
+        pages: item.attributes?.pages ?? 0,
+        updatedAt: item.attributes?.updatedAt,
+        language: item.attributes?.translatedLanguage ?? 'en',
+        scanlationGroup: scanRel?.attributes?.name ?? undefined,
+      };
+    });
     return { data, total: json?.total ?? data.length, limit, offset };
   } catch { return { data: [], total: 0, limit, offset }; }
+}
+
+// ─── Similar manga / recommendations ──────────────────────────────
+
+export async function fetchSimilarManga(mangaId: string, limit = 10): Promise<SimilarManga[]> {
+  try {
+    // Use the MangaDex relation endpoint for "related" manga
+    const tagIds = await fetchTags();
+    // Fallback: fetch manga with overlapping genres
+    const manga = await fetchMangaById(mangaId);
+    if (!manga?.genres || manga.genres.length === 0) return [];
+
+    const includedTags = tagIds
+      .filter((t) => manga.genres!.includes(t.name))
+      .map((t) => t.id)
+      .slice(0, 3);
+
+    if (includedTags.length === 0) return [];
+
+    const results = await fetchMangaList({
+      includedTags,
+      limit,
+      order: { followedCount: 'desc' },
+    });
+
+    return results
+      .filter((m) => m.id !== mangaId)
+      .slice(0, limit)
+      .map((m) => ({ id: m.id, title: m.title, coverImageUrl: m.coverImageUrl }));
+  } catch {
+    return [];
+  }
 }
 
 // ─── Chapter page fetching (for offline download manager) ──────────
