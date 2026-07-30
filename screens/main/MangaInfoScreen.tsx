@@ -68,11 +68,14 @@ const SIMILAR_ITEM_W = 110;
 
 // ─── Duplicate scoring ───────────────────────────────────────────────
 
-/** Score a chapter: +10 if it has a title, +5 per page (proxy for popularity) */
+/** Score a chapter for primary selection: title > scanlation group > pages */
 function scoreChapter(ch: ChapterWithDownload): number {
   let s = 0;
-  if (ch.title && ch.title.trim().length > 0) s += 10;
-  s += Math.min(ch.pages, 50) * 0.1; // cap at +5 for 50+ pages
+  if (ch.title && ch.title.trim().length > 0) s += 15;
+  if (ch.scanlationGroup && ch.scanlationGroup.trim().length > 0) s += 5;
+  s += Math.min(ch.pages, 50) * 0.1; // cap at +5
+  // Prefer English scanlations
+  if (ch.language === 'en') s += 2;
   return s;
 }
 
@@ -570,11 +573,9 @@ export default function MangaInfoScreen() {
                         </Text>
                       </View>
                       <View style={styles.chapterTextCol}>
-                        {ch.title ? (
-                          <Text style={styles.chapterTitle} numberOfLines={1}>
-                            {ch.title}
-                          </Text>
-                        ) : null}
+                        <Text style={styles.chapterTitle} numberOfLines={1}>
+                          {ch.title || 'Untitled'}
+                        </Text>
                         {ch.volume ? (
                           <Text style={styles.chapterVol}>Vol. {ch.volume}</Text>
                         ) : null}
@@ -592,20 +593,26 @@ export default function MangaInfoScreen() {
                       </View>
                     </Pressable>
 
-                    {/* Switch source dropdown toggle (if alternates exist) */}
+                    {/* Source/version selector (if alternates exist) */}
                     {group.alternates.length > 0 && (
                       <Pressable
-                        style={styles.sourceToggle}
+                        style={[
+                          styles.sourceToggle,
+                          expandedGroups.has(group.chapterNum) && styles.sourceToggleActive,
+                        ]}
                         onPress={() => toggleGroupExpanded(group.chapterNum)}
-                        accessibilityLabel="Switch source"
+                        accessibilityLabel={`${group.alternates.length} other version${group.alternates.length > 1 ? 's' : ''} available`}
                       >
+                        <Text style={styles.sourceToggleLabel} numberOfLines={1}>
+                          {ch.scanlationGroup || 'Unknown'}
+                        </Text>
                         <MaterialCommunityIcons
-                          name={expandedGroups.has(group.chapterNum) ? 'chevron-up' : 'source-branch'}
-                          size={16}
+                          name={expandedGroups.has(group.chapterNum) ? 'chevron-up' : 'chevron-down'}
+                          size={14}
                           color={colors.mutedPlum}
                         />
-                        <Text style={styles.sourceToggleText}>
-                          {group.alternates.length}
+                        <Text style={styles.sourceToggleBadge}>
+                          +{group.alternates.length}
                         </Text>
                       </Pressable>
                     )}
@@ -641,7 +648,7 @@ export default function MangaInfoScreen() {
                               </Text>
                               <Text style={styles.altMeta}>
                                 {alt.pages > 0 ? `${alt.pages}p` : ''}
-                                {alt.title ? ` — ${alt.title}` : ''}
+                                {alt.title ? ` — ${alt.title}` : ' — Untitled'}
                               </Text>
                             </Pressable>
                             <Pressable
@@ -998,19 +1005,34 @@ const styles = StyleSheet.create({
   sourceToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-    paddingHorizontal: spacing.p6,
-    paddingVertical: spacing.p4,
-    borderRadius: 6,
+    gap: 4,
+    paddingHorizontal: spacing.p8,
+    paddingVertical: spacing.p5,
+    borderRadius: 8,
     backgroundColor: colors.sand,
     borderWidth: 1,
     borderColor: colors.mutedPlum,
-    marginRight: spacing.p8,
+    marginRight: spacing.p6,
+    maxWidth: 140,
   },
-  sourceToggleText: {
-    fontSize: 11,
+  sourceToggleActive: {
+    borderColor: colors.plum,
+    backgroundColor: colors.lavender,
+  },
+  sourceToggleLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: colors.plum,
+    flexShrink: 1,
+  },
+  sourceToggleBadge: {
+    fontSize: 10,
     fontWeight: '700',
     color: colors.mutedPlum,
+    backgroundColor: colors.paleLavender,
+    paddingHorizontal: 4,
+    borderRadius: 4,
+    overflow: 'hidden',
   },
   altSources: {
     backgroundColor: colors.creamWhite,
