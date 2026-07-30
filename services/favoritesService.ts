@@ -79,9 +79,28 @@ export async function toggleFavorite(
   mangaImage?: string, genres?: string[],
 ): Promise<boolean> {
   const exists = await isFavorite(mangaId);
-  if (exists) { await removeFavorite(mangaId); return false; }
+  if (exists) { await removeFavorite(mangaId); scheduleMetadataUnlike(mangaId); return false; }
   await addFavorite(mangaId, mangaTitle, mangaImage, genres);
+  scheduleMetadataLike(mangaId, mangaTitle, genres);
   return true;
+}
+
+// ── Fire-and-forget metadata hooks (never block the UI) ────────────
+function scheduleMetadataLike(mangaId: string, title: string, genres?: string[]) {
+  setTimeout(async () => {
+    try {
+      const { onFavoriteAdded } = await import('./metadataClassification');
+      await onFavoriteAdded(mangaId, title, genres);
+    } catch { /* non-critical */ }
+  }, 0);
+}
+function scheduleMetadataUnlike(mangaId: string) {
+  setTimeout(async () => {
+    try {
+      const { onFavoriteRemoved } = await import('./metadataClassification');
+      await onFavoriteRemoved(mangaId);
+    } catch { /* non-critical */ }
+  }, 0);
 }
 
 // ─── Recent Updates ────────────────────────────────────────────────
