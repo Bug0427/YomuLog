@@ -400,8 +400,11 @@ export default function MangaInfoScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.bg }]}>
-      {/* ── Fixed Header Bar ──────────────────────────────────────── */}
-      <View style={[styles.headerBar, { backgroundColor: theme.headerBg, borderBottomColor: theme.border, paddingTop: insets.top }]}>
+      {/* Status bar background fill — keeps the area above the header opaque */}
+      <View style={[styles.statusBarBg, { height: insets.top, backgroundColor: theme.headerBg }]} />
+
+      {/* ── Fixed Action Bar (below safe area) ──────────────────── */}
+      <View style={[styles.headerBar, { backgroundColor: theme.headerBg, borderBottomColor: theme.border, top: insets.top }]}>
         {/* Back */}
         <BackButton onPress={() => navigation.goBack()} />
 
@@ -732,16 +735,22 @@ const styles = StyleSheet.create({
   },
 
   // ── Header bar ──────────────────────────────────────────────────
-  headerBar: {
+  statusBarBg: {
     position: 'absolute',
     top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 101,
+  },
+  headerBar: {
+    position: 'absolute',
+    // top set dynamically via useSafeAreaInsets
     left: 0,
     right: 0,
     height: HEADER_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.p10,
-    // paddingTop set dynamically via useSafeAreaInsets
     borderBottomWidth: 1,
     zIndex: 100,
     backgroundColor: colors.lavender,
@@ -932,7 +941,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.p4,
   },
 
-  // ── Chapters ──────────────────────────────────────────────���───
+  // ── Chapters ─────────────────────────��────────────────────���───
   chaptersSection: {
     marginBottom: spacing.p16,
   },
