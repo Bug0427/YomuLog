@@ -176,7 +176,7 @@ export default function SearchScreen() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [searchText, filter, aiMode, sortOrder]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchText, filter, aiMode, sortOrder, excludedGenres]);
 
   // ── Pull-to-refresh ────────────────────────────────────────────
   const handleRefresh = useCallback(async () => {

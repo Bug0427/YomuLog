@@ -34,13 +34,13 @@ const GenreSlider: FC<GenreSliderProps> = ({
     const selectedSet = new Set(selectedGenres ?? []);
     const excludedSet = new Set(excludedGenres ?? []);
 
-    // Reorder: selected first → unselected → excluded (deduplicated)
+    // Reorder: selected first → excluded → neutral (deduplicated)
     const seen = new Set<string>();
     const addUnique = (g: string) => { if (!seen.has(g)) { seen.add(g); return true; } return false; };
     const ordered = [
         ...genres.filter((g) => selectedSet.has(g) && addUnique(g)),
-        ...genres.filter((g) => !selectedSet.has(g) && !excludedSet.has(g) && addUnique(g)),
         ...genres.filter((g) => excludedSet.has(g) && !selectedSet.has(g) && addUnique(g)),
+        ...genres.filter((g) => !selectedSet.has(g) && !excludedSet.has(g) && addUnique(g)),
     ];
 
     return (
