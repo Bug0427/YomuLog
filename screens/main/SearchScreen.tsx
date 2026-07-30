@@ -147,7 +147,11 @@ export default function SearchScreen() {
           setResults(data);
           setOffset(LIMIT);
         } else {
-          setResults((prev) => [...prev, ...data]);
+          setResults((prev) => {
+            const seen = new Set(prev.map((m) => m.id));
+            const unique = data.filter((m) => !seen.has(m.id));
+            return [...prev, ...unique];
+          });
           setOffset((prev) => prev + LIMIT);
         }
         setHasMore(data.length >= LIMIT);
@@ -181,15 +185,23 @@ export default function SearchScreen() {
     setRefreshing(false);
   }, [fetchResults]);
 
-  // ── Map Manga[] → CardItem[] ─────────────────────────────────────
+  // ── Map Manga[] → CardItem[] (deduplicated by id) ─────────────────
   const cardData: CardItem[] = useMemo(
-    () =>
-      results.map((m) => ({
-        id: m.id,
-        title: m.title,
-        image: m.coverImageUrl,
-        imageUrl: m.coverImageUrl,
-      })),
+    () => {
+      const seen = new Set<string>();
+      return results
+        .filter((m) => {
+          if (seen.has(m.id)) return false;
+          seen.add(m.id);
+          return true;
+        })
+        .map((m) => ({
+          id: m.id,
+          title: m.title,
+          image: m.coverImageUrl,
+          imageUrl: m.coverImageUrl,
+        }));
+    },
     [results]
   );
 
