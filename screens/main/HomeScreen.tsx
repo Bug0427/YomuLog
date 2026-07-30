@@ -136,7 +136,7 @@ export default function HomeScreen() {
           </RefreshControl>
         }
       >
-        <View style={[GeneralStyles.container, { paddingHorizontal: 12, backgroundColor: theme.bg }]}>
+        <View style={{ paddingHorizontal: 12, backgroundColor: theme.bg }}>
           <Header />
         </View>
 
@@ -179,6 +179,12 @@ export default function HomeScreen() {
                   title={config.title}
                   data={items}
                   onTitlePress={() => navigation.navigate('SearchScreen' as never)}
+                  seeMoreOnPress={() =>
+                    (navigation as any).navigate('SearchScreen', {
+                      presetGenre: config.type === 'genre' ? config.genre : undefined,
+                      presetOrder: config.type === 'order' ? config.order : undefined,
+                    })
+                  }
                   footerComponent={
                     isLast ? <RefreshCard onRefresh={handleRefresh} /> : undefined
                   }

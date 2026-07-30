@@ -31,15 +31,23 @@ export default function CollapsibleSection({
   }, []);
 
   return (
-    <View style={{ marginBottom: spacing.p8 }}>
+    <View style={{
+      marginBottom: spacing.p8,
+      backgroundColor: colors.sand,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.plum,
+      overflow: 'hidden',
+    }}>
       <Pressable
         onPress={toggle}
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingVertical: spacing.p10,
+          paddingVertical: spacing.p12,
           paddingHorizontal: spacing.p12,
+          minHeight: 48,
         }}
         accessibilityRole="button"
         accessibilityLabel={expanded ? `Collapse ${title}` : `Expand ${title}`}
