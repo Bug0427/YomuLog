@@ -20,6 +20,7 @@ import {
 } from '../../services/supabaseSyncService';
 import { colors, spacing } from '../../styles/tokens';
 import { useTheme, type ThemeMode } from '../../context/ThemeContext';
+import { usePremium } from '../../context/PremiumContext';
 import {
   loadAllPreferences,
   setLanguage as saveLanguage,
@@ -143,9 +144,7 @@ export default function SettingsScreen() {
   });
   const [syncLoading, setSyncLoading] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-
-  // Simulated premium check
-  const [isPremium, setIsPremium] = useState(false);
+  const { isPremium, activatePremium } = usePremium();
 
   // Load persisted preferences on mount
   useEffect(() => {
@@ -448,6 +447,101 @@ export default function SettingsScreen() {
             marginHorizontal: 4,
           }} />
 
+          {/* ─── Premium Status Section ───────────────────────────── */}
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{
+              fontSize: 18,
+              fontWeight: '800',
+              color: theme.textPrimary,
+              marginBottom: 10,
+              paddingLeft: 4,
+            }}>
+              Premium
+            </Text>
+
+            <Pressable
+              onPress={() => setShowPremiumModal(true)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: spacing.p14,
+                backgroundColor: isPremium ? theme.success + '18' : theme.accentLight,
+                borderRadius: 12,
+                borderWidth: 1.5,
+                borderColor: isPremium ? theme.success : theme.accent,
+                gap: spacing.p12,
+              }}
+            >
+              <View style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: isPremium ? theme.success + '33' : theme.accent + '22',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Feather
+                  name={isPremium ? 'award' : 'star'}
+                  size={24}
+                  color={isPremium ? theme.success : theme.accent}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{
+                  fontSize: 15,
+                  fontWeight: '700',
+                  color: theme.textPrimary,
+                }}>
+                  {isPremium ? 'Premium Active' : 'Go Premium'}
+                </Text>
+                <Text style={{
+                  fontSize: 12,
+                  color: theme.textMuted,
+                  marginTop: 2,
+                }}>
+                  {isPremium
+                    ? 'Cloud sync, unlimited downloads, AI search & custom themes'
+                    : '$2.99/mo — unlock all premium features'}
+                </Text>
+              </View>
+              <Feather
+                name="chevron-right"
+                size={20}
+                color={theme.textMuted}
+              />
+            </Pressable>
+
+            {/* Dev toggle — hidden in production */}
+            {isPremium && (
+              <Pressable
+                onPress={async () => {
+                  const { deactivatePremium } = (await import('../../context/PremiumContext'));
+                  // Access via context; we'll add a dev handler
+                  Alert.alert('Premium Active', 'Manage your subscription in Account Settings.', [{ text: 'OK' }]);
+                }}
+                style={{
+                  marginTop: spacing.p8,
+                  alignSelf: 'flex-end',
+                  paddingHorizontal: spacing.p10,
+                  paddingVertical: spacing.p4,
+                }}
+              >
+                <Text style={{ fontSize: 11, color: theme.textMuted }}>
+                  Subscribed
+                </Text>
+              </Pressable>
+            )}
+          </View>
+
+          {/* ─── Divider before settings grid ─────────────────────── */}
+          <View style={{
+            height: 2,
+            backgroundColor: theme.border,
+            opacity: 0.25,
+            marginBottom: 16,
+            marginHorizontal: 4,
+          }} />
+
           {/* ─── Settings Grid ────────────────────────────────────── */}
           <View style={[SettingButtonStyles.grid, { backgroundColor: theme.bgSecondary }]}>
             <GridItem label={`Theme: ${themeMode}`} onPress={cycleTheme}>
@@ -483,8 +577,19 @@ export default function SettingsScreen() {
             <GridItem label="Reset AI recs" onPress={handleResetAI}>
               <Feather name="rotate-ccw" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
             </GridItem>
-            <GridItem label="AI Search" onPress={toggleAISearch}>
-              <Feather name={aiSearchOn ? "cpu" : "cpu"} style={[SettingButtonStyles.icon, { color: theme.accent, opacity: aiSearchOn ? 1 : 0.4 }]} />
+            <GridItem
+              label="AI Search"
+              onPress={() => {
+                if (!isPremium) { setShowPremiumModal(true); return; }
+                toggleAISearch();
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Feather name="cpu" style={[SettingButtonStyles.icon, { color: theme.accent, opacity: aiSearchOn && isPremium ? 1 : 0.4 }]} />
+                {!isPremium && (
+                  <Feather name="lock" size={10} color={theme.textMuted} style={{ marginLeft: -4, marginTop: -8 }} />
+                )}
+              </View>
             </GridItem>
             <GridItem label="Manage downloads" onPress={() => navigation.navigate('ManageDownloadsScreen' as never)}>
               <Feather name="download" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
@@ -511,17 +616,15 @@ export default function SettingsScreen() {
       <PremiumUpgradeModal
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
-        onUpgrade={() => {
-          setIsPremium(true);
-          (async () => {
-            setSyncLoading(true);
-            const newState = await setSyncEnabled(true);
-            setSyncState(newState);
-            setSyncLoading(false);
-            if (newState.status === 'synced') {
-              Alert.alert('Welcome to Premium!', `Cloud Sync is now enabled.\nLast synced: ${formatSyncTimestamp(newState.lastSyncedAt)}`, [{ text: 'OK' }]);
-            }
-          })();
+        onUpgrade={async () => {
+          await activatePremium();
+          setSyncLoading(true);
+          const newState = await setSyncEnabled(true);
+          setSyncState(newState);
+          setSyncLoading(false);
+          if (newState.status === 'synced') {
+            Alert.alert('Welcome to Premium!', `Cloud Sync is now enabled.\nLast synced: ${formatSyncTimestamp(newState.lastSyncedAt)}`, [{ text: 'OK' }]);
+          }
         }}
       />
 

@@ -14,7 +14,10 @@ import Anchor from '../../components/layout/Anchor';
 import { GeneralStyles, CardViewStyles } from '../../styles/global';
 import { colors, spacing, t } from '../../styles/tokens';
 import { useTheme } from '../../context/ThemeContext';
+import { usePremium } from '../../context/PremiumContext';
+import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import {
   getDownloadedChapters,
   getDownloadQueue,
@@ -146,6 +149,7 @@ export default function DownLoadsScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
   const { colors: theme } = useTheme();
+  const { isPremium } = usePremium();
   const scrollRef = React.useRef<any>(null);
 
   const [downloaded, setDownloaded] = useState<DownloadedChapter[]>([]);
@@ -153,6 +157,7 @@ export default function DownLoadsScreen() {
   const [favorites, setFavorites] = useState<BookmarkedManga[]>([]);
   const [filterState, setFilterState] = useState<FilterState>(DEFAULT_FILTER_STATE);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [stats, setStats] = useState({ total: 0, completed: 0, failed: 0, pending: 0, downloading: 0 });
   const [processing, setProcessing] = useState(false);
 
@@ -239,7 +244,28 @@ export default function DownLoadsScreen() {
             <Header />
             <SearchBar onFilterPress={() => setShowFilterModal(true)} />
             <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
-              <Text style={GeneralStyles.h1}>Downloads</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={GeneralStyles.h1}>Downloads</Text>
+                {!isPremium && (
+                  <Pressable
+                    onPress={() => setShowPremiumModal(true)}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      backgroundColor: theme.accent + '22',
+                      borderRadius: 6,
+                      paddingHorizontal: spacing.p6,
+                      paddingVertical: spacing.p2,
+                      gap: 3,
+                    }}
+                  >
+                    <Feather name="lock" size={10} color={theme.accent} />
+                    <Text style={{ fontSize: 9, fontWeight: '700', color: theme.accent, textTransform: 'uppercase' }}>
+                      Premium
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
             </View>
 
             {/* Stats row */}
@@ -388,6 +414,11 @@ export default function DownLoadsScreen() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      <PremiumUpgradeModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+      />
     </View>
   );
 }

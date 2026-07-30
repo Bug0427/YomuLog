@@ -27,6 +27,8 @@ import {
 } from '../../utils/filters';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { usePremium } from '../../context/PremiumContext';
+import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
 
 const LIMIT = 20;
 
@@ -48,6 +50,7 @@ export default function SearchScreen() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const { isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
   const { colors: theme } = useTheme();
+  const { isPremium } = usePremium();
   const listRef = useRef<any>(null);
 
   // ── Search / filter state ────────────────────────────────────────
@@ -56,6 +59,7 @@ export default function SearchScreen() {
   const [aiMode, setAiMode] = useState(false);
   const [showSortModal, setShowSortModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [sortOrder, setSortOrder] = useState<string>('relevance');
   const [excludedGenres, setExcludedGenres] = useState<Set<GenreTag>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
@@ -241,7 +245,10 @@ export default function SearchScreen() {
       {/* AI mode toggle */}
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 12, marginTop: 4 }}>
         <Pressable
-          onPress={() => setAiMode((prev) => !prev)}
+          onPress={() => {
+            if (!isPremium) { setShowPremiumModal(true); return; }
+            setAiMode((prev) => !prev);
+          }}
           style={{
             flexDirection: 'row',
             alignItems: 'center',
@@ -389,6 +396,11 @@ export default function SearchScreen() {
         }
       />
       <Anchor scrollRef={listRef} isScrolling={isScrolling} />
+
+      <PremiumUpgradeModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+      />
     </View>
   );
 }
