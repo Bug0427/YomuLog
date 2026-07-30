@@ -4,6 +4,7 @@ import { GeneralStyles } from '../../styles/global';
 import { GenreSliderStyles } from '../../styles/IndependentStyles/GenreSliderStyles';
 import { useWindowWidth } from '../../utils/findDimensions';
 import { colors } from '../../styles/tokens';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 type GenreSliderProps = {
     genres: string[];
@@ -64,6 +65,7 @@ const GenreSlider: FC<GenreSliderProps> = ({
                                 isActive && {
                                     backgroundColor: colors.plum,
                                     borderColor: colors.lavender,
+                                    borderWidth: 2,
                                 },
                                 isExcluded && {
                                     backgroundColor: colors.sand,
@@ -71,9 +73,21 @@ const GenreSlider: FC<GenreSliderProps> = ({
                                     borderWidth: 2,
                                     opacity: 0.6,
                                 },
+                                !isActive && !isExcluded && {
+                                    backgroundColor: colors.creamWhite,
+                                    borderColor: colors.cocoa,
+                                },
                             ]}
                             onPress={() => onGenrePress?.(genre)}
                         >
+                            {isActive && (
+                                <MaterialCommunityIcons
+                                    name="check"
+                                    size={14}
+                                    color={colors.creamWhite}
+                                    style={{ marginRight: 3 }}
+                                />
+                            )}
                             <Text
                                 style={[
                                     GeneralStyles.plainText,

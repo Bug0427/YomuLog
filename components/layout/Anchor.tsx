@@ -37,12 +37,12 @@ export default function Anchor({ scrollRef, isScrolling }: AnchorProps) {
             scrollTimeoutRef.current = setTimeout(() => {
                 Animated.timing(scrollOpacity, {
                     toValue: 1,
-                    duration: 200,
+                    duration: 250,
                     useNativeDriver: true,
                     easing: Easing.in(Easing.ease),
                 }).start();
                 scrollTimeoutRef.current = null;
-            }, 20);
+            }, 50);
         }
     }, [isScrolling, scrollOpacity]);
 

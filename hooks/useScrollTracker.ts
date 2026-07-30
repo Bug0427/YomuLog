@@ -10,8 +10,8 @@ export function useScrollTracker() {
     }, []);
 
     const handleScrollEnd = useCallback(() => {
-        // 650ms delay — prevents anchor flicker during brief scroll pauses (was 150ms)
-        setTimeout(() => setIsScrolling(false), 650);
+        // 800ms delay — prevents anchor flicker during brief scroll pauses (within spec)
+        setTimeout(() => setIsScrolling(false), 800);
     }, []);
 
     return {
