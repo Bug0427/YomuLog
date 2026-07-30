@@ -1,6 +1,6 @@
 // React & React Native
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, Pressable, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, Alert, Modal, TouchableWithoutFeedback } from 'react-native';
 
 // Navigation
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
@@ -11,7 +11,6 @@ import Header from '../../components/layout/Header';
 import SearchBar from '../../components/layout/SearchBar';
 import MangaSlider from '../../components/cardLayouts/MangaSlider';
 import CardView, { ViewMode, CardItem } from '../../components/cardLayouts/CardView';
-import Filter from '../../components/layout/Filter';
 import SelectionActionBar from '../../components/layout/SelectionActionBar';
 
 // Scroll
@@ -26,6 +25,7 @@ import {
   MangaUpdate,
   removeFavorites,
   updateReadingStatusBatch,
+  ReadingStatus,
 } from '../../services/favoritesService';
 
 // Styles
@@ -34,11 +34,9 @@ import { GeneralStyles, CardViewStyles } from '../../styles/global';
 // Theme
 import { useTheme } from '../../context/ThemeContext';
 
-// Filters
-import { FilterState, DEFAULT_FILTER_STATE } from '../../utils/filters';
-
 // Icons
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { colors } from '../../styles/tokens';
 
 export default function LibraryScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -50,7 +48,8 @@ export default function LibraryScreen() {
   // ── Data state ────────────────────────────────────────────────────
   const [favorites, setFavorites] = useState<BookmarkedManga[]>([]);
   const [recentUpdates, setRecentUpdates] = useState<MangaUpdate[]>([]);
-  const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER_STATE);
+  const [readingFilter, setReadingFilter] = useState<ReadingStatus | null>(null);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // ── Selection state ───────────────────────────────────────────────
@@ -191,22 +190,11 @@ export default function LibraryScreen() {
     [selectionMode, toggleSelection, navigation],
   );
 
-  // ── Filter favorites ─────────────────────────────────────────────
+  // ── Filter favorites by reading status ─────────────────────────────
   const filteredFavorites = useMemo(() => {
-    return favorites.filter((item) => {
-      // Reading status filter
-      if (filter.readingStatus && item.readingStatus !== filter.readingStatus) {
-        return false;
-      }
-      // Genre filter (item must match at least one selected genre)
-      if (filter.genres.length > 0) {
-        if (!item.genres || item.genres.length === 0) return false;
-        if (!filter.genres.some((g) => item.genres!.includes(g))) return false;
-      }
-      // pubStatus and contentRating don't apply to local bookmarks — ignore them
-      return true;
-    });
-  }, [favorites, filter]);
+    if (!readingFilter) return favorites;
+    return favorites.filter((item) => item.readingStatus === readingFilter);
+  }, [favorites, readingFilter]);
 
   // ── Map to CardItem[] for CardView ────────────────────────────────
   const cardData: CardItem[] = useMemo(
@@ -253,10 +241,29 @@ export default function LibraryScreen() {
   );
 
   // ── Header content ────────────────────────────────────────────────
+  const filterLabel = readingFilter
+    ? readingFilter.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+    : 'All';
+
   const HeaderContent = (
     <>
       <Header />
-      <SearchBar />
+      <SearchBar onFilterPress={() => setShowFilterModal(true)} />
+
+      {/* Active filter indicator */}
+      {readingFilter && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, marginTop: 4, gap: 6 }}>
+          <Text style={{ fontSize: 12, color: colors.mutedPlum, fontWeight: '600' }}>
+            Filtered: {filterLabel}
+          </Text>
+          <Pressable
+            onPress={() => setReadingFilter(null)}
+            style={{ paddingHorizontal: 8, paddingVertical: 2, backgroundColor: colors.error, borderRadius: 10 }}
+          >
+            <Text style={{ color: colors.creamWhite, fontSize: 10, fontWeight: '700' }}>✕ Clear</Text>
+          </Pressable>
+        </View>
+      )}
 
       <MangaSlider
         title="Updated"
@@ -265,10 +272,8 @@ export default function LibraryScreen() {
         footerComponent={ViewMoreFooter}
       />
 
-      <Filter filter={filter} onChange={setFilter} showReadingStatus />
-
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
-        <Text style={GeneralStyles.h1}>Library</Text>
+        <Text style={GeneralStyles.h1}>Library ({filteredFavorites.length})</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Pressable
             onPress={() => navigation.navigate('RecentlyReadScreen' as never)}
@@ -317,6 +322,59 @@ export default function LibraryScreen() {
         />
       )}
       <Anchor scrollRef={listRef} isScrolling={isScrolling} />
+
+      {/* ── Reading Status Filter Modal ─────────────────────────── */}
+      <Modal
+        visible={showFilterModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFilterModal(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setShowFilterModal(false)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+            <TouchableWithoutFeedback>
+              <View style={{
+                backgroundColor: colors.creamWhite,
+                borderRadius: 16,
+                borderWidth: 2,
+                borderColor: colors.plum,
+                padding: 24,
+                width: '100%',
+                maxWidth: 320,
+              }}>
+                <Text style={{ fontSize: 18, fontWeight: '800', color: colors.plum, marginBottom: 16, textAlign: 'center' }}>
+                  Filter by Status
+                </Text>
+                {([{ label: 'All', value: null }, { label: 'Reading', value: 'reading' }, { label: 'Completed', value: 'completed' }, { label: 'On Hold', value: 'on_hold' }, { label: 'Dropped', value: 'dropped' }, { label: 'Plan to Read', value: 'plan_to_read' }] as const).map((opt) => (
+                  <Pressable
+                    key={opt.label}
+                    onPress={() => {
+                      setReadingFilter(opt.value as ReadingStatus | null);
+                      setShowFilterModal(false);
+                    }}
+                    style={{
+                      paddingVertical: 12,
+                      paddingHorizontal: 16,
+                      backgroundColor: readingFilter === opt.value ? colors.plum : 'transparent',
+                      borderRadius: 8,
+                      marginBottom: 4,
+                    }}
+                  >
+                    <Text style={{
+                      fontSize: 15,
+                      fontWeight: readingFilter === opt.value ? '800' : '600',
+                      color: readingFilter === opt.value ? colors.creamWhite : colors.cocoa,
+                      textAlign: 'center',
+                    }}>
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
 
       {/* Batch selection action bar */}
       <SelectionActionBar
