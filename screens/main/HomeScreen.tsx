@@ -97,11 +97,11 @@ export default function HomeScreen() {
     setLoading(true);
     setFailedSliders(new Set());
     try {
-      // Fetch sliders in batches of 5 with 500ms delay to avoid MangaDex rate-limiting
+      // Fetch sliders in batches of 5 with 150ms delay to avoid MangaDex rate-limiting
       const map: SliderDataMap = {};
       const failed = new Set<string>();
 
-      await batchProcess(SLIDER_CONFIGS, 5, 500, async (config) => {
+      await batchProcess(SLIDER_CONFIGS, 5, 150, async (config) => {
         try {
           let result: Manga[] = [];
           if (config.type === 'order') {

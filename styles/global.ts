@@ -1,8 +1,6 @@
 // styles/global.ts
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { colors, borders, spacing, u, ux, t } from '../styles/tokens';
-
-const IOS_STATUSBAR_PAD = Platform.OS === 'ios' ? 44 : 0;
 
 const GeneralStyles = StyleSheet.create({
     container: {
@@ -12,7 +10,7 @@ const GeneralStyles = StyleSheet.create({
     section: {
         ...u.bgLavender, ...u.full,
         paddingHorizontal: 0, paddingBottom: spacing.p24,
-        paddingTop: IOS_STATUSBAR_PAD,
+        paddingTop: 0,
     },
     h1: {...t.h1, paddingTop: spacing.p18,},
     scrollContainer: {...u.bgLavender, flexGrow: 1,},
