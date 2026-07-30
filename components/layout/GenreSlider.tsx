@@ -80,14 +80,6 @@ const GenreSlider: FC<GenreSliderProps> = ({
                             ]}
                             onPress={() => onGenrePress?.(genre)}
                         >
-                            {isActive && (
-                                <MaterialCommunityIcons
-                                    name="check"
-                                    size={14}
-                                    color={colors.creamWhite}
-                                    style={{ marginRight: 3 }}
-                                />
-                            )}
                             <Text
                                 style={[
                                     GeneralStyles.plainText,
