@@ -20,22 +20,26 @@ import {
 } from '../../services/supabaseSyncService';
 import { colors } from '../../styles/tokens';
 import { useTheme, type ThemeMode } from '../../context/ThemeContext';
+import {
+  loadAllPreferences,
+  setLanguage as saveLanguage,
+  setAlertsOn as saveAlertsOn,
+  setAISearchOn as saveAISearchOn,
+  setDirectionMode as saveDirectionMode,
+  type Language,
+  type DirectionMode,
+} from '../../services/preferencesService';
 
 type VerifyRow = { SECURITYLVL: SecurityLevel } | null;
 const isAdminLevel = (lvl: any) => lvl === SecurityLevel?.Admin || lvl === 1 || lvl === '1' || lvl === 'Admin';
 const isFeedbackAllowed = (lvl: any) => lvl === 2 || lvl === 3 || lvl === '2' || lvl === '3' || lvl === (SecurityLevel as any)?.Level2 || lvl === (SecurityLevel as any)?.Level3;
 
-export const buttonActions = {
-    refreshMetadata: () => {console.log('🔄 Refresh metadata');},
-    clearCache: () => {console.log('🗑️ Clear cache');},
-    resetAIRecommendations: () => {console.log('🔄 Reset AI recommendations');},
-    enableAISearch: () => { console.log('🤖 Enable AI search');},
-    logOut: (navigation?: any) => { logout(navigation); },
-    openFeedback: (navigation?: any) => { console.log('💬 Open feedback'); navigation?.navigate('FeedBackHome'); },
-    openDownloads: (navigation?: any) => { console.log('⬇️ Open downloads'); navigation?.navigate('ManageDownloadsScreen'); },
-    openAccountSettings: () => {console.log('🔒 Open account settings');},
-    openReadingStats: (navigation?: any) => { console.log('📊 Open reading stats'); navigation?.navigate('ReadingStatsScreen'); },
-};
+/** Language cycle order */
+const LANGUAGES: Language[] = ['en', 'ja', 'ko'];
+const LANGUAGE_FLAGS: Record<Language, string> = { en: '🇺🇸', ja: '🇯🇵', ko: '🇰🇷' };
+
+/** Direction cycle order */
+const DIRECTIONS: DirectionMode[] = ['ltr', 'rtl', 'vertical'];
 
 const GridItem = ({ label, children, onPress }: { label: string; children?: React.ReactNode; onPress?: () => void }) => {
   return (
@@ -48,17 +52,27 @@ const GridItem = ({ label, children, onPress }: { label: string; children?: Reac
   );
 };
 
-/** Larger grid item for the sync section — spans full width */
+/** Larger grid item for the sync section — spans full width, theme-aware */
 const SyncGridItem = ({
   label,
   subtitle,
   children,
   onPress,
+  bg,
+  borderColor,
+  iconBg,
+  textColor,
+  subColor,
 }: {
   label: string;
   subtitle?: string;
   children?: React.ReactNode;
   onPress?: () => void;
+  bg: string;
+  borderColor: string;
+  iconBg: string;
+  textColor: string;
+  subColor: string;
 }) => {
   return (
     <View style={{
@@ -68,19 +82,19 @@ const SyncGridItem = ({
       paddingVertical: 12,
       paddingHorizontal: 12,
       marginBottom: 8,
-      backgroundColor: colors.creamWhite,
+      backgroundColor: bg,
       borderRadius: 12,
       borderWidth: 2,
-      borderColor: colors.plum,
+      borderColor: borderColor,
     }}>
       <Pressable
         style={{
           width: 56,
           height: 56,
           borderRadius: 12,
-          backgroundColor: colors.sand,
+          backgroundColor: iconBg,
           borderWidth: 3,
-          borderColor: colors.plum,
+          borderColor: borderColor,
           alignItems: 'center',
           justifyContent: 'center',
           marginRight: 14,
@@ -91,9 +105,9 @@ const SyncGridItem = ({
         {children}
       </Pressable>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: colors.plum }}>{label}</Text>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: textColor }}>{label}</Text>
         {subtitle ? (
-          <Text style={{ fontSize: 12, color: colors.mutedPlum, marginTop: 2 }}>{subtitle}</Text>
+          <Text style={{ fontSize: 12, color: subColor, marginTop: 2 }}>{subtitle}</Text>
         ) : null}
       </View>
     </View>
@@ -102,15 +116,17 @@ const SyncGridItem = ({
 
 export default function SettingsScreen() {
   const { mode: themeMode, cycleTheme, colors: theme } = useTheme();
-  const [directionMode, setDirectionMode] = useState<'ltr' | 'rtl' | 'vertical'>('ltr');
-  const [language, setLanguage] = useState<'en' | 'ja' | 'ko'>('en');
+  const [directionMode, setDirectionMode] = useState<DirectionMode>('ltr');
+  const [language, setLanguage] = useState<Language>('en');
   const [alertsOn, setAlertsOn] = useState(true);
+  const [aiSearchOn, setAISearchOn] = useState(false);
   const { scrollRef, isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
   const navigation = useNavigation();
   const [accountId, setAccountId] = useState<string | null>(null);
   const [securityLevel, setSecurityLevel] = useState<SecurityLevel | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [showChangeLogin, setShowChangeLogin] = useState(false);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
 
   // ─── Sync state ──────────────────────────────────────────────────
   const [syncState, setSyncState] = useState<SyncState>({
@@ -123,9 +139,23 @@ export default function SettingsScreen() {
   const [syncLoading, setSyncLoading] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
-  // Simulated premium check — in production this would come from a
-  // subscription verification endpoint (Stripe / RevenueCat).
+  // Simulated premium check
   const [isPremium, setIsPremium] = useState(false);
+
+  // Load persisted preferences on mount
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      const prefs = await loadAllPreferences();
+      if (!isMounted) return;
+      setLanguage(prefs.language);
+      setAlertsOn(prefs.alertsOn);
+      setAISearchOn(prefs.aiSearchOn);
+      setDirectionMode(prefs.directionMode);
+      setPrefsLoaded(true);
+    })();
+    return () => { isMounted = false; };
+  }, []);
 
   // Load sync state on mount
   useEffect(() => {
@@ -159,12 +189,71 @@ export default function SettingsScreen() {
   useFocusEffect(useCallback(() => {
     setSecurityLevel((globalThis as any).currentSecurityLevel ?? null);
     setAccountId((globalThis as any).currentAccountId ?? null);
-    // Refresh sync state when screen gains focus
     (async () => {
       const ss = await getSyncState();
       setSyncState(ss);
     })();
   }, []));
+
+  // ─── Preference handlers (with persistence) ─────────────────────
+
+  const cycleLanguage = useCallback(async () => {
+    const idx = LANGUAGES.indexOf(language);
+    const next = LANGUAGES[(idx + 1) % LANGUAGES.length];
+    setLanguage(next);
+    await saveLanguage(next);
+  }, [language]);
+
+  const toggleAlerts = useCallback(async () => {
+    const next = !alertsOn;
+    setAlertsOn(next);
+    await saveAlertsOn(next);
+  }, [alertsOn]);
+
+  const toggleAISearch = useCallback(async () => {
+    const next = !aiSearchOn;
+    setAISearchOn(next);
+    await saveAISearchOn(next);
+  }, [aiSearchOn]);
+
+  const cycleDirection = useCallback(async () => {
+    const idx = DIRECTIONS.indexOf(directionMode);
+    const next = DIRECTIONS[(idx + 1) % DIRECTIONS.length];
+    setDirectionMode(next);
+    await saveDirectionMode(next);
+  }, [directionMode]);
+
+  // ─── Action handlers with confirmation ──────────────────────────
+
+  const handleClearCache = () => {
+    Alert.alert(
+      'Clear Cache',
+      'This will remove all locally cached images and temporary files. Downloaded chapters will not be affected.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear Cache',
+          style: 'destructive',
+          onPress: () => console.log('🗑️ Cache cleared'),
+        },
+      ],
+    );
+  };
+
+  const handleResetAI = () => {
+    Alert.alert(
+      'Reset AI Recommendations',
+      'This will erase your AI recommendation history and reset your taste profile. You will need to re-train recommendations from scratch.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => console.log('🔄 AI recommendations reset'),
+        },
+      ],
+    );
+  };
 
   const handleRefreshMetadata = () => {
     Alert.alert("Refresh Metadata", "This will reset the database.", [
@@ -202,7 +291,6 @@ export default function SettingsScreen() {
   // ─── Sync handlers ───────────────────────────────────────────────
 
   const handleSyncToggle = async () => {
-    // Check premium tier
     if (!isPremium && !syncState.syncEnabled) {
       setShowPremiumModal(true);
       return;
@@ -214,21 +302,12 @@ export default function SettingsScreen() {
       setSyncState(newState);
 
       if (newState.status === 'synced') {
-        Alert.alert(
-          'Sync Complete',
-          `Your data has been backed up.\nLast synced: ${formatSyncTimestamp(newState.lastSyncedAt)}`,
-          [{ text: 'OK' }],
-        );
+        Alert.alert('Sync Complete', `Your data has been backed up.\nLast synced: ${formatSyncTimestamp(newState.lastSyncedAt)}`, [{ text: 'OK' }]);
       } else if (newState.status === 'error') {
-        Alert.alert(
-          'Sync Error',
-          newState.lastError ?? 'An unknown error occurred during sync.',
-          [{ text: 'OK' }],
-        );
+        Alert.alert('Sync Error', newState.lastError ?? 'An unknown error occurred during sync.', [{ text: 'OK' }]);
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Sync failed';
-      Alert.alert('Sync Error', msg);
+      Alert.alert('Sync Error', e instanceof Error ? e.message : 'Sync failed');
     } finally {
       setSyncLoading(false);
     }
@@ -236,34 +315,21 @@ export default function SettingsScreen() {
 
   const handleManualSync = async () => {
     if (!syncState.syncEnabled) return;
-
     setSyncLoading(true);
     try {
       const newState = await performFullSync();
       setSyncState(newState);
-
       if (newState.status === 'synced') {
-        Alert.alert(
-          'Sync Complete',
-          `All data synced successfully.\nLast synced: ${formatSyncTimestamp(newState.lastSyncedAt)}`,
-          [{ text: 'OK' }],
-        );
+        Alert.alert('Sync Complete', `All data synced successfully.\nLast synced: ${formatSyncTimestamp(newState.lastSyncedAt)}`, [{ text: 'OK' }]);
       } else if (newState.status === 'error') {
-        Alert.alert(
-          'Sync Error',
-          newState.lastError ?? 'An unknown error occurred.',
-          [{ text: 'OK' }],
-        );
+        Alert.alert('Sync Error', newState.lastError ?? 'An unknown error occurred.', [{ text: 'OK' }]);
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Sync failed';
-      Alert.alert('Sync Error', msg);
+      Alert.alert('Sync Error', e instanceof Error ? e.message : 'Sync failed');
     } finally {
       setSyncLoading(false);
     }
   };
-
-  // ─── Sync subtitle ───────────────────────────────────────────────
 
   const syncSubtitle = (() => {
     if (syncLoading) return 'Syncing...';
@@ -274,19 +340,17 @@ export default function SettingsScreen() {
     return isPremium ? 'Tap to enable cloud backup' : 'Premium feature — tap to upgrade';
   })();
 
-  // ─── Sync icon ──────────────────────────────────────────────────
-
   const syncIcon = () => {
     if (syncLoading || syncState.status === 'syncing') {
-      return <ActivityIndicator size="small" color={colors.plum} />;
+      return <ActivityIndicator size="small" color={theme.accent} />;
     }
     if (syncState.status === 'error') {
-      return <Feather name="cloud-off" size={26} color={colors.error} />;
+      return <Feather name="cloud-off" size={26} color={theme.error} />;
     }
     if (syncState.syncEnabled && syncState.status === 'synced') {
-      return <Feather name="cloud" size={26} color={colors.success} />;
+      return <Feather name="cloud" size={26} color={theme.success} />;
     }
-    return <Feather name="cloud" size={26} color={colors.plum} />;
+    return <Feather name="cloud" size={26} color={theme.accent} />;
   };
 
   return (
@@ -300,7 +364,7 @@ export default function SettingsScreen() {
             <Text style={{
               fontSize: 18,
               fontWeight: '800',
-              color: colors.deepPlum,
+              color: theme.textPrimary,
               marginBottom: 10,
               paddingLeft: 4,
             }}>
@@ -311,11 +375,15 @@ export default function SettingsScreen() {
               label={syncState.syncEnabled ? 'Sync Enabled' : 'Sync Disabled'}
               subtitle={syncSubtitle}
               onPress={handleSyncToggle}
+              bg={theme.bgCard}
+              borderColor={theme.border}
+              iconBg={theme.bgSecondary}
+              textColor={theme.textSecondary}
+              subColor={theme.textMuted}
             >
               {syncIcon()}
             </SyncGridItem>
 
-            {/* Manual sync button — only visible when sync is enabled */}
             {syncState.syncEnabled && syncState.status !== 'syncing' && !syncLoading && (
               <Pressable
                 onPress={handleManualSync}
@@ -325,26 +393,21 @@ export default function SettingsScreen() {
                   alignItems: 'center',
                   paddingVertical: 8,
                   paddingHorizontal: 14,
-                  backgroundColor: colors.lavender,
+                  backgroundColor: theme.accentLight,
                   borderRadius: 8,
                   gap: 6,
                   marginBottom: 8,
                 }}
               >
-                <Feather name="refresh-cw" size={14} color={colors.deepPlum} />
-                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.deepPlum }}>
+                <Feather name="refresh-cw" size={14} color={theme.accentDark} />
+                <Text style={{ fontSize: 13, fontWeight: '700', color: theme.accentDark }}>
                   Sync Now
                 </Text>
               </Pressable>
             )}
 
-            {/* Sync status details — visible when synced */}
             {syncState.syncEnabled && syncState.status === 'synced' && syncState.scopeTimestamps && (
-              <View style={{
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                marginTop: 2,
-              }}>
+              <View style={{ paddingHorizontal: 8, paddingVertical: 4, marginTop: 2 }}>
                 {(['favorites', 'progress', 'downloads'] as const).map((scope) => {
                   const ts = syncState.scopeTimestamps[scope];
                   const scopeLabel = scope === 'favorites' ? 'Library' : scope === 'progress' ? 'Reading Progress' : 'Downloads';
@@ -353,14 +416,14 @@ export default function SettingsScreen() {
                       <Feather
                         name={ts ? 'check-circle' : 'circle'}
                         size={12}
-                        color={ts ? colors.success : colors.mutedPlum}
+                        color={ts ? theme.success : theme.textMuted}
                         style={{ marginRight: 6 }}
                       />
-                      <Text style={{ fontSize: 11, color: colors.mutedPlum, flex: 1 }}>
+                      <Text style={{ fontSize: 11, color: theme.textMuted, flex: 1 }}>
                         {scopeLabel}
                       </Text>
                       {ts ? (
-                        <Text style={{ fontSize: 11, color: colors.mutedPlum }}>
+                        <Text style={{ fontSize: 11, color: theme.textMuted }}>
                           {formatSyncTimestamp(ts)}
                         </Text>
                       ) : null}
@@ -374,20 +437,20 @@ export default function SettingsScreen() {
           {/* ─── Divider ─────────────────────────────────────────── */}
           <View style={{
             height: 2,
-            backgroundColor: colors.plum,
+            backgroundColor: theme.border,
             opacity: 0.25,
             marginBottom: 16,
             marginHorizontal: 4,
           }} />
 
-          {/* ─── Original Settings Grid ──────────────────────────── */}
+          {/* ─── Settings Grid ────────────────────────────────────── */}
           <View style={SettingButtonStyles.grid}>
             <GridItem label={`Theme: ${themeMode}`} onPress={cycleTheme}>
               {themeMode === 'light' && <Feather name="sun" style={SettingButtonStyles.icon} />}
               {themeMode === 'dark' && <Feather name="moon" style={SettingButtonStyles.icon} />}
               {themeMode === 'sepia' && <Feather name="coffee" style={SettingButtonStyles.icon} />}
             </GridItem>
-            <GridItem label="Direction" onPress={() => setDirectionMode(prev => prev === 'ltr' ? 'rtl' : prev === 'rtl' ? 'vertical' : 'ltr')}>
+            <GridItem label="Direction" onPress={cycleDirection}>
               {directionMode === 'ltr' && <Feather name="chevrons-right" style={[SettingButtonStyles.icon, { fontSize: 35 }]} />}
               {directionMode === 'rtl' && <Feather name="chevrons-left" style={[SettingButtonStyles.icon, { fontSize: 35 }]} />}
               {directionMode === 'vertical' && (
@@ -397,28 +460,28 @@ export default function SettingsScreen() {
                 </View>
               )}
             </GridItem>
-            <GridItem label="Language" onPress={() => setLanguage(prev => prev === 'en' ? 'ja' : prev === 'ja' ? 'ko' : 'en')}>
-              <Text style={SettingButtonStyles.flag}>{language === 'en' ? '🇺🇸' : language === 'ja' ? '🇯🇵' : '🇰🇷'}</Text>
+            <GridItem label="Language" onPress={cycleLanguage}>
+              <Text style={SettingButtonStyles.flag}>{LANGUAGE_FLAGS[language]}</Text>
             </GridItem>
-            <GridItem label="Chapter alerts" onPress={() => setAlertsOn(prev => !prev)}>
+            <GridItem label="Chapter alerts" onPress={toggleAlerts}>
               <Feather name={alertsOn ? "bell" : "bell-off"} style={SettingButtonStyles.icon} />
             </GridItem>
-            <GridItem label="Reading Stats" onPress={() => buttonActions.openReadingStats(navigation)}>
+            <GridItem label="Reading Stats" onPress={() => navigation.navigate('ReadingStatsScreen' as never)}>
               <Feather name="bar-chart-2" style={SettingButtonStyles.icon} />
             </GridItem>
             <GridItem label="Refresh metadata" onPress={handleRefreshMetadata}>
               <Feather name="refresh-ccw" style={SettingButtonStyles.icon} />
             </GridItem>
-            <GridItem label="Clear cache" onPress={buttonActions.clearCache}>
+            <GridItem label="Clear cache" onPress={handleClearCache}>
               <Feather name="trash-2" style={SettingButtonStyles.icon} />
             </GridItem>
-            <GridItem label="Reset AI recs" onPress={buttonActions.resetAIRecommendations}>
+            <GridItem label="Reset AI recs" onPress={handleResetAI}>
               <Feather name="rotate-ccw" style={SettingButtonStyles.icon} />
             </GridItem>
-            <GridItem label="Enable AI search" onPress={buttonActions.enableAISearch}>
-              <Feather name="cpu" style={SettingButtonStyles.icon} />
+            <GridItem label="AI Search" onPress={toggleAISearch}>
+              <Feather name={aiSearchOn ? "cpu" : "cpu"} style={[SettingButtonStyles.icon, { opacity: aiSearchOn ? 1 : 0.4 }]} />
             </GridItem>
-            <GridItem label="Manage downloads" onPress={() => buttonActions.openDownloads(navigation)}>
+            <GridItem label="Manage downloads" onPress={() => navigation.navigate('ManageDownloadsScreen' as never)}>
               <Feather name="download" style={SettingButtonStyles.icon} />
             </GridItem>
             {isAdmin ? (
@@ -433,34 +496,25 @@ export default function SettingsScreen() {
             <GridItem label="Change password/username" onPress={goChangeLogin}>
               <Feather name="lock" style={SettingButtonStyles.icon} />
             </GridItem>
-            <GridItem label="Log out" onPress={() => buttonActions.logOut(navigation)}>
-              <Feather name="log-out" style={SettingButtonStyles.icon} />
-            </GridItem>
+            {/* Log Out removed from Settings per BUG-12 — kept only in Account Profile */}
           </View>
         </View>
       </ScrollView>
 
       <ChangeLoginModal visible={showChangeLogin} onClose={() => setShowChangeLogin(false)} accountId={accountId ?? undefined} navigation={navigation} />
 
-      {/* Premium Upgrade Modal */}
       <PremiumUpgradeModal
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
         onUpgrade={() => {
-          // Simulate upgrading — in production this would trigger Stripe checkout
           setIsPremium(true);
-          // Auto-enable sync after upgrade
           (async () => {
             setSyncLoading(true);
             const newState = await setSyncEnabled(true);
             setSyncState(newState);
             setSyncLoading(false);
             if (newState.status === 'synced') {
-              Alert.alert(
-                'Welcome to Premium!',
-                `Cloud Sync is now enabled.\nLast synced: ${formatSyncTimestamp(newState.lastSyncedAt)}`,
-                [{ text: 'OK' }],
-              );
+              Alert.alert('Welcome to Premium!', `Cloud Sync is now enabled.\nLast synced: ${formatSyncTimestamp(newState.lastSyncedAt)}`, [{ text: 'OK' }]);
             }
           })();
         }}
