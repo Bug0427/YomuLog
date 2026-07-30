@@ -12,6 +12,7 @@ import { useScrollTracker } from '../../hooks/useScrollTracker';
 import Anchor from '../../components/layout/Anchor';
 import { GeneralStyles, CardViewStyles } from '../../styles/global';
 import { colors, spacing, t } from '../../styles/tokens';
+import { useTheme } from '../../context/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   getDownloadedChapters,
@@ -28,12 +29,13 @@ import {
 // ─── Stat box component ────────────────────────────────────────────
 
 function StatBox({ label, value }: { label: string; value: number }) {
+  const { colors: theme } = useTheme();
   return (
     <View style={{ alignItems: 'center' }}>
-      <Text style={{ fontSize: 20, fontWeight: '700', color: colors.deepPlum }}>
+      <Text style={{ fontSize: 20, fontWeight: '700', color: theme.accentDark }}>
         {value}
       </Text>
-      <Text style={{ fontSize: 11, color: colors.mutedPlum }}>{label}</Text>
+      <Text style={{ fontSize: 11, color: theme.textMuted }}>{label}</Text>
     </View>
   );
 }
@@ -41,10 +43,11 @@ function StatBox({ label, value }: { label: string; value: number }) {
 // ─── Download job row ──────────────────────────────────────────────
 
 function JobRow({ item, onRemove }: { item: DownloadJob; onRemove: (id: string) => void }) {
+  const { colors: theme } = useTheme();
   return (
-    <View style={[CardViewStyles.rowCard, { marginBottom: 6, alignItems: 'center' }]}>
+    <View style={[CardViewStyles.rowCard, { marginBottom: 6, alignItems: 'center', backgroundColor: theme.bgCard }]}>
       <View style={[CardViewStyles.rowTextWrap, { flex: 1 }]}>
-        <Text style={CardViewStyles.rowTitle} numberOfLines={1}>
+        <Text style={[CardViewStyles.rowTitle, { color: theme.textSecondary }]} numberOfLines={1}>
           {item.mangaTitle} · Ch. {item.chapterNumber}
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
@@ -54,13 +57,13 @@ function JobRow({ item, onRemove }: { item: DownloadJob; onRemove: (id: string) 
               paddingVertical: 2,
               borderRadius: 4,
               backgroundColor:
-                item.status === 'completed' ? colors.success :
-                item.status === 'failed' ? colors.error :
-                item.status === 'downloading' ? colors.lavender :
-                colors.paleLavender,
+                item.status === 'completed' ? theme.success :
+                item.status === 'failed' ? theme.error :
+                item.status === 'downloading' ? theme.bg :
+                theme.bgSecondary,
             }}
           >
-            <Text style={{ fontSize: 10, fontWeight: '600', color: colors.plum }}>
+            <Text style={{ fontSize: 10, fontWeight: '600', color: theme.textSecondary }}>
               {item.status === 'downloading' ? `${item.progress}%` : item.status}
             </Text>
           </View>
@@ -70,7 +73,7 @@ function JobRow({ item, onRemove }: { item: DownloadJob; onRemove: (id: string) 
                 flex: 1,
                 height: 4,
                 borderRadius: 2,
-                backgroundColor: colors.paleLavender,
+                backgroundColor: theme.bgSecondary,
                 overflow: 'hidden',
               }}
             >
@@ -78,7 +81,7 @@ function JobRow({ item, onRemove }: { item: DownloadJob; onRemove: (id: string) 
                 style={{
                   width: `${item.progress}%`,
                   height: '100%',
-                  backgroundColor: colors.plum,
+                  backgroundColor: theme.accent,
                   borderRadius: 2,
                 }}
               />
@@ -86,14 +89,14 @@ function JobRow({ item, onRemove }: { item: DownloadJob; onRemove: (id: string) 
           )}
         </View>
         {item.errorMessage && (
-          <Text style={{ fontSize: 10, color: colors.error, marginTop: 2 }} numberOfLines={1}>
+          <Text style={{ fontSize: 10, color: theme.error, marginTop: 2 }} numberOfLines={1}>
             {item.errorMessage}
           </Text>
         )}
       </View>
       {item.status === 'failed' && (
         <Pressable onPress={() => onRemove(item.jobId)}>
-          <MaterialCommunityIcons name="close" size={18} color={colors.error} />
+          <MaterialCommunityIcons name="close" size={18} color={theme.error} />
         </Pressable>
       )}
     </View>
@@ -109,24 +112,25 @@ function DownloadedRow({
   item: DownloadedChapter;
   onPress: (item: DownloadedChapter) => void;
 }) {
+  const { colors: theme } = useTheme();
   return (
     <Pressable onPress={() => onPress(item)}>
-      <View style={[CardViewStyles.rowCard, { marginBottom: 6, alignItems: 'center' }]}>
+      <View style={[CardViewStyles.rowCard, { marginBottom: 6, alignItems: 'center', backgroundColor: theme.bgCard }]}>
         <View
           style={[
             CardViewStyles.rowMediaBase,
-            { width: 40, height: 56, backgroundColor: colors.sand },
+            { width: 40, height: 56, backgroundColor: theme.bgCard },
           ]}
         />
         <View style={[CardViewStyles.rowTextWrap, { flex: 1 }]}>
-          <Text style={CardViewStyles.rowTitle} numberOfLines={1}>
+          <Text style={[CardViewStyles.rowTitle, { color: theme.textSecondary }]} numberOfLines={1}>
             {item.mangaTitle}
           </Text>
-          <Text style={{ fontSize: 12, color: colors.mutedPlum, marginTop: 2 }}>
+          <Text style={{ fontSize: 12, color: theme.textMuted, marginTop: 2 }}>
             Ch. {item.chapterNumber} · {item.totalPages} pages
           </Text>
         </View>
-        <MaterialCommunityIcons name="check-circle" size={18} color={colors.success} />
+        <MaterialCommunityIcons name="check-circle" size={18} color={theme.success} />
       </View>
     </Pressable>
   );
@@ -137,6 +141,7 @@ function DownloadedRow({
 export default function DownLoadsScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
+  const { colors: theme } = useTheme();
   const scrollRef = React.useRef<any>(null);
 
   const [downloaded, setDownloaded] = useState<DownloadedChapter[]>([]);
@@ -228,7 +233,7 @@ export default function DownLoadsScreen() {
                 justifyContent: 'space-around',
                 paddingVertical: spacing.p10,
                 marginHorizontal: spacing.p12,
-                backgroundColor: colors.paleLavender,
+                backgroundColor: theme.bgSecondary,
                 borderRadius: 8,
                 marginBottom: spacing.p10,
               }}
@@ -254,13 +259,13 @@ export default function DownLoadsScreen() {
                   style={{
                     flex: 1,
                     paddingVertical: 8,
-                    backgroundColor: colors.deepPlum,
+                    backgroundColor: theme.accentDark,
                     borderRadius: 6,
                     alignItems: 'center',
                     opacity: processing ? 0.6 : 1,
                   }}
                 >
-                  <Text style={{ color: colors.paleLavender, fontWeight: '600', fontSize: 13 }}>
+                  <Text style={{ color: theme.textInverse, fontWeight: '600', fontSize: 13 }}>
                     {processing ? 'Processing…' : 'Download All'}
                   </Text>
                 </Pressable>
@@ -271,7 +276,7 @@ export default function DownLoadsScreen() {
                     style={{
                       flex: 1,
                       paddingVertical: 8,
-                      backgroundColor: colors.error,
+                      backgroundColor: theme.error,
                       borderRadius: 6,
                       alignItems: 'center',
                       opacity: processing ? 0.6 : 1,
@@ -287,13 +292,13 @@ export default function DownLoadsScreen() {
                   style={{
                     paddingVertical: 8,
                     paddingHorizontal: 12,
-                    backgroundColor: colors.sand,
+                    backgroundColor: theme.bgCard,
                     borderRadius: 6,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <MaterialCommunityIcons name="delete-sweep" size={18} color={colors.deepPlum} />
+                  <MaterialCommunityIcons name="delete-sweep" size={18} color={theme.accentDark} />
                 </Pressable>
               </View>
             )}
@@ -323,8 +328,8 @@ export default function DownLoadsScreen() {
         ListEmptyComponent={
           !isEmpty ? null : (
             <View style={{ alignItems: 'center', marginTop: 60, paddingHorizontal: 24 }}>
-              <MaterialCommunityIcons name="download-off" size={48} color={colors.mutedPlum} />
-              <Text style={{ fontSize: 16, color: colors.mutedPlum, marginTop: 12, textAlign: 'center' }}>
+              <MaterialCommunityIcons name="download-off" size={48} color={theme.textMuted} />
+              <Text style={{ fontSize: 16, color: theme.textMuted, marginTop: 12, textAlign: 'center' }}>
                 No downloads yet. Open a manga and save chapters for offline reading.
               </Text>
             </View>
