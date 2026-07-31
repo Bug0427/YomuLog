@@ -22,4 +22,5 @@ export type RootStackParamList = {
     LeaveRating: undefined;
     LeaveReview: undefined;
     AuthScreen: undefined;
+    OnboardingFlow: undefined;
 };

@@ -328,6 +328,7 @@ function StatCard({ label, value, icon, color }: { label: string; value: string;
 
 /** Pure-RN donut chart using View borders and rotation */
 function DonutChart({ segments }: { segments: { label: string; count: number; color: string }[] }) {
+  const { colors: theme } = useTheme();
   const total = segments.reduce((s, x) => s + x.count, 0) || 1;
   let cumulativeAngle = -90; // start from top
 

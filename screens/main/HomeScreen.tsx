@@ -221,7 +221,7 @@ export default function HomeScreen() {
               const isLast = idx === SLIDER_CONFIGS.length - 1;
               // Show failed as retry card, empty as placeholder, or data as slider
               if ((!items || items.length === 0) && !isFailed) {
-                // Show friendly empty state for sliders with no data
+                // Show simple italic empty state matching MangaInfo pattern
                 return (
                   <View key={`${config.title}-${refreshKey}`}>
                     <View style={{ marginBottom: 20, paddingHorizontal: 12 }}>
@@ -233,20 +233,9 @@ export default function HomeScreen() {
                       }}>
                         {config.title}
                       </Text>
-                      <View style={{
-                        alignItems: 'center',
-                        paddingVertical: 40,
-                        backgroundColor: theme.bgCard,
-                        borderRadius: 8,
-                        borderWidth: 1,
-                        borderColor: theme.borderLight,
-                        borderStyle: 'dashed',
-                      }}>
-                        <MaterialCommunityIcons name="book-open-outline" size={32} color={theme.textMuted} />
-                        <Text style={{ fontSize: 14, color: theme.textMuted, marginTop: 8, fontStyle: 'italic' }}>
-                          No manga available
-                        </Text>
-                      </View>
+                      <Text style={{ fontSize: 14, color: theme.textMuted, fontStyle: 'italic', textAlign: 'center', marginTop: 12 }}>
+                        No manga available
+                      </Text>
                     </View>
                     {isLast && <RefreshCard onRefresh={handleRefresh} />}
                   </View>

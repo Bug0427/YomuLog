@@ -7,8 +7,9 @@ import {
 import { useNavigation, RouteProp, useRoute } from '@react-navigation/native';
 import { getChapterPages, buildPageUrlsFromChapterData, getMangaFeed } from '../../services/mangaAPI';
 import { RootStackParamList } from '../../navigation/navigation';
-import { spacing } from '../../styles/tokens';
+import { spacing, colors } from '../../styles/tokens';
 import { useTheme } from '../../context/ThemeContext';
+import ErrorBoundary from '../../components/layout/ErrorBoundary';
 import BackButton from '../../components/general/BackButton';
 import {
   updateChapterProgress,
@@ -37,7 +38,9 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 export default function ReaderScreenWrapper() {
   return (
     <ReaderThemeProvider>
-      <ReaderScreen />
+      <ErrorBoundary>
+        <ReaderScreen />
+      </ErrorBoundary>
     </ReaderThemeProvider>
   );
 }
@@ -457,6 +460,7 @@ function ReaderPage({ uri, index, isActive, bg, onLoad }: {
   bg: string;
   onLoad?: () => void;
 }) {
+  const { colors: theme } = useTheme();
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
 
