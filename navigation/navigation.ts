@@ -23,4 +23,5 @@ export type RootStackParamList = {
     LeaveReview: undefined;
     AuthScreen: undefined;
     OnboardingFlow: undefined;
+    ReaderThemeSettingsScreen: undefined;
 };
