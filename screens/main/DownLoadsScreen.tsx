@@ -370,19 +370,13 @@ export default function DownLoadsScreen() {
         }
         ListEmptyComponent={
           filteredDownloaded.length === 0 && downloaded.length > 0 ? (
-            <View style={{ alignItems: 'center', marginTop: 60, paddingHorizontal: 24 }}>
-              <MaterialCommunityIcons name="filter-remove" size={48} color={theme.textMuted} />
-              <Text style={{ fontSize: 16, color: theme.textMuted, marginTop: 12, textAlign: 'center' }}>
-                No downloaded chapters match the selected filter.
-              </Text>
-            </View>
+            <Text style={{ fontSize: 14, color: theme.textMuted, fontStyle: 'italic', textAlign: 'center', marginTop: 40 }}>
+              No downloaded chapters match the selected filter.
+            </Text>
           ) : !isEmpty ? null : (
-            <View style={{ alignItems: 'center', marginTop: 60, paddingHorizontal: 24 }}>
-              <MaterialCommunityIcons name="download-off" size={48} color={theme.textMuted} />
-              <Text style={{ fontSize: 16, color: theme.textMuted, marginTop: 12, textAlign: 'center' }}>
-                No downloads yet. Open a manga and save chapters for offline reading.
-              </Text>
-            </View>
+            <Text style={{ fontSize: 14, color: theme.textMuted, fontStyle: 'italic', textAlign: 'center', marginTop: 40 }}>
+              No downloads yet. Open a manga and save chapters for offline reading.
+            </Text>
           )
         }
       />
