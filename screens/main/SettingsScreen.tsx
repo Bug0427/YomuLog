@@ -607,7 +607,7 @@ export default function SettingsScreen() {
               onPress={() => setShowReaderThemeModal(true)}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Feather name="palette" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
+                <Feather name="eye" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
                 {!isPremium && (
                   <Feather name="lock" size={10} color={theme.textMuted} style={{ marginLeft: -4, marginTop: -8 }} />
                 )}

@@ -67,16 +67,16 @@ export default function ReverseImageSearchModal({
         </View>
       )}
       <View style={styles.cardBody}>
-        <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={2}>
+        <Text style={[styles.cardTitle, { color: theme.textPrimary }]} numberOfLines={2}>
           {item.manga.title}
         </Text>
         <View style={styles.scoreRow}>
           <MaterialCommunityIcons
             name="chart-bell-curve"
             size={12}
-            color={scoreColor(item.score)}
+            color={scoreColor(item.score, theme)}
           />
-          <Text style={[styles.scoreText, { color: scoreColor(item.score) }]}>
+          <Text style={[styles.scoreText, { color: scoreColor(item.score, theme) }]}>
             {Math.round(item.score * 100)}% match
           </Text>
         </View>
@@ -99,7 +99,7 @@ export default function ReverseImageSearchModal({
             <View style={[styles.modal, { backgroundColor: theme.bg }]}>
               {/* Header */}
               <View style={styles.header}>
-                <Text style={[styles.headerTitle, { color: theme.text }]}>
+                <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
                   Reverse Image Search
                 </Text>
                 <Pressable onPress={onClose} hitSlop={8}>
@@ -166,7 +166,7 @@ export default function ReverseImageSearchModal({
 // Helpers
 // ---------------------------------------------------------------------------
 
-function scoreColor(score: number): string {
+function scoreColor(score: number, theme: { success: string; warning: string; error: string }): string {
   if (score >= 0.7) return theme.success;
   if (score >= 0.4) return theme.warning;
   return theme.error;
