@@ -22,7 +22,6 @@ const AUTO_DISMISS_MS = 4000; // hide after 4s on success
 const ANIM_DURATION = 300;
 
 export default function SyncStatusBanner({
-  const { colors: theme } = useTheme();
   status,
   lastSyncedAt,
   lastError,
@@ -31,6 +30,7 @@ export default function SyncStatusBanner({
   onSyncNow,
   onDismiss,
 }: Props) {
+  const { colors: theme } = useTheme();
   const [visible, setVisible] = useState(false);
   const opacity = useRef(new Animated.Value(0)).current;
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
