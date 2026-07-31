@@ -369,7 +369,14 @@ export default function DownLoadsScreen() {
           </>
         }
         ListEmptyComponent={
-          !isEmpty ? null : (
+          filteredDownloaded.length === 0 && downloaded.length > 0 ? (
+            <View style={{ alignItems: 'center', marginTop: 60, paddingHorizontal: 24 }}>
+              <MaterialCommunityIcons name="filter-remove" size={48} color={theme.textMuted} />
+              <Text style={{ fontSize: 16, color: theme.textMuted, marginTop: 12, textAlign: 'center' }}>
+                No downloaded chapters match the selected filter.
+              </Text>
+            </View>
+          ) : !isEmpty ? null : (
             <View style={{ alignItems: 'center', marginTop: 60, paddingHorizontal: 24 }}>
               <MaterialCommunityIcons name="download-off" size={48} color={theme.textMuted} />
               <Text style={{ fontSize: 16, color: theme.textMuted, marginTop: 12, textAlign: 'center' }}>
