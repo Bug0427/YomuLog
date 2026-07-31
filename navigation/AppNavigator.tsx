@@ -1,4 +1,5 @@
 import React from 'react';
+import ErrorBoundary from '../components/layout/ErrorBoundary';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 
@@ -31,6 +32,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
     return (
+        <ErrorBoundary>
         <NavigationContainer>
         <Stack.Navigator
           initialRouteName="Splash"
@@ -65,5 +67,6 @@ export default function AppNavigator() {
             <Stack.Screen name="AuthScreen" component={AuthScreen} />
         </Stack.Navigator>
         </NavigationContainer>
+      </ErrorBoundary>
     );
 }
