@@ -23,7 +23,9 @@ import { Text } from 'react-native';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 
 function AuthConsumer() {
-  const { user, isAuthenticated, isReady } = useAuth();
+  const { user, loading } = useAuth();
+  const isReady = !loading;
+  const isAuthenticated = !!user;
   return (
     <>
       <Text testID="auth-ready">{isReady ? 'ready' : 'loading'}</Text>
@@ -72,7 +74,6 @@ describe('AuthContext', () => {
     expect(typeof contextValue.signIn).toBe('function');
     expect(typeof contextValue.signUp).toBe('function');
     expect(typeof contextValue.signOut).toBe('function');
-    expect(contextValue.isAuthenticated).toBe(false);
     expect(contextValue.user).toBeNull();
   });
 

@@ -17,7 +17,6 @@ const BackButton: React.FC<BackButtonProps> = ({ onPress, accessibilityLabel = '
         styles.button,
         {
           borderColor: theme.textPrimary,
-          color: theme.accent,
         },
       ]}
       onPress={onPress}

@@ -7,7 +7,7 @@ import {
 import { useNavigation, RouteProp, useRoute } from '@react-navigation/native';
 import { getChapterPages, buildPageUrlsFromChapterData, getMangaFeed } from '../../services/mangaAPI';
 import { RootStackParamList } from '../../navigation/navigation';
-import { spacing } from '../../styles/tokens';
+import { spacing, colors } from '../../styles/tokens';
 import { useTheme } from '../../context/ThemeContext';
 import BackButton from '../../components/general/BackButton';
 import {
@@ -457,6 +457,7 @@ function ReaderPage({ uri, index, isActive, bg, onLoad }: {
   bg: string;
   onLoad?: () => void;
 }) {
+  const { colors: theme } = useTheme();
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
 
