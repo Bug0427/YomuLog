@@ -12,7 +12,7 @@
     "splash": {
       "image": "./assets/logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#AFA6DD"
     },
     "updates": {
       "fallbackToCacheTimeout": 0,
@@ -21,14 +21,21 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yomulog.app"
+      "bundleIdentifier": "com.yomulog.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "YomuLog uses your photo library for reverse image search to find manga by cover art.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo.png",
-        "backgroundColor": "#FFFFFF"
+        "backgroundColor": "#AFA6DD"
       },
-      "package": "com.yomulog.app"
+      "package": "com.yomulog.app",
+      "permissions": ["INTERNET", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]
     },
     "web": {
       "favicon": "./assets/logo.png"
@@ -36,6 +43,11 @@
     "plugins": [
       "expo-sqlite",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "YOMULOG_PROJECT_ID"
+      }
+    }
   }
 }
