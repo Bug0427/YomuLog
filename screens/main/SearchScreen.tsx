@@ -29,6 +29,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
 import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
+import ReverseImageSearchModal from '../../components/layout/ReverseImageSearchModal';
+import { pickImageFromLibrary, searchByImage, RisMatch } from '../../services/reverseImageSearch';
 
 const LIMIT = 20;
 
@@ -82,6 +84,46 @@ export default function SearchScreen() {
   useEffect(() => {
     loadUpdates();
   }, [loadUpdates]);
+
+  // ── Reverse image search state ─────────────────────────────────────
+  const [risVisible, setRisVisible] = useState(false);
+  const [risQueryUri, setRisQueryUri] = useState<string | null>(null);
+  const [risResults, setRisResults] = useState<RisMatch[]>([]);
+  const [risLoading, setRisLoading] = useState(false);
+  const [risError, setRisError] = useState<string | null>(null);
+
+  /** Launch the reverse image search flow: pick → fingerprint → match. */
+  const handleRisPress = useCallback(async () => {
+    setRisError(null);
+    const asset = await pickImageFromLibrary();
+    if (!asset) return;
+
+    const uri = asset.uri;
+    setRisQueryUri(uri);
+    setRisVisible(true);
+    setRisResults([]);
+    setRisLoading(true);
+
+    try {
+      const matches = await searchByImage(uri);
+      setRisResults(matches);
+      if (matches.length === 0) setRisError(null); // no error, just no matches
+    } catch (e) {
+      console.error('[RIS] search failed:', e);
+      setRisError('Search failed. Please try a different image.');
+    } finally {
+      setRisLoading(false);
+    }
+  }, []);
+
+  /** Navigate to manga detail from RIS result. */
+  const handleRisSelectManga = useCallback(
+    (mangaId: string) => {
+      setRisVisible(false);
+      (navigation as any).navigate('MangaInfoScreen', { mangaId });
+    },
+    [navigation]
+  );
 
   // ── Effective AI mode — auto-enables for natural language queries (3+ words)
   const isNaturalLanguage = searchText.trim().split(/\s+/).length >= 3;
@@ -246,8 +288,25 @@ export default function SearchScreen() {
         onOpenOrder={() => setShowSortModal(true)}
         placeholder="Search items..."
       />
-      {/* AI mode toggle */}
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 12, marginTop: 4 }}>
+      {/* AI mode toggle + Reverse Image Search */}
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: 12, marginTop: 4, gap: 8 }}>
+        {/* Reverse image search button */}
+        <Pressable
+          onPress={handleRisPress}
+          accessibilityLabel="Search by image"
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 17,
+            borderWidth: 1,
+            borderColor: theme.border,
+            backgroundColor: theme.bgCard,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <MaterialCommunityIcons name="image-search" size={18} color={theme.text} />
+        </Pressable>
         <Pressable
           onPress={() => {
             if (!isPremium) { setShowPremiumModal(true); return; }
@@ -365,6 +424,16 @@ export default function SearchScreen() {
       <PremiumUpgradeModal
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
+      />
+      {/* Reverse image search modal */}
+      <ReverseImageSearchModal
+        visible={risVisible}
+        onClose={() => setRisVisible(false)}
+        queryImageUri={risQueryUri}
+        results={risResults}
+        loading={risLoading}
+        error={risError}
+        onSelectManga={handleRisSelectManga}
       />
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
         <Text style={GeneralStyles.h1}>
