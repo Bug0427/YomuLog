@@ -21,4 +21,5 @@ export type RootStackParamList = {
     ChooseProfileIcon: undefined;
     LeaveRating: undefined;
     LeaveReview: undefined;
+    AuthScreen: undefined;
 };

@@ -21,6 +21,7 @@ import {
 import { colors, spacing } from '../../styles/tokens';
 import { useTheme, type ThemeMode } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
+import { useAuth } from '../../context/AuthContext';
 import {
   loadAllPreferences,
   setLanguage as saveLanguage,
@@ -145,6 +146,7 @@ export default function SettingsScreen() {
   const [syncLoading, setSyncLoading] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const { isPremium, activatePremium } = usePremium();
+  const { user } = useAuth();
 
   // Load persisted preferences on mount
   useEffect(() => {
@@ -578,6 +580,23 @@ export default function SettingsScreen() {
             </GridItem>
             <GridItem label="Clear cache" onPress={handleClearCache}>
               <Feather name="trash-2" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
+            </GridItem>
+            <GridItem
+              label={user ? `Sync Account: ${user.email}` : 'Cloud Sync Account'}
+              onPress={() => {
+                if (!isPremium) { setShowPremiumModal(true); return; }
+                navigation.navigate('AuthScreen' as never);
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Feather
+                  name={user ? 'user-check' : 'user'}
+                  style={[SettingButtonStyles.icon, { color: user ? theme.success : theme.accent }]}
+                />
+                {!isPremium && (
+                  <Feather name="lock" size={10} color={theme.textMuted} style={{ marginLeft: -4, marginTop: -8 }} />
+                )}
+              </View>
             </GridItem>
             <GridItem label="Reset AI recs" onPress={handleResetAI}>
               <Feather name="rotate-ccw" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
