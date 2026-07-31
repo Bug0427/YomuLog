@@ -24,6 +24,7 @@ import ChooseProfileIcon from '../screens/account/ChooseProfileIcon'
 import LeaveRating from '../screens/feedback/LeaveRating';
 import LeaveReview from '../screens/feedback/LeaveReview';
 import ReadingStatsScreen from '../screens/main/ReadingStatsScreen';
+import AuthScreen from '../screens/auth/AuthScreen';
 import { RootStackParamList } from '../navigation/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -61,6 +62,7 @@ export default function AppNavigator() {
             <Stack.Screen name="MangaInfoScreen" component={MangaInfoScreen} />
             <Stack.Screen name="LeaveRating" component={LeaveRating} />
             <Stack.Screen name="LeaveReview" component={LeaveReview} />
+            <Stack.Screen name="AuthScreen" component={AuthScreen} />
         </Stack.Navigator>
         </NavigationContainer>
     );

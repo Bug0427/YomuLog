@@ -5,6 +5,7 @@ import { initDb } from './services/feedbackRepo';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from './context/ThemeContext';
 import { PremiumProvider } from './context/PremiumContext';
+import { AuthProvider } from './context/AuthContext';
 import { useSyncEngine } from './hooks/useSyncEngine';
 import SyncStatusBanner from './components/layout/SyncStatusBanner';
 
@@ -73,11 +74,13 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <PremiumProvider>
-          <SyncWrapper>
-            <ResponsiveContainer>
-              <AppNavigator />
-            </ResponsiveContainer>
-          </SyncWrapper>
+          <AuthProvider>
+            <SyncWrapper>
+              <ResponsiveContainer>
+                <AppNavigator />
+              </ResponsiveContainer>
+            </SyncWrapper>
+          </AuthProvider>
         </PremiumProvider>
       </ThemeProvider>
     </SafeAreaProvider>

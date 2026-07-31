@@ -1,6 +1,7 @@
 // hooks/useSyncEngine.ts
 // Central sync orchestration hook — handles AppState foreground detection,
 // connectivity checks, and debounced auto-sync.
+// Uses real Supabase cloud sync when authenticated, falls back to simulated sync.
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
@@ -11,7 +12,12 @@ import {
   type SyncState,
   type SyncStatus,
 } from '../services/supabaseSyncService';
+import {
+  performCloudSync,
+  isAuthenticated as isSupabaseAuthenticated,
+} from '../services/syncService';
 import { usePremium } from '../context/PremiumContext';
+import { useAuth } from '../context/AuthContext';
 
 const FOREGROUND_SYNC_DEBOUNCE_MS = 10_000; // 10s cooldown between foreground syncs
 const AUTO_SYNC_DEBOUNCE_MS = 5_000; // 5s cooldown for auto-sync after mutations
@@ -32,6 +38,7 @@ export type SyncEngineState = {
  */
 export function useSyncEngine() {
   const { isPremium } = usePremium();
+  const { user } = useAuth();
   const [state, setState] = useState<SyncEngineState>({
     status: 'pending',
     lastSyncedAt: null,
@@ -92,15 +99,30 @@ export function useSyncEngine() {
       }
 
       setState((prev) => ({ ...prev, isOnline: true }));
-      const result = await performFullSync();
-      setState((prev) => ({
-        ...prev,
-        status: result.status,
-        lastSyncedAt: result.lastSyncedAt,
-        lastError: result.lastError,
-        syncEnabled: result.syncEnabled,
-        isOnline: true,
-      }));
+
+      // Try real Supabase cloud sync first (if authenticated)
+      const isSbAuthed = await isSupabaseAuthenticated();
+      if (isSbAuthed) {
+        const cloudResult = await performCloudSync();
+        setState((prev) => ({
+          ...prev,
+          status: cloudResult.status === 'synced' ? 'synced' : 'error',
+          lastSyncedAt: cloudResult.lastSyncedAt,
+          lastError: cloudResult.lastError,
+          isOnline: true,
+        }));
+      } else {
+        // Fall back to simulated sync
+        const result = await performFullSync();
+        setState((prev) => ({
+          ...prev,
+          status: result.status,
+          lastSyncedAt: result.lastSyncedAt,
+          lastError: result.lastError,
+          syncEnabled: result.syncEnabled,
+          isOnline: true,
+        }));
+      }
     } catch (e) {
       setState((prev) => ({
         ...prev,
