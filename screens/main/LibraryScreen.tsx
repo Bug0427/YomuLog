@@ -1,6 +1,6 @@
 // React & React Native
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, Pressable, ActivityIndicator, Alert, Modal, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, Alert, Modal, TouchableWithoutFeedback, ScrollView } from 'react-native';
 
 // Navigation
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
@@ -37,7 +37,12 @@ import { useTheme } from '../../context/ThemeContext';
 
 // Icons
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { colors } from '../../styles/tokens';
+import { Feather } from '@expo/vector-icons';
+import { colors, spacing } from '../../styles/tokens';
+
+// Collections
+import CollectionManager from '../../components/library/CollectionManager';
+import { getCollections, type Collection } from '../../services/collectionService';
 
 // Filters
 import { FilterState, DEFAULT_FILTER_STATE, hasActiveFilters } from '../../utils/filters';
@@ -61,6 +66,12 @@ export default function LibraryScreen() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
 
+  // ── Collection state ────────────────────────────────────────────────
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null);
+  const [showCollectionManager, setShowCollectionManager] = useState(false);
+  const [collectionTargetIds, setCollectionTargetIds] = useState<string[]>([]);
+
   // ── Fetch on focus ────────────────────────────────────────────────
   useFocusEffect(
     useCallback(() => {
@@ -68,13 +79,15 @@ export default function LibraryScreen() {
       async function load() {
         setLoading(true);
         try {
-          const [favs, updates] = await Promise.all([
+          const [favs, updates, cols] = await Promise.all([
             getFavorites(),
             getRecentFavoritesUpdates(),
+            getCollections(),
           ]);
           if (active) {
             setFavorites(favs);
             setRecentUpdates(updates);
+            setCollections(cols);
           }
         } catch (e) {
           console.error('Failed to load library:', e);
@@ -119,12 +132,14 @@ export default function LibraryScreen() {
 
   const reloadFavorites = useCallback(async () => {
     try {
-      const [favs, updates] = await Promise.all([
+      const [favs, updates, cols] = await Promise.all([
         getFavorites(),
         getRecentFavoritesUpdates(),
+        getCollections(),
       ]);
       setFavorites(favs);
       setRecentUpdates(updates);
+      setCollections(cols);
     } catch (e) {
       console.error('Failed to reload library:', e);
     }
@@ -137,9 +152,15 @@ export default function LibraryScreen() {
   }, [reloadFavorites]);
 
   const handleBatchAction = useCallback(
-    (action: 'delete' | 'unlike' | 'markRead') => {
+    (action: 'delete' | 'unlike' | 'markRead' | 'addToCollection') => {
       const ids = Array.from(selectedIds);
       if (ids.length === 0) return;
+
+      if (action === 'addToCollection') {
+        setCollectionTargetIds(ids);
+        setShowCollectionManager(true);
+        return;
+      }
 
       const titles = ids
         .map((id) => favorites.find((f) => f.mangaId === id)?.mangaTitle ?? 'Unknown')
@@ -194,11 +215,25 @@ export default function LibraryScreen() {
     [selectionMode, toggleSelection, navigation],
   );
 
-  // ── Filter favorites by reading status ─────────────────────────────
+  // ── Filter favorites by reading status AND active collection ────────
   const filteredFavorites = useMemo(() => {
-    if (!filterState.readingStatus) return favorites;
-    return favorites.filter((item) => item.readingStatus === filterState.readingStatus);
-  }, [favorites, filterState.readingStatus]);
+    let result = favorites;
+    if (filterState.readingStatus) {
+      result = result.filter((item) => item.readingStatus === filterState.readingStatus);
+    }
+    if (activeCollectionId) {
+      const col = collections.find(c => c.id === activeCollectionId);
+      if (col) {
+        const idSet = new Set(col.mangaIds);
+        result = result.filter((item) => idSet.has(item.mangaId));
+      }
+    }
+    return result;
+  }, [favorites, filterState.readingStatus, activeCollectionId, collections]);
+
+  const activeCollection = activeCollectionId
+    ? collections.find(c => c.id === activeCollectionId)
+    : null;
 
   // ── Map to CardItem[] for CardView ────────────────────────────────
   const cardData: CardItem[] = useMemo(
@@ -254,6 +289,99 @@ export default function LibraryScreen() {
         onTitlePress={() => navigation.navigate('RecentlyUpdated' as never)}
         seeMoreOnPress={recentUpdates.length > 10 ? () => navigation.navigate('RecentlyUpdated' as never) : undefined}
       />
+
+      {/* ── Collection tabs ─────────────────────────────────── */}
+      {collections.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: spacing.p12, gap: spacing.p6, paddingTop: spacing.p6 }}
+        >
+          <Pressable
+            onPress={() => setActiveCollectionId(null)}
+            style={[
+              {
+                paddingVertical: spacing.p5,
+                paddingHorizontal: spacing.p12,
+                borderRadius: 16,
+                borderWidth: 1,
+              },
+              !activeCollectionId
+                ? { backgroundColor: theme.accent, borderColor: theme.accent }
+                : { backgroundColor: theme.bgCard, borderColor: theme.border },
+            ]}
+          >
+            <Text style={{
+              fontSize: 12,
+              fontWeight: '600',
+              color: !activeCollectionId ? theme.textInverse : theme.textSecondary,
+            }}>
+              All
+            </Text>
+          </Pressable>
+          {collections.map(col => (
+            <Pressable
+              key={col.id}
+              onPress={() => setActiveCollectionId(col.id === activeCollectionId ? null : col.id)}
+              style={[
+                {
+                  paddingVertical: spacing.p5,
+                  paddingHorizontal: spacing.p12,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: spacing.p4,
+                },
+                col.id === activeCollectionId
+                  ? { backgroundColor: theme.accent, borderColor: theme.accent }
+                  : { backgroundColor: theme.bgCard, borderColor: theme.border },
+              ]}
+            >
+              <Feather
+                name={col.type === 'reading_list' ? 'list' : 'folder'}
+                size={12}
+                color={col.id === activeCollectionId ? theme.textInverse : theme.textSecondary}
+              />
+              <Text style={{
+                fontSize: 12,
+                fontWeight: '600',
+                color: col.id === activeCollectionId ? theme.textInverse : theme.textSecondary,
+              }}>
+                {col.name} ({col.mangaIds.length})
+              </Text>
+            </Pressable>
+          ))}
+          <Pressable
+            onPress={() => { setCollectionTargetIds([]); setShowCollectionManager(true); }}
+            style={{
+              paddingVertical: spacing.p5,
+              paddingHorizontal: spacing.p12,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: theme.border,
+              backgroundColor: 'transparent',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing.p4,
+            }}
+          >
+            <Feather name="plus" size={12} color={theme.textMuted} />
+            <Text style={{ fontSize: 12, fontWeight: '600', color: theme.textMuted }}>Manage</Text>
+          </Pressable>
+        </ScrollView>
+      )}
+
+      {activeCollection && (
+        <Text style={{
+          fontSize: 11,
+          color: theme.textMuted,
+          paddingHorizontal: 12,
+          paddingTop: spacing.p4,
+        }}>
+          Showing {filteredFavorites.length} of {favorites.length} manga in "{activeCollection.name}"
+        </Text>
+      )}
 
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
         <Text style={GeneralStyles.h1}>Library ({filteredFavorites.length})</Text>
@@ -348,6 +476,17 @@ export default function LibraryScreen() {
         selectedCount={selectedIds.size}
         onAction={handleBatchAction}
         onCancel={cancelSelection}
+      />
+
+      {/* ── Collection Manager modal ──────────────────────────── */}
+      <CollectionManager
+        visible={showCollectionManager}
+        onClose={async () => {
+          setShowCollectionManager(false);
+          setCollectionTargetIds([]);
+          await reloadFavorites();
+          cancelSelection();
+        }}
       />
     </View>
   );
