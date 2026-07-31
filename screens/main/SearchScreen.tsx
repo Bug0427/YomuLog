@@ -1,6 +1,6 @@
 // screens/main/SearchScreen.tsx
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, Text, Pressable, Modal, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, Pressable, Modal, TouchableWithoutFeedback, ScrollView } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
 import Header from '../../components/layout/Header';
@@ -29,6 +29,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
 import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
+import GenreFilterModal, { genreLabel as genreDisplay } from '../../components/layout/GenreFilterModal';
 import ReverseImageSearchModal from '../../components/layout/ReverseImageSearchModal';
 import GenreSuggestions from '../../components/search/GenreSuggestions';
 import { pickImageFromLibrary, searchByImage, RisMatch } from '../../services/reverseImageSearch';
@@ -62,6 +63,7 @@ export default function SearchScreen() {
   const [aiMode, setAiMode] = useState<'auto' | 'on' | 'off'>('auto');
   const [showSortModal, setShowSortModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showGenreModal, setShowGenreModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [sortOrder, setSortOrder] = useState<string>('relevance');
   const [excludedGenres, setExcludedGenres] = useState<Set<GenreTag>>(new Set());
@@ -286,11 +288,12 @@ export default function SearchScreen() {
         onChangeText={setSearchText}
         onSearchPress={() => fetchResults(true)}
         onFilterPress={() => setShowFilterModal(true)}
+        onGenrePress={() => setShowGenreModal(true)}
         onOpenOrder={() => setShowSortModal(true)}
         placeholder="Search items..."
       />
       {/* AI mode toggle + Reverse Image Search */}
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: 12, marginTop: 4, gap: 8 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: spacing.p12, marginTop: spacing.p4, gap: spacing.p8 }}>
         {/* Reverse image search button */}
         <Pressable
           onPress={handleRisPress}
@@ -320,9 +323,9 @@ export default function SearchScreen() {
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            gap: 6,
-            paddingVertical: 5,
-            paddingHorizontal: 12,
+            gap: spacing.p6,
+            paddingVertical: spacing.p5,
+            paddingHorizontal: spacing.p12,
             borderRadius: 16,
             borderWidth: 1,
             borderColor: effectiveAiMode ? theme.accent : theme.border,
@@ -352,10 +355,10 @@ export default function SearchScreen() {
       {aiSummary ? (
         <View
           style={{
-            marginHorizontal: 12,
-            marginTop: 6,
-            paddingVertical: 8,
-            paddingHorizontal: 12,
+            marginHorizontal: spacing.p12,
+            marginTop: spacing.p6,
+            paddingVertical: spacing.p8,
+            paddingHorizontal: spacing.p12,
             backgroundColor: colors.deepPlum,
             borderRadius: 8,
           }}
@@ -410,17 +413,37 @@ export default function SearchScreen() {
           <TouchableWithoutFeedback onPress={() => setShowFilterModal(false)}>
             <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
               <TouchableWithoutFeedback onPress={() => {}}>
-                <View style={{ backgroundColor: theme.bgCard, borderRadius: 12, padding: 0, width: '90%', maxHeight: '80%' }}>
-                  <Filter
-                    filter={filter}
-                    onChange={setFilter}
-                  />
+                <View style={{ backgroundColor: theme.bgCard, borderRadius: 12, padding: 0, width: '90%', maxHeight: '85%' }}>
+                  <ScrollView showsVerticalScrollIndicator={true}>
+                    <Filter
+                      filter={filter}
+                      onChange={setFilter}
+                    />
+                  </ScrollView>
                 </View>
               </TouchableWithoutFeedback>
             </View>
           </TouchableWithoutFeedback>
         </Modal>
       )}
+
+      {/* Genre filter modal — replaces horizontal GenreSlider for richer UX */}
+      <GenreFilterModal
+        visible={showGenreModal}
+        selected={filter.genres}
+        onClose={() => setShowGenreModal(false)}
+        onSelect={(tag) => setFilter((prev) => ({ ...prev, genres: [...prev.genres, tag] }))}
+        onUnselect={(tag) => setFilter((prev) => ({ ...prev, genres: prev.genres.filter((g) => g !== tag) }))}
+        onSelectCategory={(tags) => setFilter((prev) => {
+          const existing = new Set(prev.genres);
+          tags.forEach((t) => existing.add(t));
+          return { ...prev, genres: Array.from(existing) };
+        })}
+        onClearCategory={(tags) => {
+          const tagSet = new Set(tags);
+          setFilter((prev) => ({ ...prev, genres: prev.genres.filter((g) => !tagSet.has(g)) }));
+        }}
+      />
 
       {/* Sort order modal — shared SortModal component */}
       <SortModal

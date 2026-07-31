@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   ctaText: {
-    color: '#fff',
+    color: colors.white,
     fontSize: 17,
     fontWeight: '700',
   },

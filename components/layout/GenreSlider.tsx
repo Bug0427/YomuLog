@@ -34,14 +34,9 @@ const GenreSlider: FC<GenreSliderProps> = ({
     const selectedSet = new Set(selectedGenres ?? []);
     const excludedSet = new Set(excludedGenres ?? []);
 
-    // Reorder: selected first → excluded → neutral (deduplicated)
-    const seen = new Set<string>();
-    const addUnique = (g: string) => { if (!seen.has(g)) { seen.add(g); return true; } return false; };
-    const ordered = [
-        ...genres.filter((g) => selectedSet.has(g) && addUnique(g)),
-        ...genres.filter((g) => excludedSet.has(g) && !selectedSet.has(g) && addUnique(g)),
-        ...genres.filter((g) => !selectedSet.has(g) && !excludedSet.has(g) && addUnique(g)),
-    ];
+    // Render genres in original order — excluded pills keep their position
+    // (visual state shows exclusion via red tint + strikethrough)
+
 
     return (
         <View style={[GenreSliderStyles.outerWrap, containerStyle]}>
@@ -54,7 +49,7 @@ const GenreSlider: FC<GenreSliderProps> = ({
                     if (w && w !== contentWidth) setContentWidth(w);
                 }}
             >
-                {ordered.map((genre) => {
+                {genres.map((genre) => {
                     const isActive = selectedSet.has(genre);
                     const isExcluded = excludedSet.has(genre);
                     return (

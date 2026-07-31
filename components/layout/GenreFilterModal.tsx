@@ -51,7 +51,7 @@ const GENRE_CATEGORIES: GenreCategory[] = [
 
 // ─── Display helper ───────────────────────────────────────────────
 
-function genreLabel(tag: GenreTag): string {
+export function genreLabel(tag: GenreTag): string {
   return tag
     .split('-')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
