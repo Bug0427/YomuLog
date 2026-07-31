@@ -397,6 +397,7 @@ export default function DownLoadsScreen() {
                 borderColor: theme.border,
                 width: '100%',
                 maxWidth: 360,
+                maxHeight: '85%',
                 overflow: 'hidden',
               }}>
                 <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>

@@ -1,8 +1,8 @@
 // components/layout/Filter.tsx
 // Multi-criteria Filter modal: publication status (multi-select),
-// content format (multi-select), and reading status.
+// content format (multi-select), and reading status — all inline checklists.
 // Genres are handled by the capsule bar on SearchScreen — no longer rendered here.
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { colors, borders, spacing, u } from '../../styles/tokens';
 import { useTheme } from '../../context/ThemeContext';
@@ -28,9 +28,6 @@ export default function Filter({
   showReadingStatus,
 }: Props) {
   const theme = useTheme();
-  const [pubOpen, setPubOpen] = useState(false);
-  const [formatOpen, setFormatOpen] = useState(false);
-  const [statusOpen, setStatusOpen] = useState(false);
 
   /** Multi-select toggle for pub status */
   const togglePub = useCallback(
@@ -57,7 +54,6 @@ export default function Filter({
   const setReading = useCallback(
     (v: ReadingStatus | null) => {
       onChange({ ...filter, readingStatus: v });
-      setStatusOpen(false);
     },
     [filter, onChange],
   );
@@ -67,105 +63,58 @@ export default function Filter({
     filter.contentFormat.length > 0 ||
     filter.readingStatus !== null;
 
-  /** Label for a multi-select dropdown button */
-  const pubLabel =
-    filter.pubStatus.length === 0
-      ? 'Status'
-      : filter.pubStatus.length === 1
-      ? filter.pubStatus[0]
-      : `${filter.pubStatus.length} selected`;
-
-  const formatLabel =
-    filter.contentFormat.length === 0
-      ? 'Format'
-      : filter.contentFormat.length === 1
-      ? filter.contentFormat[0]
-      : `${filter.contentFormat.length} selected`;
-
   return (
     <ScrollView
       style={s.container}
       contentContainerStyle={s.content}
-      showsVerticalScrollIndicator={false}
+      showsVerticalScrollIndicator={true}
     >
-      {/* ── Dropdowns row ─────────────────────────────────────── */}
-      <View style={s.dropdownRow}>
-        {/* Pub status multi-select */}
-        <DropdownWrap>
-          <DropdownBtn label={pubLabel} open={pubOpen} onToggle={() => setPubOpen((o) => !o)} />
-          {pubOpen && (
-            <DropdownMenu>
-              {PUB_STATUS_OPTIONS.map((opt) => (
-                <DropdownItem
-                  key={opt.value}
-                  label={opt.label}
-                  active={filter.pubStatus.includes(opt.value)}
-                  multi
-                  onPress={() => togglePub(opt.value)}
-                />
-              ))}
-            </DropdownMenu>
-          )}
-        </DropdownWrap>
+      {/* ── Publication Status ───────────────────────────────── */}
+      <SectionLabel label="Publication Status" theme={theme} />
+      {PUB_STATUS_OPTIONS.map((opt) => (
+        <CheckboxItem
+          key={opt.value}
+          label={opt.label}
+          active={filter.pubStatus.includes(opt.value)}
+          onPress={() => togglePub(opt.value)}
+        />
+      ))}
 
-        {/* Content format multi-select */}
-        <DropdownWrap>
-          <DropdownBtn
-            label={formatLabel}
-            open={formatOpen}
-            onToggle={() => setFormatOpen((o) => !o)}
-          />
-          {formatOpen && (
-            <DropdownMenu>
-              {CONTENT_FORMAT_OPTIONS.map((opt) => (
-                <DropdownItem
-                  key={opt.value}
-                  label={opt.label}
-                  active={filter.contentFormat.includes(opt.value)}
-                  multi
-                  onPress={() => toggleFormat(opt.value)}
-                />
-              ))}
-            </DropdownMenu>
-          )}
-        </DropdownWrap>
+      {/* ── Content Format ───────────────────────────────────── */}
+      <SectionLabel label="Content Format" theme={theme} />
+      {CONTENT_FORMAT_OPTIONS.map((opt) => (
+        <CheckboxItem
+          key={opt.value}
+          label={opt.label}
+          active={filter.contentFormat.includes(opt.value)}
+          onPress={() => toggleFormat(opt.value)}
+        />
+      ))}
 
-        {/* Reading status (still single-select) */}
-        {showReadingStatus && (
-          <DropdownWrap>
-            <DropdownBtn
-              label={
-                filter.readingStatus
-                  ? filter.readingStatus.replace(/_/g, ' ')
-                  : 'Reading'
-              }
-              open={statusOpen}
-              onToggle={() => setStatusOpen((o) => !o)}
+      {/* ── Reading Status ───────────────────────────────────── */}
+      {showReadingStatus && (
+        <>
+          <SectionLabel label="Reading Status" theme={theme} />
+          {(
+            [
+              { label: 'All', value: null },
+              { label: 'Reading', value: 'reading' as ReadingStatus },
+              { label: 'Completed', value: 'completed' as ReadingStatus },
+              { label: 'On Hold', value: 'on_hold' as ReadingStatus },
+              { label: 'Dropped', value: 'dropped' as ReadingStatus },
+              { label: 'Plan to Read', value: 'plan_to_read' as ReadingStatus },
+            ] as const
+          ).map((opt) => (
+            <CheckboxItem
+              key={opt.label}
+              label={opt.label}
+              active={filter.readingStatus === opt.value}
+              radio
+              onPress={() => setReading(opt.value)}
             />
-            {statusOpen && (
-              <DropdownMenu>
-                {(
-                  [
-                    { label: 'All', value: null },
-                    { label: 'Reading', value: 'reading' as ReadingStatus },
-                    { label: 'Completed', value: 'completed' as ReadingStatus },
-                    { label: 'On Hold', value: 'on_hold' as ReadingStatus },
-                    { label: 'Dropped', value: 'dropped' as ReadingStatus },
-                    { label: 'Plan to Read', value: 'plan_to_read' as ReadingStatus },
-                  ] as const
-                ).map((opt) => (
-                  <DropdownItem
-                    key={opt.label}
-                    label={opt.label}
-                    active={filter.readingStatus === opt.value}
-                    onPress={() => setReading(opt.value)}
-                  />
-                ))}
-              </DropdownMenu>
-            )}
-          </DropdownWrap>
-        )}
-      </View>
+          ))}
+        </>
+      )}
 
       {/* ── Clear All ────────────────────────────────────────── */}
       {hasActive && (
@@ -175,6 +124,78 @@ export default function Filter({
         </View>
       )}
     </ScrollView>
+  );
+}
+
+// ── Section header ───────────────────────────────────────────
+
+function SectionLabel({ label, theme }: { label: string; theme: ReturnType<typeof useTheme> }) {
+  return (
+    <Text
+      style={{
+        fontSize: 12,
+        fontWeight: '700',
+        color: theme.textSecondary,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginTop: spacing.p12,
+        marginBottom: spacing.p6,
+        paddingHorizontal: 2,
+      }}
+    >
+      {label}
+    </Text>
+  );
+}
+
+// ── Checkbox / radio item ────────────────────────────────────
+
+function CheckboxItem({
+  label,
+  active,
+  radio,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  radio?: boolean;
+  onPress: () => void;
+}) {
+  const theme = useTheme();
+  const shape = radio ? s.radio : s.checkbox;
+  const activeShape = radio ? s.radioActive : s.checkboxActive;
+  const inner = radio
+    ? (active ? <View style={s.radioDot} /> : null)
+    : (active ? <Text style={{ color: theme.bgCard, fontSize: 11, fontWeight: '700' }}>✓</Text> : null);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: spacing.p8,
+        paddingHorizontal: 4,
+        borderRadius: borders.br6,
+        backgroundColor: pressed ? theme.bgSecondary : 'transparent',
+        minHeight: 40,
+      })}
+    >
+      <View style={[shape, active && activeShape, { borderColor: active ? theme.accent : theme.borderLight, backgroundColor: active ? theme.accent : 'transparent' }]}>
+        {inner}
+      </View>
+      <Text
+        style={{
+          fontWeight: active ? '700' : '500',
+          color: active ? theme.accent : theme.textPrimary,
+          fontSize: 14,
+          marginLeft: spacing.p10,
+          flex: 1,
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -214,151 +235,40 @@ function ClearAllButton({
   );
 }
 
-// ── Internal sub-components ──────────────────────────────────
-
-function DropdownWrap({ children }: { children: React.ReactNode }) {
-  return <View style={{ flex: 1, zIndex: 10 }}>{children}</View>;
-}
-
-function DropdownBtn({
-  label,
-  open,
-  onToggle,
-}: {
-  label: string;
-  open: boolean;
-  onToggle: () => void;
-}) {
-  const theme = useTheme();
-  return (
-    <Pressable
-      onPress={onToggle}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: spacing.p10,
-        paddingHorizontal: spacing.p12,
-        borderWidth: 1.5,
-        borderColor: theme.borderLight,
-        borderRadius: borders.br8,
-        backgroundColor: theme.bgCard,
-        minHeight: 42,
-      }}
-    >
-      <Text
-        style={{ color: theme.textPrimary, fontWeight: '600', fontSize: 13, flex: 1 }}
-        numberOfLines={1}
-      >
-        {label}
-      </Text>
-      <Text style={{ color: theme.textSecondary, fontSize: 10, marginLeft: 4 }}>
-        {open ? '▲' : '▼'}
-      </Text>
-    </Pressable>
-  );
-}
-
-function DropdownMenu({ children }: { children: React.ReactNode }) {
-  const theme = useTheme();
-  return (
-    <View
-      style={{
-        marginTop: 4,
-        borderWidth: 1.5,
-        borderColor: theme.border,
-        borderRadius: borders.br8,
-        backgroundColor: theme.bgCard,
-        overflow: 'hidden',
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-      }}
-    >
-      {children}
-    </View>
-  );
-}
-
-function DropdownItem({
-  label,
-  active,
-  multi,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  multi?: boolean;
-  onPress: () => void;
-}) {
-  const theme = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: spacing.p10,
-        paddingHorizontal: spacing.p12,
-        backgroundColor: active
-          ? theme.accent + '22'
-          : pressed
-          ? theme.bgSecondary
-          : 'transparent',
-        minHeight: 44,
-      })}
-    >
-      {multi && (
-        <View
-          style={{
-            width: 18,
-            height: 18,
-            borderRadius: 4,
-            borderWidth: 1.5,
-            borderColor: active ? theme.accent : theme.borderLight,
-            backgroundColor: active ? theme.accent : 'transparent',
-            marginRight: spacing.p8,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {active && (
-            <Text style={{ color: theme.bgCard, fontSize: 11, fontWeight: '700' }}>✓</Text>
-          )}
-        </View>
-      )}
-      <Text
-        style={{
-          fontWeight: active ? '700' : '500',
-          color: active ? theme.accent : theme.textPrimary,
-          fontSize: 13,
-        }}
-      >
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
 const s = StyleSheet.create({
   container: {
-    maxHeight: 420,
+    // parent modal controls the height via maxHeight
   },
   content: {
     paddingHorizontal: spacing.p16,
-    paddingVertical: spacing.p12,
-  },
-  dropdownRow: {
-    flexDirection: 'row',
-    gap: 10,
+    paddingVertical: spacing.p8,
+    paddingBottom: spacing.p24,
   },
   clearArea: {
     marginTop: spacing.p16,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxActive: {},
+  radio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioActive: {},
+  radioDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#fff',
   },
 });
