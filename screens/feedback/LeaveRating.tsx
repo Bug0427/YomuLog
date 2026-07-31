@@ -68,7 +68,7 @@ export default function LeaveRating() {
             <Ionicons
                 name={active ? 'heart' : 'heart-outline'}
                 size={35}
-                color={active ? '#412d5cff' : '#412d5cff'}
+                color={active ? theme.accent : theme.textMuted}
             />
         </Pressable>
         );

@@ -222,7 +222,7 @@ export default function AdminAccounts() {
             borderRadius: 8, elevation: 5,
           }}
         >
-          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>
+          <Text style={{ color: colors.white, fontWeight: '800', fontSize: 14 }}>
             Delete Selected ({selectedIds.size})
           </Text>
         </Pressable>

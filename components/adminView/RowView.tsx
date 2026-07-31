@@ -63,7 +63,7 @@ export default function RowView<T extends Record<string, any>>({
               backgroundColor: isSelected ? colors.plum : 'transparent',
             }}
           >
-            <Text style={{ color: isSelected ? '#fff' : colors.deepPlum, fontWeight: '800', fontSize: 14 }}>
+            <Text style={{ color: isSelected ? colors.white : colors.deepPlum, fontWeight: '800', fontSize: 14 }}>
               {isSelected ? '✓' : '☐'}
             </Text>
           </Pressable>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../../context/ThemeContext';
 import { FeedbackStyles, SubmitButtonStyles } from '../../styles/global';
 import { CreateNewUser, runAsync, SecurityLevel } from '../../services/feedbackRepo';
 
@@ -18,6 +19,7 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
     }
 
     export default function CreateAccount() {
+    const { colors: theme } = useTheme();
     const navigation = useNavigation<any>();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -125,16 +127,16 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
 
             <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}>
                 {/* Card */}
-                <View style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, backgroundColor: 'transparent', overflow: 'hidden', marginHorizontal: 8 }}>
+                <View style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 8, backgroundColor: 'transparent', overflow: 'hidden', marginHorizontal: 8 }}>
                 {/* Header */}
-                <View style={{ paddingVertical: 12, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#ddd' }}>
+                <View style={{ paddingVertical: 12, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: theme.borderLight }}>
                     <Text style={[FeedbackStyles.itemText, { fontSize: 20 }]}>Create account</Text>
                 </View>
 
                 {/* Body */}
                 <View style={{ padding: 16, alignItems: 'center' }}>
                     {errorMsg ? (
-                    <Text style={[FeedbackStyles.helper, { color: '#d33', marginBottom: 8 }]}>{errorMsg}</Text>
+                    <Text style={[FeedbackStyles.helper, { color: theme.error, marginBottom: 8 }]}>{errorMsg}</Text>
                     ) : null}
 
                     {/* Username */}
@@ -143,7 +145,7 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
                     value={username}
                     onChangeText={setUsername}
                     placeholder="Username"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={theme.placeholder}
                     autoCapitalize="none"
                     autoCorrect={false}
                     returnKeyType="next"
@@ -155,7 +157,7 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
                     value={password}
                     onChangeText={setPassword}
                     placeholder="Password"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={theme.placeholder}
                     secureTextEntry
                     returnKeyType="done"
                     />
@@ -166,7 +168,7 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
                     value={email}
                     onChangeText={setEmail}
                     placeholder="E‑mail"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={theme.placeholder}
                     autoCapitalize="none"
                     keyboardType="email-address"
                     />

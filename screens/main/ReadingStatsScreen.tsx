@@ -237,8 +237,8 @@ export default function ReadingStatsScreen() {
                         backgroundColor:
                           day.level === 0 ? theme.bgSecondary :
                           day.level === 1 ? theme.bgSecondary :
-                          day.level === 2 ? '#4a2d7a' :
-                          day.level === 3 ? '#7c3aed' : '#a78bfa',
+                          day.level === 2 ? theme.accentDark :
+                          day.level === 3 ? theme.accent : theme.accentLight,
                       },
                     ]}
                   />
@@ -250,7 +250,7 @@ export default function ReadingStatsScreen() {
                 {[0, 1, 2, 3, 4].map((lvl) => (
                   <View key={lvl} style={[s.heatmapCell, {
                     width: 12, height: 12, borderRadius: 2,
-                    backgroundColor: lvl === 0 ? theme.bgSecondary : lvl === 1 ? theme.bgSecondary : lvl === 2 ? '#4a2d7a' : lvl === 3 ? '#7c3aed' : '#a78bfa',
+                    backgroundColor: lvl === 0 ? theme.bgSecondary : lvl === 1 ? theme.bgSecondary : lvl === 2 ? theme.accentDark : lvl === 3 ? theme.accent : theme.accentLight,
                   }]} />
                 ))}
                 <Text style={s.heatmapLegendLabel}>More</Text>
@@ -328,6 +328,7 @@ function StatCard({ label, value, icon, color }: { label: string; value: string;
 
 /** Pure-RN donut chart using View borders and rotation */
 function DonutChart({ segments }: { segments: { label: string; count: number; color: string }[] }) {
+  const { colors: theme } = useTheme();
   const total = segments.reduce((s, x) => s + x.count, 0) || 1;
   let cumulativeAngle = -90; // start from top
 
@@ -411,7 +412,7 @@ const s = StyleSheet.create({
   },
   premiumGateText: { fontSize: 12, fontWeight: '600', color: colors.deepPlum, flex: 1 },
   upgradeBtn: { backgroundColor: colors.deepPlum, borderRadius: 8, paddingHorizontal: spacing.p14, paddingVertical: spacing.p6 },
-  upgradeBtnText: { color: '#fff', fontWeight: '700', fontSize: 12 },
+  upgradeBtnText: { color: colors.white, fontWeight: '700', fontSize: 12 },
 
   // Section
   sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.plum, marginTop: spacing.p20, marginBottom: spacing.p12 },

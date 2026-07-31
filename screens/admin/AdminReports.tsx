@@ -231,7 +231,7 @@ export default function AdminReports() {
           zIndex={500} zIndexInverse={400} closeAfterSelecting
           style={[AdminSearchBarStyles.dropdown, { minHeight: 36 }]}
           dropDownContainerStyle={AdminSearchBarStyles.dropdown}
-          textStyle={{ color: '#412d5cff', fontWeight: '600' }}
+          textStyle={{ color: theme.accent, fontWeight: '600' }}
           placeholderStyle={{ color: theme.placeholder }}
           selectedItemLabelStyle={{ fontWeight: '900' }}
         />
@@ -247,7 +247,7 @@ export default function AdminReports() {
             borderRadius: 8, elevation: 5,
           }}
         >
-          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>
+          <Text style={{ color: theme.textInverse, fontWeight: '800', fontSize: 14 }}>
             Delete Selected ({selectedIds.size})
           </Text>
         </Pressable>

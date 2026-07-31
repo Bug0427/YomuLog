@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../../context/ThemeContext';
 import { FeedbackStyles, SubmitButtonStyles } from '../../styles/global';
 import { verifyUser } from '../../services/feedbackRepo';
 
 
 export default function LoginScreen() {
+const { colors: theme } = useTheme();
 const navigation = useNavigation<any>();
 const [username, setUsername] = useState('');
 const [password, setPassword] = useState('');
@@ -79,21 +81,21 @@ return (
             {/* Card */}
             <View style={{
             borderWidth: 1,
-            borderColor: '#ccc',
+            borderColor: theme.border,
             borderRadius: 8,
             backgroundColor: 'transparent',
             overflow: 'hidden',
             marginHorizontal: 8,
             }}>
             {/* Card header */}
-            <View style={{ paddingVertical: 12, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#ddd' }}>
+            <View style={{ paddingVertical: 12, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: theme.borderLight }}>
                 <Text style={[FeedbackStyles.itemText, { fontSize: 20 }]}>Login</Text>
             </View>
 
             {/* Card body */}
             <View style={{ padding: 16, alignItems: 'center' }}>
                 {errorMsg ? (
-                <Text style={[FeedbackStyles.helper, { color: '#d33', marginBottom: 8 }]}>
+                <Text style={[FeedbackStyles.helper, { color: theme.error, marginBottom: 8 }]}>
                     {errorMsg}
                 </Text>
                 ) : null}
@@ -103,7 +105,7 @@ return (
                 value={username}
                 onChangeText={setUsername}
                 placeholder="username"
-                placeholderTextColor="#999"
+                placeholderTextColor={theme.placeholder}
                 autoCapitalize="none"
                 autoCorrect={false}
                 textContentType="username"
@@ -117,7 +119,7 @@ return (
                 value={password}
                 onChangeText={setPassword}
                 placeholder="password"
-                placeholderTextColor="#999"
+                placeholderTextColor={theme.placeholder}
                 secureTextEntry
                 textContentType="newPassword"
                 autoComplete="new-password"

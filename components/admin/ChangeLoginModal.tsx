@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { changeLoginData } from '../../data/SettingsButtonActions/changeLoginData';
 import { ChangeLoginStyles } from '../../styles/IndependentStyles/ChangeLoginStyles';
+import { useTheme } from '../../context/ThemeContext';
 
 
 export type ChangeLoginModalProps = {
@@ -12,6 +13,7 @@ export type ChangeLoginModalProps = {
 };
 
 const ChangeLoginModal: React.FC<ChangeLoginModalProps> = ({ visible, onClose, accountId, navigation }) => {
+  const { colors: theme } = useTheme();
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -105,7 +107,7 @@ const ChangeLoginModal: React.FC<ChangeLoginModalProps> = ({ visible, onClose, a
               <View style={ChangeLoginStyles.typeBox}>
                 <TextInput
                   placeholder="Username"
-                  placeholderTextColor="#543C27"
+                  placeholderTextColor={theme.placeholder}
                   value={newUsername}
                   onChangeText={setNewUsername}
                   autoCapitalize="none"
@@ -116,7 +118,7 @@ const ChangeLoginModal: React.FC<ChangeLoginModalProps> = ({ visible, onClose, a
               <View style={ChangeLoginStyles.typeBox}>
                 <TextInput
                   placeholder="Password"
-                  placeholderTextColor="#543C27"
+                  placeholderTextColor={theme.placeholder}
                   value={newPassword}
                   onChangeText={setNewPassword}
                   secureTextEntry
@@ -127,7 +129,7 @@ const ChangeLoginModal: React.FC<ChangeLoginModalProps> = ({ visible, onClose, a
               <View style={ChangeLoginStyles.typeBox}>
                 <TextInput
                   placeholder="Confirm password"
-                  placeholderTextColor="#543C27"
+                  placeholderTextColor={theme.placeholder}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry
@@ -144,7 +146,7 @@ const ChangeLoginModal: React.FC<ChangeLoginModalProps> = ({ visible, onClose, a
                   <Text style={ChangeLoginStyles.text}>Cancel</Text>
                 </Pressable>
                 <Pressable onPress={handleSubmit} disabled={submitting} style={ChangeLoginStyles.button}>
-                  {submitting ? <ActivityIndicator color="#fff" /> : <Text style={ChangeLoginStyles.text}>Submit</Text>}
+                  {submitting ? <ActivityIndicator color={theme.textInverse} /> : <Text style={ChangeLoginStyles.text}>Submit</Text>}
                 </Pressable>
               </View>
             </View>
