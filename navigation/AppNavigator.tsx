@@ -26,6 +26,7 @@ import LeaveRating from '../screens/feedback/LeaveRating';
 import LeaveReview from '../screens/feedback/LeaveReview';
 import ReadingStatsScreen from '../screens/main/ReadingStatsScreen';
 import AuthScreen from '../screens/auth/AuthScreen';
+import OnboardingFlow from '../screens/onboarding/OnboardingFlow';
 import { RootStackParamList } from '../navigation/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -65,6 +66,7 @@ export default function AppNavigator() {
             <Stack.Screen name="LeaveRating" component={LeaveRating} />
             <Stack.Screen name="LeaveReview" component={LeaveReview} />
             <Stack.Screen name="AuthScreen" component={AuthScreen} />
+            <Stack.Screen name="OnboardingFlow" component={OnboardingFlow} />
         </Stack.Navigator>
         </NavigationContainer>
       </ErrorBoundary>
