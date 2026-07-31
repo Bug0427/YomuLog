@@ -585,7 +585,7 @@ function ReaderControls({
 
 // ─── Styles ────────────────────────────────────────────────────────────
 
-const styles = useMemo(() => StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -605,11 +605,11 @@ const styles = useMemo(() => StyleSheet.create({
     marginTop: 20,
     paddingVertical: 10,
     paddingHorizontal: 24,
-    backgroundColor: theme.accentLight,
+    backgroundColor: colors.lavender,
     borderRadius: 8,
   },
   backBtnText: {
-    color: theme.accentDark,
+    color: colors.deepPlum,
     fontWeight: '600',
   },
   pageContainer: {
@@ -677,7 +677,7 @@ const styles = useMemo(() => StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: theme.accentLight,
+    backgroundColor: colors.lavender,
     borderRadius: 2,
   },
   bottomRow: {
@@ -690,7 +690,7 @@ const styles = useMemo(() => StyleSheet.create({
     fontSize: 13,
   },
   readBadge: {
-    color: theme.success,
+    color: colors.success,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -703,7 +703,7 @@ const styles = useMemo(() => StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: theme.accentLight,
+    backgroundColor: colors.lavender,
     borderRadius: 6,
     alignItems: 'center',
   },
@@ -711,7 +711,7 @@ const styles = useMemo(() => StyleSheet.create({
     opacity: 0.4,
   },
   chapterNavBtnText: {
-    color: theme.accentDark,
+    color: colors.deepPlum,
     fontWeight: '600',
     fontSize: 13,
   },
@@ -742,4 +742,4 @@ const styles = useMemo(() => StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
-}), [theme]);
+});
