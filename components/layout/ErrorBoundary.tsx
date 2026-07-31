@@ -12,7 +12,7 @@ const C = {
   white: '#ffffff',
 };
 
-type Props = { children: ReactNode };
+type Props = { children: ReactNode; screenLabel?: string };
 type State = { hasError: boolean; error: Error | null };
 
 export default class ErrorBoundary extends Component<Props, State> {
@@ -23,8 +23,9 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('[ErrorBoundary] Uncaught error:', error.message);
-    console.error('[ErrorBoundary] Component stack:', info.componentStack ?? 'N/A');
+    const label = this.props.screenLabel ? ` [${this.props.screenLabel}]` : '';
+    console.error(`[ErrorBoundary${label}] Uncaught error:`, error.message);
+    console.error(`[ErrorBoundary${label}] Component stack:`, info.componentStack ?? 'N/A');
   }
 
   handleRetry = () => this.setState({ hasError: false, error: null });
@@ -36,6 +37,9 @@ export default class ErrorBoundary extends Component<Props, State> {
           <View style={s.card}>
             <Feather name="alert-triangle" size={48} color={C.error} />
             <Text style={s.title}>Something went wrong</Text>
+            {this.props.screenLabel ? (
+              <Text style={s.screenLabel}>Screen: {this.props.screenLabel}</Text>
+            ) : null}
             <Text style={s.message}>
               An unexpected error occurred. Please try again.{'\n\n'}
               {this.state.error?.message ?? ''}
@@ -56,6 +60,7 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: 32 },
   card: { backgroundColor: C.card, borderRadius: 16, padding: 32, alignItems: 'center', borderWidth: 2, borderColor: C.border, maxWidth: 360, width: '100%' },
   title: { fontSize: 20, fontWeight: '700', color: C.border, marginTop: 16, textAlign: 'center' },
+  screenLabel: { fontSize: 13, color: C.text, textAlign: 'center', marginTop: 4, opacity: 0.7 },
   message: { fontSize: 14, color: C.text, textAlign: 'center', marginTop: 12, lineHeight: 20 },
   button: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 24, backgroundColor: C.border, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12 },
   buttonText: { fontSize: 15, fontWeight: '700', color: C.white },

@@ -1,5 +1,6 @@
 import React from 'react';
 import ErrorBoundary from '../components/layout/ErrorBoundary';
+import ScreenErrorBoundary from '../components/layout/ScreenErrorBoundary';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 
@@ -34,6 +35,24 @@ import { RootStackParamList } from '../navigation/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+/**
+ * Helper: wraps a screen component with a ScreenErrorBoundary.
+ * Each screen gets its own error boundary so a crash in one
+ * screen only affects that screen, not the entire app.
+ */
+function withScreenBoundary(
+  name: string,
+  Component: React.ComponentType<any>
+) {
+  return function ScreenWrapper(props: any) {
+    return (
+      <ScreenErrorBoundary screenName={name}>
+        <Component {...props} />
+      </ScreenErrorBoundary>
+    );
+  };
+}
+
 export default function AppNavigator() {
     return (
         <ErrorBoundary>
@@ -46,33 +65,33 @@ export default function AppNavigator() {
             animationDuration: 450,
           }}
         >
-            <Stack.Screen name="Splash" component={SplashScreen} />
-            <Stack.Screen name="HomeScreen" component={HomeScreen} />
-            <Stack.Screen name="SearchScreen" component={SearchScreen} />
-            <Stack.Screen name="LibraryScreen" component={LibraryScreen} />
-            <Stack.Screen name="RecentlyUpdated" component={RecentlyUpdated} />
-            <Stack.Screen name="RecentlyReadScreen" component={RecentlyReadScreen} />
-            <Stack.Screen name="DownLoadsScreen" component={DownLoadsScreen} />
-            <Stack.Screen name="ManageDownloadsScreen" component={ManageDownloadsScreen} />
-            <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
-            <Stack.Screen name="ReadingStatsScreen" component={ReadingStatsScreen} />
-            <Stack.Screen name="FeedBackHome" component={FeedBackHome} />
-            <Stack.Screen name="FileReport" component={FileReport} />
-            <Stack.Screen name="AdminScreen" component={AdminScreen} />
-            <Stack.Screen name="LoginScreen" component={LoginScreen} />
-            <Stack.Screen name="UserAccount" component={UserAccount} />
-            <Stack.Screen name="CreateAccount" component={CreateAccount} />
-            <Stack.Screen name="ForgotCredentials" component={ForgotCredentials} />
-            <Stack.Screen name="ChooseProfileIcon" component={ChooseProfileIcon} />
-            <Stack.Screen name="ReaderScreen" component={ReaderScreen} />
-            <Stack.Screen name="MangaInfoScreen" component={MangaInfoScreen} />
-            <Stack.Screen name="LeaveRating" component={LeaveRating} />
-            <Stack.Screen name="LeaveReview" component={LeaveReview} />
-            <Stack.Screen name="AuthScreen" component={AuthScreen} />
-            <Stack.Screen name="OnboardingFlow" component={OnboardingFlow} />
-            <Stack.Screen name="ReaderThemeSettingsScreen" component={ReaderThemeSettingsScreen} />
-            <Stack.Screen name="UpgradeScreen" component={UpgradeScreen} />
-            <Stack.Screen name="ManageSubscriptionScreen" component={ManageSubscriptionScreen} />
+            <Stack.Screen name="Splash" getComponent={() => withScreenBoundary('Splash', SplashScreen)} />
+            <Stack.Screen name="HomeScreen" getComponent={() => withScreenBoundary('HomeScreen', HomeScreen)} />
+            <Stack.Screen name="SearchScreen" getComponent={() => withScreenBoundary('SearchScreen', SearchScreen)} />
+            <Stack.Screen name="LibraryScreen" getComponent={() => withScreenBoundary('LibraryScreen', LibraryScreen)} />
+            <Stack.Screen name="RecentlyUpdated" getComponent={() => withScreenBoundary('RecentlyUpdated', RecentlyUpdated)} />
+            <Stack.Screen name="RecentlyReadScreen" getComponent={() => withScreenBoundary('RecentlyReadScreen', RecentlyReadScreen)} />
+            <Stack.Screen name="DownLoadsScreen" getComponent={() => withScreenBoundary('DownLoadsScreen', DownLoadsScreen)} />
+            <Stack.Screen name="ManageDownloadsScreen" getComponent={() => withScreenBoundary('ManageDownloadsScreen', ManageDownloadsScreen)} />
+            <Stack.Screen name="SettingsScreen" getComponent={() => withScreenBoundary('SettingsScreen', SettingsScreen)} />
+            <Stack.Screen name="ReadingStatsScreen" getComponent={() => withScreenBoundary('ReadingStatsScreen', ReadingStatsScreen)} />
+            <Stack.Screen name="FeedBackHome" getComponent={() => withScreenBoundary('FeedBackHome', FeedBackHome)} />
+            <Stack.Screen name="FileReport" getComponent={() => withScreenBoundary('FileReport', FileReport)} />
+            <Stack.Screen name="AdminScreen" getComponent={() => withScreenBoundary('AdminScreen', AdminScreen)} />
+            <Stack.Screen name="LoginScreen" getComponent={() => withScreenBoundary('LoginScreen', LoginScreen)} />
+            <Stack.Screen name="UserAccount" getComponent={() => withScreenBoundary('UserAccount', UserAccount)} />
+            <Stack.Screen name="CreateAccount" getComponent={() => withScreenBoundary('CreateAccount', CreateAccount)} />
+            <Stack.Screen name="ForgotCredentials" getComponent={() => withScreenBoundary('ForgotCredentials', ForgotCredentials)} />
+            <Stack.Screen name="ChooseProfileIcon" getComponent={() => withScreenBoundary('ChooseProfileIcon', ChooseProfileIcon)} />
+            <Stack.Screen name="ReaderScreen" getComponent={() => withScreenBoundary('ReaderScreen', ReaderScreen)} />
+            <Stack.Screen name="MangaInfoScreen" getComponent={() => withScreenBoundary('MangaInfoScreen', MangaInfoScreen)} />
+            <Stack.Screen name="LeaveRating" getComponent={() => withScreenBoundary('LeaveRating', LeaveRating)} />
+            <Stack.Screen name="LeaveReview" getComponent={() => withScreenBoundary('LeaveReview', LeaveReview)} />
+            <Stack.Screen name="AuthScreen" getComponent={() => withScreenBoundary('AuthScreen', AuthScreen)} />
+            <Stack.Screen name="OnboardingFlow" getComponent={() => withScreenBoundary('OnboardingFlow', OnboardingFlow)} />
+            <Stack.Screen name="ReaderThemeSettingsScreen" getComponent={() => withScreenBoundary('ReaderThemeSettingsScreen', ReaderThemeSettingsScreen)} />
+            <Stack.Screen name="UpgradeScreen" getComponent={() => withScreenBoundary('UpgradeScreen', UpgradeScreen)} />
+            <Stack.Screen name="ManageSubscriptionScreen" getComponent={() => withScreenBoundary('ManageSubscriptionScreen', ManageSubscriptionScreen)} />
         </Stack.Navigator>
         </NavigationContainer>
       </ErrorBoundary>
