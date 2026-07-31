@@ -362,9 +362,10 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={[GeneralStyles.section, { backgroundColor: theme.bg }]}>
-      <ScrollView ref={scrollRef} onScrollBeginDrag={handleScrollStart} onScrollEndDrag={handleScrollEnd} onMomentumScrollEnd={handleScrollEnd}>
-        <View style={[GeneralStyles.container, { paddingHorizontal: 12, backgroundColor: theme.bg, paddingTop: spacing.p12 }]}>
+    <View style={[GeneralStyles.container, { backgroundColor: theme.bg }]}>
+      <ScrollView ref={scrollRef} onScrollBeginDrag={handleScrollStart} onScrollEndDrag={handleScrollEnd} onMomentumScrollEnd={handleScrollEnd}
+        contentContainerStyle={{ paddingBottom: spacing.p24 }}>
+        <View style={{ backgroundColor: theme.bg, paddingTop: spacing.p12 }}>
           <Header />
 
           {/* ─── Cloud Sync & Backup Section ─────────────────────── */}

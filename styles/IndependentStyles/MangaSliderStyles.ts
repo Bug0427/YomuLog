@@ -52,6 +52,9 @@ const MangaSliderStyles = StyleSheet.create({
         alignItems: 'center', 
         paddingHorizontal: spacing.p12 
     },
+    placeholderCard: {
+        opacity: 0.4,
+    },
 });
 
 export{MangaSliderStyles}

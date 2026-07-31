@@ -230,7 +230,7 @@ export default function DownLoadsScreen() {
   const isEmpty = downloaded.length === 0 && queue.length === 0;
 
   return (
-    <View style={[GeneralStyles.section, { backgroundColor: 'transparent' }]}>
+    <View style={[GeneralStyles.container, { backgroundColor: theme.bg }]}>
       <FlatList
         ref={scrollRef as any}
         data={filteredDownloaded}
@@ -239,6 +239,7 @@ export default function DownLoadsScreen() {
         onScrollBeginDrag={handleScrollStart}
         onScrollEndDrag={handleScrollEnd}
         onMomentumScrollEnd={handleScrollEnd}
+        contentContainerStyle={{ paddingBottom: 24 }}
         ListHeaderComponent={
           <>
             <Header />

@@ -218,6 +218,7 @@ export default function HomeScreen() {
             {SLIDER_CONFIGS.map((config, idx) => {
               const items = sliderDataMap[config.title];
               const isFailed = failedSliders.has(config.title);
+              const isLast = idx === SLIDER_CONFIGS.length - 1;
               // Show failed as retry card, empty as placeholder, or data as slider
               if ((!items || items.length === 0) && !isFailed) {
                 // Show placeholder for empty sliders instead of hiding them
@@ -234,7 +235,6 @@ export default function HomeScreen() {
                   </View>
                 );
               }
-              const isLast = idx === SLIDER_CONFIGS.length - 1;
               return (
                 <View key={`${config.title}-${refreshKey}`}>
                   {isFailed ? (

@@ -78,6 +78,24 @@ const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress, fo
           </Pressable>
         ) : null}
         <View style={[MangaSliderStyles.sliderWrapper, { width: containerWidth }]}> 
+          {displayData.length === 0 ? (
+            /* Placeholder cards when no data */
+            <View style={{ flexDirection: 'row' }}>
+              {[1, 2, 3].map((i) => (
+                <View
+                  key={`placeholder-${i}`}
+                  style={[
+                    MangaSliderStyles.card,
+                    MangaSliderStyles.placeholderCard,
+                    i === 3 && MangaSliderStyles.lastCard,
+                  ]}
+                >
+                  <View style={[MangaSliderStyles.image, { backgroundColor: '#e0e0e0' }]} />
+                  <View style={{ height: 14, backgroundColor: '#e0e0e0', borderRadius: 4, marginTop: 4, width: '80%', alignSelf: 'center' }} />
+                </View>
+              ))}
+            </View>
+          ) : (
           <FlatList<MangaItem>
             data={displayData}
             horizontal
@@ -115,6 +133,7 @@ const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress, fo
             }}
             ListFooterComponent={footerComponent}
           />
+          )}
         </View>
       </View>
     </View>
