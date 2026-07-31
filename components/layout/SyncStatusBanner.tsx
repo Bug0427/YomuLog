@@ -5,6 +5,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator, Animated } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useTheme } from '../../context/ThemeContext';
 import type { SyncStatus } from '../../services/supabaseSyncService';
 
 type Props = {

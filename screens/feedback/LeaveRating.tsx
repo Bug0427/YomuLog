@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { GeneralStyles } from '../../styles/global';
 import FBHeader from '../../components/layout/FBHeader';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function LeaveRating() {
   const { colors: theme } = useTheme();

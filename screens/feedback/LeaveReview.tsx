@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 
 import FBHeader from '../../components/layout/FBHeader';
 import { GeneralStyles, FeedbackStyles } from '../../styles/global';
+import { useTheme } from '../../context/ThemeContext';
 
 const MAX_CHARS = 360;
 

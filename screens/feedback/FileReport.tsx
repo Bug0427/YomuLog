@@ -6,6 +6,7 @@ import { categories, issuesByCategory, type CategoryId } from '../../data/feedba
 import { FeedbackStyles } from '../../styles/global';
 import SubmitButton from '../../components/layout/SubmitButton';
 import { insertReport, initDb } from '../../services/feedbackRepo';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function FileReport() {
   const { colors: theme } = useTheme();
