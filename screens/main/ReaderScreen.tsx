@@ -9,6 +9,7 @@ import { getChapterPages, buildPageUrlsFromChapterData, getMangaFeed } from '../
 import { RootStackParamList } from '../../navigation/navigation';
 import { spacing, colors } from '../../styles/tokens';
 import { useTheme } from '../../context/ThemeContext';
+import ErrorBoundary from '../../components/layout/ErrorBoundary';
 import BackButton from '../../components/general/BackButton';
 import {
   updateChapterProgress,
@@ -37,7 +38,9 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 export default function ReaderScreenWrapper() {
   return (
     <ReaderThemeProvider>
-      <ReaderScreen />
+      <ErrorBoundary>
+        <ReaderScreen />
+      </ErrorBoundary>
     </ReaderThemeProvider>
   );
 }
