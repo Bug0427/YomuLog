@@ -338,7 +338,11 @@ export default function SettingsScreen() {
   const syncSubtitle = (() => {
     if (syncLoading) return 'Syncing...';
     if (syncState.status === 'syncing') return 'Sync in progress...';
-    if (syncState.status === 'error') return `Error: ${syncState.lastError ?? 'Unknown'}`;
+    if (syncState.status === 'error') {
+      const err = syncState.lastError ?? 'Unknown';
+      if (err.includes('No internet') || err.includes('offline')) return 'Offline — will sync when connected';
+      return `Error: ${err}`;
+    }
     if (syncState.status === 'synced') return `Last synced: ${formatSyncTimestamp(syncState.lastSyncedAt)}`;
     if (syncState.syncEnabled) return 'Sync enabled — pending sync';
     return isPremium ? 'Tap to enable cloud backup' : 'Premium feature — tap to upgrade';
@@ -412,9 +416,9 @@ export default function SettingsScreen() {
 
             {syncState.syncEnabled && syncState.status === 'synced' && syncState.scopeTimestamps && (
               <View style={{ paddingHorizontal: 8, paddingVertical: 4, marginTop: 2 }}>
-                {(['favorites', 'progress', 'downloads'] as const).map((scope) => {
+                {(['favorites', 'progress', 'downloads', 'preferences'] as const).map((scope) => {
                   const ts = syncState.scopeTimestamps[scope];
-                  const scopeLabel = scope === 'favorites' ? 'Library' : scope === 'progress' ? 'Reading Progress' : 'Downloads';
+                  const scopeLabel = scope === 'favorites' ? 'Library' : scope === 'progress' ? 'Reading Progress' : scope === 'downloads' ? 'Downloads' : 'Preferences';
                   return (
                     <View key={scope} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
                       <Feather

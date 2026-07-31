@@ -17,7 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type SyncStatus = 'synced' | 'syncing' | 'error' | 'pending';
 
-export type SyncScope = 'all' | 'favorites' | 'progress' | 'downloads' | 'stats';
+export type SyncScope = 'all' | 'favorites' | 'progress' | 'downloads' | 'stats' | 'preferences';
 
 export type SyncState = {
   status: SyncStatus;
@@ -99,6 +99,14 @@ export type SyncPayloadStats = {
   favoriteReadingDay: number;
 };
 
+export type SyncPayloadPreferences = {
+  updatedAt: string;
+  language: string;
+  alertsOn: boolean;
+  aiSearchOn: boolean;
+  directionMode: string;
+};
+
 // ─── Storage keys ────────────────────────────────────────────────────
 
 const KEYS = {
@@ -113,6 +121,7 @@ const KEYS = {
   CLOUD_PROGRESS: '@YomuLog:cloud:chapterProgress',
   CLOUD_DOWNLOAD_QUEUE: '@YomuLog:cloud:downloadQueue',
   CLOUD_DOWNLOADED: '@YomuLog:cloud:downloadedChapters',
+  CLOUD_PREFERENCES: '@YomuLog:cloud:preferences',
 
   // Sync metadata
   SYNC_STATE: '@YomuLog:syncState',
@@ -284,6 +293,34 @@ async function syncDownloads(): Promise<void> {
   ]);
 }
 
+async function syncPreferences(): Promise<void> {
+  const { loadAllPreferences } = await import('./preferencesService');
+  const localPrefs = await loadAllPreferences();
+  const localPayload: SyncPayloadPreferences = {
+    ...localPrefs,
+    updatedAt: isoNow(),
+  };
+
+  const cloudPayload = await getJson<SyncPayloadPreferences | null>(KEYS.CLOUD_PREFERENCES, null);
+
+  // LWW: compare timestamps, local wins on tie
+  if (cloudPayload && cloudPayload.updatedAt > localPayload.updatedAt) {
+    // Cloud is newer — pull down
+    const { setLanguage, setAlertsOn, setAISearchOn, setDirectionMode } = await import('./preferencesService');
+    await Promise.all([
+      setLanguage(cloudPayload.language as 'en' | 'ja' | 'ko'),
+      setAlertsOn(cloudPayload.alertsOn),
+      setAISearchOn(cloudPayload.aiSearchOn),
+      setDirectionMode(cloudPayload.directionMode as 'ltr' | 'rtl' | 'vertical'),
+    ]);
+    // Write the cloud version back to the cloud mirror (idempotent)
+    await setJson(KEYS.CLOUD_PREFERENCES, cloudPayload);
+  } else {
+    // Local is newer or equal — push up
+    await setJson(KEYS.CLOUD_PREFERENCES, localPayload);
+  }
+}
+
 /** LWW merge where the key is computed via a composite function. */
 function mergeLWWByComposite<T extends Record<string, unknown>>(
   local: T[],
@@ -362,6 +399,7 @@ export async function performFullSync(): Promise<SyncState> {
       syncFavorites().then(() => 'favorites' as SyncScope),
       syncProgress().then(() => 'progress' as SyncScope),
       syncDownloads().then(() => 'downloads' as SyncScope),
+      syncPreferences().then(() => 'preferences' as SyncScope),
     ]);
 
     // Collect any errors
@@ -444,11 +482,17 @@ export async function pushLocalToCloud(): Promise<SyncState> {
       getJson(KEYS.LOCAL_DOWNLOADED, []),
     ]);
 
+    // Push preferences too
+    const { loadAllPreferences } = await import('./preferencesService');
+    const localPrefs = await loadAllPreferences();
+    const prefsPayload: SyncPayloadPreferences = { ...localPrefs, updatedAt: isoNow() };
+
     await Promise.all([
       setJson(KEYS.CLOUD_FAVORITES, favs),
       setJson(KEYS.CLOUD_PROGRESS, progress),
       setJson(KEYS.CLOUD_DOWNLOAD_QUEUE, dlQueue),
       setJson(KEYS.CLOUD_DOWNLOADED, dlDone),
+      setJson(KEYS.CLOUD_PREFERENCES, prefsPayload),
     ]);
 
     const syncedAt = isoNow();
@@ -460,6 +504,7 @@ export async function pushLocalToCloud(): Promise<SyncState> {
         favorites: syncedAt,
         progress: syncedAt,
         downloads: syncedAt,
+        preferences: syncedAt,
       },
     });
   } catch (e) {
@@ -478,11 +523,12 @@ export async function pullCloudToLocal(): Promise<SyncState> {
   await saveSyncState({ status: 'syncing', lastError: null });
 
   try {
-    const [cloudFavs, cloudProgress, cloudDlQ, cloudDlDone] = await Promise.all([
+    const [cloudFavs, cloudProgress, cloudDlQ, cloudDlDone, cloudPrefs] = await Promise.all([
       getJson(KEYS.CLOUD_FAVORITES, []),
       getJson(KEYS.CLOUD_PROGRESS, []),
       getJson(KEYS.CLOUD_DOWNLOAD_QUEUE, []),
       getJson(KEYS.CLOUD_DOWNLOADED, []),
+      getJson<SyncPayloadPreferences | null>(KEYS.CLOUD_PREFERENCES, null),
     ]);
 
     await Promise.all([
@@ -491,6 +537,17 @@ export async function pullCloudToLocal(): Promise<SyncState> {
       setJson(KEYS.LOCAL_DOWNLOAD_QUEUE, cloudDlQ),
       setJson(KEYS.LOCAL_DOWNLOADED, cloudDlDone),
     ]);
+
+    // Pull preferences down
+    if (cloudPrefs) {
+      const { setLanguage, setAlertsOn, setAISearchOn, setDirectionMode } = await import('./preferencesService');
+      await Promise.all([
+        setLanguage(cloudPrefs.language as 'en' | 'ja' | 'ko'),
+        setAlertsOn(cloudPrefs.alertsOn),
+        setAISearchOn(cloudPrefs.aiSearchOn),
+        setDirectionMode(cloudPrefs.directionMode as 'ltr' | 'rtl' | 'vertical'),
+      ]);
+    }
 
     const syncedAt = isoNow();
     return await saveSyncState({
@@ -501,6 +558,7 @@ export async function pullCloudToLocal(): Promise<SyncState> {
         favorites: syncedAt,
         progress: syncedAt,
         downloads: syncedAt,
+        preferences: syncedAt,
       },
     });
   } catch (e) {
@@ -518,9 +576,29 @@ export async function resetSync(): Promise<void> {
     AsyncStorage.removeItem(KEYS.CLOUD_PROGRESS),
     AsyncStorage.removeItem(KEYS.CLOUD_DOWNLOAD_QUEUE),
     AsyncStorage.removeItem(KEYS.CLOUD_DOWNLOADED),
+    AsyncStorage.removeItem(KEYS.CLOUD_PREFERENCES),
     AsyncStorage.removeItem(KEYS.SYNC_STATE),
     AsyncStorage.removeItem(KEYS.SYNC_QUEUE),
   ]);
+}
+
+/**
+ * Check if the device has internet connectivity.
+ * Uses a lightweight HEAD request with a 3-second timeout.
+ */
+export async function checkConnectivity(): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch('https://api.mangadex.org/ping', {
+      method: 'HEAD',
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 /**

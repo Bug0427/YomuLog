@@ -2,6 +2,16 @@
 // Manages liked/bookmarked manga locally via AsyncStorage.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Fire-and-forget sync trigger (avoids circular import)
+function scheduleSync() {
+  setTimeout(async () => {
+    try {
+      const { queueSync } = await import('./supabaseSyncService');
+      await queueSync('favorites');
+    } catch { /* non-critical */ }
+  }, 0);
+}
+
 export type ReadingStatus = 'reading' | 'completed' | 'on_hold' | 'dropped' | 'plan_to_read';
 
 export type BookmarkedManga = {
@@ -61,17 +71,20 @@ export async function addFavorite(
   if (list.some((m) => m.mangaId === mangaId)) return;
   list.push({ mangaId, mangaTitle, mangaImage, genres, bookmarkedAt: new Date().toISOString(), readingStatus: 'reading' });
   await setJson(STORAGE_KEY, list);
+  scheduleSync();
 }
 
 export async function removeFavorite(mangaId: string): Promise<void> {
   const list = await getFavoritesRaw();
   await setJson(STORAGE_KEY, list.filter((m) => m.mangaId !== mangaId));
+  scheduleSync();
 }
 
 export async function updateReadingStatus(mangaId: string, status: ReadingStatus): Promise<void> {
   const list = await getFavoritesRaw();
   const idx = list.findIndex((m) => m.mangaId === mangaId);
   if (idx >= 0) { list[idx].readingStatus = status; await setJson(STORAGE_KEY, list); }
+  scheduleSync();
 }
 
 export async function toggleFavorite(
@@ -157,6 +170,7 @@ export async function removeFavorites(ids: string[]): Promise<void> {
   const idSet = new Set(ids);
   const list = await getFavoritesRaw();
   await setJson(STORAGE_KEY, list.filter((m) => !idSet.has(m.mangaId)));
+  scheduleSync();
 }
 
 export async function updateReadingStatusBatch(
@@ -169,9 +183,11 @@ export async function updateReadingStatusBatch(
     idSet.has(m.mangaId) ? { ...m, readingStatus: status } : m,
   );
   await setJson(STORAGE_KEY, updated);
+  scheduleSync();
 }
 
 export async function clearAllFavorites(): Promise<void> {
   await AsyncStorage.removeItem(STORAGE_KEY);
   await AsyncStorage.removeItem(UPDATES_KEY);
+  scheduleSync();
 }
