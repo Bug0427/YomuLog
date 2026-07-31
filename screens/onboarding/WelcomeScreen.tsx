@@ -5,6 +5,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { colors } from '../../styles/tokens';
 
 const { width } = Dimensions.get('window');
 
@@ -44,7 +45,7 @@ export default function WelcomeScreen({ onNext }: Props) {
           style={[styles.cta, { backgroundColor: theme.accent }]}
         >
           <Text style={styles.ctaText}>Get Started</Text>
-          <Feather name="arrow-right" size={18} color="#fff" />
+          <Feather name="arrow-right" size={18} color={colors.white} />
         </Pressable>
       </View>
     </View>

@@ -231,10 +231,10 @@ export default function HomeScreen() {
         {usingCachedData && (
           <View style={{
             marginHorizontal: 12, marginTop: 4, paddingVertical: 6, paddingHorizontal: 12,
-            backgroundColor: '#f0ad4e18', borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6,
+            backgroundColor: theme.warning + '18', borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6,
           }}>
-            <MaterialCommunityIcons name="wifi-off" size={14} color="#f0ad4e" />
-            <Text style={{ fontSize: 11, color: '#f0ad4e', fontWeight: '600', flex: 1 }}>
+            <MaterialCommunityIcons name="wifi-off" size={14} color={theme.warning} />
+            <Text style={{ fontSize: 11, color: theme.warning, fontWeight: '600', flex: 1 }}>
               Showing cached data — pull to refresh when back online
             </Text>
           </View>

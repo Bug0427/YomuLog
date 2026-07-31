@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
-import { spacing } from '../../styles/tokens';
+import { colors, spacing } from '../../styles/tokens';
 import {
   getCollections, createCollection, updateCollection, deleteCollection,
   getCollectionsForManga, addMangaToCollection, removeMangaFromCollection,
@@ -135,7 +135,7 @@ export default function CollectionManager({ visible, mangaId, mangaTitle, onClos
               </Text>
             </Pressable>
             <Pressable onPress={handleCreate} style={[styles.addBtn, { backgroundColor: theme.accent }]}>
-              <Feather name="plus" size={16} color="#fff" />
+              <Feather name="plus" size={16} color={colors.white} />
             </Pressable>
           </View>
         </View>
@@ -195,7 +195,7 @@ export default function CollectionManager({ visible, mangaId, mangaTitle, onClos
                               <Feather name="edit-2" size={15} color={theme.textSecondary} />
                             </Pressable>
                             <Pressable onPress={() => handleDelete(col)} hitSlop={8}>
-                              <Feather name="trash-2" size={15} color="#e74c3c" />
+                              <Feather name="trash-2" size={15} color={theme.error} />
                             </Pressable>
                           </>
                         )}

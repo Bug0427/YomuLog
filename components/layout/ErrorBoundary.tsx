@@ -1,15 +1,16 @@
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { colors } from '../../styles/tokens';
 
 // Token-aligned colors (class component can't use useTheme hook)
 const C = {
-  bg: '#AFA6DD',
-  card: '#E3D3BD',
-  border: '#463B54',
-  text: '#543C27',
-  error: '#ff6b6b',
-  white: '#ffffff',
+  bg: colors.lavender,
+  card: colors.sand,
+  border: colors.plum,
+  text: colors.cocoa,
+  error: colors.error,
+  white: colors.white,
 };
 
 type Props = { children: ReactNode; screenLabel?: string };

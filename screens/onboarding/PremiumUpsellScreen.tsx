@@ -5,6 +5,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { colors } from '../../styles/tokens';
 
 const { width } = Dimensions.get('window');
 
@@ -55,7 +56,7 @@ export default function PremiumUpsellScreen({ onFinish, onSkip }: Props) {
           onPress={onFinish}
           style={[styles.cta, { backgroundColor: theme.warning }]}
         >
-          <Feather name="star" size={18} color="#fff" />
+          <Feather name="star" size={18} color={colors.white} />
           <Text style={styles.ctaText}>Try Premium Free</Text>
         </Pressable>
 

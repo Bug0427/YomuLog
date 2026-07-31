@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   errorText: {
-    color: '#f87171',
+    color: colors.error,
     textAlign: 'center',
     fontSize: 16,
     marginHorizontal: 20,
@@ -745,7 +745,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   chapterNavText: {
-    color: '#fff',
+    color: colors.white,
     fontWeight: '600',
     fontSize: 14,
   },
