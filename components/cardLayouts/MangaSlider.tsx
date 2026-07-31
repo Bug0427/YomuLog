@@ -4,6 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { GeneralStyles } from '../../styles/global';
 import { MangaSliderStyles } from '../../styles/IndependentStyles/MangaSliderStyles';
 import { colors } from '../../styles/tokens';
+import { useTheme } from '../../context/ThemeContext';
 import { useWindowWidth } from '../../utils/findDimensions';
 
 interface MangaItem {
@@ -24,6 +25,7 @@ interface MangaSliderProps {
 }
 
 const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress, footerComponent, seeMoreOnPress }) => {
+  const { colors: theme } = useTheme();
   const screenWidth = useWindowWidth();
 
   // Ensure a minimum horizontal gutter on all screen sizes
@@ -90,8 +92,8 @@ const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress, fo
                     i === 3 && MangaSliderStyles.lastCard,
                   ]}
                 >
-                  <View style={[MangaSliderStyles.image, { backgroundColor: '#e0e0e0' }]} />
-                  <View style={{ height: 14, backgroundColor: '#e0e0e0', borderRadius: 4, marginTop: 4, width: '80%', alignSelf: 'center' }} />
+                  <View style={[MangaSliderStyles.image, { backgroundColor: theme.bgSecondary }]} />
+                  <View style={{ height: 14, backgroundColor: theme.bgSecondary, borderRadius: 4, marginTop: 4, width: '80%', alignSelf: 'center' }} />
                 </View>
               ))}
             </View>

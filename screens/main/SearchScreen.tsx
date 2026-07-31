@@ -305,7 +305,7 @@ export default function SearchScreen() {
             alignItems: 'center',
           }}
         >
-          <MaterialCommunityIcons name="image-search" size={18} color={theme.text} />
+          <MaterialCommunityIcons name="image-search" size={18} color={theme.textPrimary} />
         </Pressable>
         <Pressable
           onPress={() => {

@@ -103,7 +103,7 @@ export default function ReverseImageSearchModal({
                   Reverse Image Search
                 </Text>
                 <Pressable onPress={onClose} hitSlop={8}>
-                  <MaterialCommunityIcons name="close" size={24} color={theme.text} />
+                  <MaterialCommunityIcons name="close" size={24} color={theme.textPrimary} />
                 </Pressable>
               </View>
 
@@ -167,9 +167,9 @@ export default function ReverseImageSearchModal({
 // ---------------------------------------------------------------------------
 
 function scoreColor(score: number): string {
-  if (score >= 0.7) return '#4caf50';
-  if (score >= 0.4) return '#ff9800';
-  return '#f44336';
+  if (score >= 0.7) return theme.success;
+  if (score >= 0.4) return theme.warning;
+  return theme.error;
 }
 
 // ---------------------------------------------------------------------------

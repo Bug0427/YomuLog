@@ -50,7 +50,7 @@ export default function RowEditorModal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={[u.absFill, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Pressable onPress={onClose} style={[u.absFill, { backgroundColor: 'rgba(0,0,0,0.4)' }]} />
+        <Pressable onPress={onClose} style={[u.absFill, { backgroundColor: 'theme.overlay' }]} />
         <View style={{ width: '84%', maxHeight: '76%', backgroundColor: colors.paleLavender, borderWidth: 2, borderColor: colors.deepPlum, borderRadius: 4, padding: 16 }}>
           <Text style={{ color: colors.deepPlum, fontWeight: '900', fontSize: 16, marginBottom: 12, textAlign: 'center' }}>
             {title}

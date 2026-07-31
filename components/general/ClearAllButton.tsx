@@ -14,7 +14,7 @@ const ClearAllButton: React.FC<ClearAllButtonProps> = ({
   accessibilityLabel = 'Clear all',
   label = 'Clear All',
 }) => {
-  const theme = useTheme();
+  const { colors: theme } = useTheme();
 
   return (
     <Pressable

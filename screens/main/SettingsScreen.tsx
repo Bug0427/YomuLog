@@ -523,7 +523,7 @@ export default function SettingsScreen() {
             {isPremium && (
               <Pressable
                 onPress={async () => {
-                  const { deactivatePremium } = (await import('../../context/PremiumContext'));
+                  const { deactivatePremium } = usePremium();
                   // Access via context; we'll add a dev handler
                   Alert.alert('Premium Active', 'Manage your subscription in Account Settings.', [{ text: 'OK' }]);
                 }}

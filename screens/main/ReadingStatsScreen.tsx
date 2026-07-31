@@ -11,6 +11,7 @@ import {
   fmtLastRead as formatLastRead,
 } from '../../services/readingStatsService';
 import { colors, spacing } from '../../styles/tokens';
+import { useTheme } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
 import BackButton from '../../components/general/BackButton';
 
@@ -27,6 +28,7 @@ const DAY_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#8b5
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function ReadingStatsScreen() {
+  const { colors: theme } = useTheme();
   const navigation = useNavigation();
   const { isPremium } = usePremium();
   const [stats, setStats] = useState<ReadingStats | null>(null);
@@ -232,8 +234,8 @@ export default function ReadingStatsScreen() {
                       s.heatmapCell,
                       {
                         backgroundColor:
-                          day.level === 0 ? '#1e1e3a' :
-                          day.level === 1 ? '#2d1f4e' :
+                          day.level === 0 ? theme.bgSecondary :
+                          day.level === 1 ? theme.bgSecondary :
                           day.level === 2 ? '#4a2d7a' :
                           day.level === 3 ? '#7c3aed' : '#a78bfa',
                       },
@@ -247,7 +249,7 @@ export default function ReadingStatsScreen() {
                 {[0, 1, 2, 3, 4].map((lvl) => (
                   <View key={lvl} style={[s.heatmapCell, {
                     width: 12, height: 12, borderRadius: 2,
-                    backgroundColor: lvl === 0 ? '#1e1e3a' : lvl === 1 ? '#2d1f4e' : lvl === 2 ? '#4a2d7a' : lvl === 3 ? '#7c3aed' : '#a78bfa',
+                    backgroundColor: lvl === 0 ? theme.bgSecondary : lvl === 1 ? theme.bgSecondary : lvl === 2 ? '#4a2d7a' : lvl === 3 ? '#7c3aed' : '#a78bfa',
                   }]} />
                 ))}
                 <Text style={s.heatmapLegendLabel}>More</Text>
@@ -333,7 +335,7 @@ function DonutChart({ segments }: { segments: { label: string; count: number; co
       {/* Background ring */}
       <View style={{
         width: DONUT_SIZE, height: DONUT_SIZE, borderRadius: DONUT_SIZE / 2,
-        borderWidth: DONUT_STROKE, borderColor: '#1e1e3a',
+        borderWidth: DONUT_STROKE, borderColor: theme.bgSecondary,
         position: 'absolute',
       }} />
       {/* Segment slices */}

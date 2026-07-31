@@ -8,6 +8,7 @@ import SubmitButton from '../../components/layout/SubmitButton';
 import { insertReport, initDb } from '../../services/feedbackRepo';
 
 export default function FileReport() {
+  const { colors: theme } = useTheme();
   React.useEffect(() => {
     // Ensure DB schema (including reports.SID) is initialized once
     initDb().catch(err => console.warn('initDb failed (ignored on UI):', err));
@@ -143,7 +144,7 @@ export default function FileReport() {
               {selectedCat && (
                 isFreeTextSub ? (
                   <TextInput
-                    style={[FeedbackStyles.item, { color: '#2c1f42', minHeight: 40, paddingVertical: 10 }]}
+                    style={[FeedbackStyles.item, { color: theme.textPrimary, minHeight: 40, paddingVertical: 10 }]}
                     placeholder="Please specify"
                     placeholderTextColor="#6b5a8e"
                     value={selectedIssue ?? ''}
@@ -198,16 +199,16 @@ export default function FileReport() {
                   <View
                     style={{
                       borderWidth: 2,
-                      borderColor: '#543C27',
+                      borderColor: theme.textPrimary,
                       padding: 12,
-                      backgroundColor:'#E3D3BD',
+                      backgroundColor:theme.bgCard,
                     }}
                   >
                     <TextInput
                       style={{
                         minHeight: 165,
                         textAlignVertical: 'top',
-                        color: '#2c1f42',
+                        color: theme.textPrimary,
                       }}
                       multiline
                       placeholder="Describe the problem…"
@@ -219,7 +220,7 @@ export default function FileReport() {
                     />
                   </View>
                   <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
-                    <Text style={{ color: '#2c1f42', fontWeight: '600' }}>
+                    <Text style={{ color: theme.textPrimary, fontWeight: '600' }}>
                       {remaining} characters left
                     </Text>
                   </View>
