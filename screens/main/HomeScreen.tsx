@@ -15,7 +15,9 @@ import { fetchMangaList, Manga } from '../../services/mangaAPI';
 import { GENRE_TAG_IDS, GenreTag } from '../../utils/filters';
 import { getPersonalisedRecommendations } from '../../services/metadataClassification';
 import { useTheme } from '../../context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import MascotLoader from '../../components/general/MascotLoader';
+import { fetchHomeSlidersWithFallback } from '../../services/offlineFallback';
 
 // ── Slider configuration ───────────────────────────────────────────
 type SliderConfig =
@@ -69,6 +71,7 @@ export default function HomeScreen() {
 
   const [sliderDataMap, setSliderDataMap] = useState<SliderDataMap>({});
   const [failedSliders, setFailedSliders] = useState<Set<string>>(new Set());
+  const [usingCachedData, setUsingCachedData] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -125,8 +128,29 @@ export default function HomeScreen() {
 
       setSliderDataMap(map);
       setFailedSliders(failed);
+      setUsingCachedData(false);
+      // Cache for offline fallback
+      AsyncStorage.setItem('@YomuLog:cache:homeSliders', JSON.stringify({
+        data: map, timestamp: Date.now(),
+      })).catch(() => {});
     } catch (e) {
       console.error('Failed to load home data:', e);
+      // Try stale cache fallback
+      try {
+        const cached = await fetchHomeSlidersWithFallback(async () => { throw new Error('offline'); });
+        // Rebuild slider items from cached Manga[]
+        const cachedMap: SliderDataMap = {};
+        for (const config of SLIDER_CONFIGS) {
+          const mangas = cached.data[config.title];
+          if (mangas && mangas.length) {
+            cachedMap[config.title] = mangas.map((m) => toSliderItem(m, navigation));
+          }
+        }
+        if (Object.keys(cachedMap).length) {
+          setSliderDataMap(cachedMap);
+          setUsingCachedData(true);
+        }
+      } catch { /* no cache available */ }
     } finally {
       setLoading(false);
     }
@@ -204,6 +228,19 @@ export default function HomeScreen() {
         <View style={{ paddingHorizontal: 12, backgroundColor: theme.bg }}>
           <Header />
         </View>
+
+        {/* Stale-data offline indicator */}
+        {usingCachedData && (
+          <View style={{
+            marginHorizontal: 12, marginTop: 4, paddingVertical: 6, paddingHorizontal: 12,
+            backgroundColor: '#f0ad4e18', borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6,
+          }}>
+            <MaterialCommunityIcons name="wifi-off" size={14} color="#f0ad4e" />
+            <Text style={{ fontSize: 11, color: '#f0ad4e', fontWeight: '600', flex: 1 }}>
+              Showing cached data — pull to refresh when back online
+            </Text>
+          </View>
+        )}
 
         {/* Loading */}
         {loading && (
