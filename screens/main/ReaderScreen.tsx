@@ -15,39 +15,33 @@ import {
   getChapterProgress,
 } from '../../services/readingProgress';
 import { getLocalPageUris } from '../../services/downloadManager';
+import {
+  ReaderThemeProvider,
+  useReaderTheme,
+  type ReaderThemePreset,
+  type ReaderThemeConfig,
+} from '../../context/ReaderThemeContext';
+import ThemePicker from '../../components/reader/ThemePicker';
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
 type ReaderMode = 'vertical' | 'ltr' | 'rtl';
-type ReaderTheme = 'dark' | 'light' | 'sepia';
 
 type ReaderRoute = RouteProp<RootStackParamList, 'ReaderScreen'>;
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
-// ─── Theme colour maps ──────────────────────────────────────────────────
-
-const THEME_BG: Record<ReaderTheme, string> = {
-  dark: '#111111',
-  light: '#fff8f0',
-  sepia: '#f5e6c8',
-};
-
-const THEME_TEXT: Record<ReaderTheme, string> = {
-  dark: '#e0e0e0',
-  light: '#333333',
-  sepia: '#5a4a3a',
-};
-
-const THEME_OVERLAY: Record<ReaderTheme, string> = {
-  dark: 'rgba(0,0,0,0.85)',
-  light: 'rgba(255,248,240,0.92)',
-  sepia: 'rgba(245,230,200,0.92)',
-};
-
 // ─── Main Component ─────────────────────────────────────────────────────
 
-export default function ReaderScreen() {
+export default function ReaderScreenWrapper() {
+  return (
+    <ReaderThemeProvider>
+      <ReaderScreen />
+    </ReaderThemeProvider>
+  );
+}
+
+function ReaderScreen() {
   const navigation = useNavigation();
   const route = useRoute<ReaderRoute>();
   const { chapterId, mangaId, chapterNum } = route.params ?? {};
@@ -56,7 +50,9 @@ export default function ReaderScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [readerMode, setReaderMode] = useState<ReaderMode>('vertical');
-  const [readerTheme, setReaderTheme] = useState<ReaderTheme>('dark');
+  const { preset: readerTheme, activeConfig, brightness, fontSize,
+    setPreset: setReaderTheme } = useReaderTheme();
+  const [showThemePicker, setShowThemePicker] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
@@ -270,23 +266,20 @@ export default function ReaderScreen() {
     });
   }, []);
 
-  // ─── Cycle theme ──────────────────────────────────────────────────────
+  // ─── Open theme picker ────────────────────────────────────────────────
 
-  const cycleTheme = useCallback(() => {
-    setReaderTheme((prev) => {
-      const themes: ReaderTheme[] = ['dark', 'light', 'sepia'];
-      return themes[(themes.indexOf(prev) + 1) % themes.length];
-    });
+  const openThemePicker = useCallback(() => {
+    setShowThemePicker(true);
   }, []);
 
   // ─── Loading state ───────────────────────────────────────────────────
 
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: THEME_BG[readerTheme] }]}>
+      <View style={[styles.container, { backgroundColor: activeConfig.bg }]}>
         <StatusBar hidden />
         <ActivityIndicator size="large" color={colors.lavender} />
-        <Text style={[styles.loadingText, { color: THEME_TEXT[readerTheme] }]}>
+        <Text style={[styles.loadingText, { color: activeConfig.text }]}>
           Loading chapter...
         </Text>
       </View>
@@ -297,7 +290,7 @@ export default function ReaderScreen() {
 
   if (error || pageUrls.length === 0) {
     return (
-      <View style={[styles.container, { backgroundColor: THEME_BG[readerTheme] }]}>
+      <View style={[styles.container, { backgroundColor: activeConfig.bg }]}>
         <StatusBar hidden />
         <Text style={styles.errorText}>{error || 'No pages found'}</Text>
         <BackButton onPress={() => navigation.goBack()} />
@@ -313,7 +306,7 @@ export default function ReaderScreen() {
       uri={uri}
       index={index}
       isActive={index === currentPage}
-      theme={readerTheme}
+      bg={activeConfig.bg}
       onLoad={() => setLoadedImages((prev) => new Set(prev).add(index))}
     />
   );
@@ -322,7 +315,6 @@ export default function ReaderScreen() {
     <ReaderControls
       chapterNum={chapterNum ?? ''}
       readerMode={readerMode}
-      readerTheme={readerTheme}
       currentPage={currentPage}
       totalPages={pageUrls.length}
       scrollPercent={scrollPercent}
@@ -330,12 +322,33 @@ export default function ReaderScreen() {
       hasPrevChapter={currentChapterIdx > 0}
       hasNextChapter={currentChapterIdx < chapterList.length - 1}
       onToggleMode={cycleMode}
-      onToggleTheme={cycleTheme}
+      onOpenThemePicker={openThemePicker}
       onClose={() => navigation.goBack()}
       onPrevChapter={goToPrevChapter}
       onNextChapter={goToNextChapter}
     />
   );
+
+  const renderThemePicker = () => (
+    <ThemePicker
+      visible={showThemePicker}
+      onClose={() => setShowThemePicker(false)}
+    />
+  );
+
+  const themeContainerStyle = useMemo(() => [
+    styles.container,
+    { backgroundColor: activeConfig.bg },
+  ], [activeConfig.bg]);
+
+  const brightnessOverlay = brightness < 1.0 ? (
+    <View
+      style={[
+        StyleSheet.absoluteFill,
+        { backgroundColor: 'rgba(0,0,0,' + (1 - brightness) * 0.7 + ')', pointerEvents: 'none' as const },
+      ]}
+    />
+  ) : null;
 
   // ═════════════════════════════════════════════════════════════════════
   // VERTICAL SCROLL MODE
@@ -343,7 +356,7 @@ export default function ReaderScreen() {
 
   if (readerMode === 'vertical') {
     return (
-      <View style={[styles.container, { backgroundColor: THEME_BG[readerTheme] }]}>
+      <View style={themeContainerStyle}>
         <StatusBar hidden />
         <ScrollView
           ref={scrollViewRef}
@@ -356,8 +369,10 @@ export default function ReaderScreen() {
         >
           {pageUrls.map((uri, i) => renderPage(uri, i))}
         </ScrollView>
+        {brightnessOverlay}
         {showControls && renderControls()}
         <Pressable style={StyleSheet.absoluteFill} onPress={handleDoubleTap} />
+        {renderThemePicker()}
       </View>
     );
   }
@@ -387,7 +402,7 @@ export default function ReaderScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: THEME_BG[readerTheme] }]}>
+    <View style={themeContainerStyle}>
       <StatusBar hidden />
       <View style={styles.pageContainer}>
         {renderPage(pageUrls[currentPage], currentPage)}
@@ -423,19 +438,21 @@ export default function ReaderScreen() {
         </Pressable>
       )}
 
+      {brightnessOverlay}
       {showControls && renderControls()}
       <Pressable style={StyleSheet.absoluteFill} onPress={handleDoubleTap} />
+      {renderThemePicker()}
     </View>
   );
 }
 
 // ─── Reader Page Component ─────────────────────────────────────────────
 
-function ReaderPage({ uri, index, isActive, theme, onLoad }: {
+function ReaderPage({ uri, index, isActive, bg, onLoad }: {
   uri: string;
   index: number;
   isActive: boolean;
-  theme: ReaderTheme;
+  bg: string;
   onLoad?: () => void;
 }) {
   const [loaded, setLoaded] = useState(false);
@@ -448,18 +465,18 @@ function ReaderPage({ uri, index, isActive, theme, onLoad }: {
   }, [isActive, uri, loaded]);
 
   if (!isActive && !loaded) {
-    return <View style={[styles.pagePlaceholder, { backgroundColor: THEME_BG[theme] }]} />;
+    return <View style={[styles.pagePlaceholder, { backgroundColor: bg }]} />;
   }
 
   return (
     <View style={styles.pageWrap}>
       {!loaded && !failed && (
-        <View style={[styles.pagePlaceholder, { backgroundColor: THEME_BG[theme] }]}>
+        <View style={[styles.pagePlaceholder, { backgroundColor: bg }]}>
           <ActivityIndicator size="small" color={colors.lavender} />
         </View>
       )}
       {failed ? (
-        <View style={[styles.pagePlaceholder, { backgroundColor: THEME_BG[theme] }]}>
+        <View style={[styles.pagePlaceholder, { backgroundColor: bg }]}>
           <Text style={styles.errorText}>Failed to load</Text>
         </View>
       ) : (
@@ -478,13 +495,12 @@ function ReaderPage({ uri, index, isActive, theme, onLoad }: {
 // ─── Reader Controls Overlay ───────────────────────────────────────────
 
 function ReaderControls({
-  chapterNum, readerMode, readerTheme, currentPage, totalPages,
+  chapterNum, readerMode, currentPage, totalPages,
   scrollPercent, isRead, hasPrevChapter, hasNextChapter,
-  onToggleMode, onToggleTheme, onClose, onPrevChapter, onNextChapter,
+  onToggleMode, onOpenThemePicker, onClose, onPrevChapter, onNextChapter,
 }: {
   chapterNum: string;
   readerMode: ReaderMode;
-  readerTheme: ReaderTheme;
   currentPage: number;
   totalPages: number;
   scrollPercent: number;
@@ -492,23 +508,19 @@ function ReaderControls({
   hasPrevChapter: boolean;
   hasNextChapter: boolean;
   onToggleMode: () => void;
-  onToggleTheme: () => void;
+  onOpenThemePicker: () => void;
   onClose: () => void;
   onPrevChapter: () => void;
   onNextChapter: () => void;
 }) {
+  const { activeConfig } = useReaderTheme();
   const modeLabels: Record<ReaderMode, string> = {
     vertical: 'Scroll',
     ltr: 'L→R',
     rtl: 'R→L',
   };
-  const themeLabels: Record<ReaderTheme, string> = {
-    dark: '🌙 Dark',
-    light: '☀️ Light',
-    sepia: '📜 Sepia',
-  };
-  const overlayBg = THEME_OVERLAY[readerTheme];
-  const textColor = THEME_TEXT[readerTheme];
+  const overlayBg = activeConfig.overlay;
+  const textColor = activeConfig.text;
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
@@ -521,9 +533,9 @@ function ReaderControls({
           Ch. {chapterNum}
         </Text>
         <View style={styles.topRightBtns}>
-          <Pressable onPress={onToggleTheme} style={styles.controlBtn}>
+          <Pressable onPress={onOpenThemePicker} style={styles.controlBtn}>
             <Text style={[styles.controlBtnText, { color: textColor, fontSize: 11 }]}>
-              {themeLabels[readerTheme]}
+              {activeConfig.icon} {activeConfig.label}
             </Text>
           </Pressable>
           <Pressable onPress={onToggleMode} style={[styles.controlBtn, { marginLeft: 6 }]}>
