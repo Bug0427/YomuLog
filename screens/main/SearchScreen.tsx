@@ -293,7 +293,7 @@ export default function SearchScreen() {
         placeholder="Search items..."
       />
       {/* AI mode toggle + Reverse Image Search */}
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: 12, marginTop: 4, gap: 8 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: spacing.p12, marginTop: spacing.p4, gap: spacing.p8 }}>
         {/* Reverse image search button */}
         <Pressable
           onPress={handleRisPress}
@@ -323,9 +323,9 @@ export default function SearchScreen() {
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            gap: 6,
-            paddingVertical: 5,
-            paddingHorizontal: 12,
+            gap: spacing.p6,
+            paddingVertical: spacing.p5,
+            paddingHorizontal: spacing.p12,
             borderRadius: 16,
             borderWidth: 1,
             borderColor: effectiveAiMode ? theme.accent : theme.border,
@@ -355,10 +355,10 @@ export default function SearchScreen() {
       {aiSummary ? (
         <View
           style={{
-            marginHorizontal: 12,
-            marginTop: 6,
-            paddingVertical: 8,
-            paddingHorizontal: 12,
+            marginHorizontal: spacing.p12,
+            marginTop: spacing.p6,
+            paddingVertical: spacing.p8,
+            paddingHorizontal: spacing.p12,
             backgroundColor: colors.deepPlum,
             borderRadius: 8,
           }}

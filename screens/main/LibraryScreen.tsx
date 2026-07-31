@@ -270,7 +270,7 @@ export default function LibraryScreen() {
 
       {/* Active filter indicator */}
       {hasActiveFilters(filterState) && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, marginTop: 4, gap: 6 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.p12, marginTop: spacing.p4, gap: spacing.p6 }}>
           <Text style={{ fontSize: 12, color: theme.textSecondary, fontWeight: '600' }}>
             Filtered: {filterState.readingStatus ? filterLabel : `${filterState.pubStatus.length} statuses`}
           </Text>

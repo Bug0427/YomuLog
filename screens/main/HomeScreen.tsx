@@ -230,7 +230,7 @@ export default function HomeScreen() {
         {/* Stale-data offline indicator */}
         {usingCachedData && (
           <View style={{
-            marginHorizontal: 12, marginTop: 4, paddingVertical: 6, paddingHorizontal: 12,
+            marginHorizontal: spacing.p12, marginTop: spacing.p4, paddingVertical: spacing.p6, paddingHorizontal: spacing.p12,
             backgroundColor: theme.warning + '18', borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6,
           }}>
             <MaterialCommunityIcons name="wifi-off" size={14} color={theme.warning} />
@@ -259,7 +259,7 @@ export default function HomeScreen() {
                 // Show simple italic empty state matching MangaInfo pattern
                 return (
                   <View key={`${config.title}-${refreshKey}`}>
-                    <View style={{ marginBottom: 20, paddingHorizontal: 12 }}>
+                    <View style={{ marginBottom: spacing.p20, paddingHorizontal: spacing.p12 }}>
                       <Text style={{
                         fontSize: 18,
                         fontWeight: '700',

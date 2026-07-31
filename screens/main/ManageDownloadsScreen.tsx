@@ -375,13 +375,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     // paddingTop set dynamically via useSafeAreaInsets
-    paddingBottom: 12,
-    paddingHorizontal: 16,
+    paddingBottom: spacing.p12,
+    paddingHorizontal: spacing.p16,
     backgroundColor: colors.paleLavender,
   },
   backBtn: {
     padding: 4,
-    marginRight: 12,
+    marginRight: spacing.p12,
   },
   headerTitle: {
     flex: 1,
@@ -393,8 +393,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: spacing.p16,
+    paddingTop: spacing.p12,
   },
   section: {
     marginBottom: 24,
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     borderTopWidth: 1,
     borderTopColor: colors.sand,
-    paddingTop: 12,
+    paddingTop: spacing.p12,
   },
   quickStatBox: {
     alignItems: 'center',
@@ -521,8 +521,8 @@ const styles = StyleSheet.create({
   mangaCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    paddingVertical: spacing.p12,
+    paddingHorizontal: spacing.p12,
     marginBottom: 8,
     borderRadius: 10,
     borderWidth: 1,

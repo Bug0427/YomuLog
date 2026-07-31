@@ -87,8 +87,8 @@ const SyncGridItem = ({
       width: '100%',
       flexDirection: 'row',
       alignItems: 'center',
-      paddingVertical: 12,
-      paddingHorizontal: 12,
+      paddingVertical: spacing.p12,
+      paddingHorizontal: spacing.p12,
       marginBottom: 8,
       backgroundColor: bg,
       borderRadius: 12,
@@ -403,8 +403,8 @@ export default function SettingsScreen() {
                   alignSelf: 'flex-end',
                   flexDirection: 'row',
                   alignItems: 'center',
-                  paddingVertical: 8,
-                  paddingHorizontal: 14,
+                  paddingVertical: spacing.p8,
+                  paddingHorizontal: spacing.p14,
                   backgroundColor: theme.accentLight,
                   borderRadius: 8,
                   gap: 6,
@@ -419,7 +419,7 @@ export default function SettingsScreen() {
             )}
 
             {syncState.syncEnabled && syncState.status === 'synced' && syncState.scopeTimestamps && (
-              <View style={{ paddingHorizontal: 8, paddingVertical: 4, marginTop: 2 }}>
+              <View style={{ paddingHorizontal: spacing.p8, paddingVertical: spacing.p4, marginTop: spacing.p3 }}>
                 {(['favorites', 'progress', 'downloads', 'preferences'] as const).map((scope) => {
                   const ts = syncState.scopeTimestamps[scope];
                   const scopeLabel = scope === 'favorites' ? 'Library' : scope === 'progress' ? 'Reading Progress' : scope === 'downloads' ? 'Downloads' : 'Preferences';
