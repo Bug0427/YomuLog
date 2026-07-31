@@ -453,7 +453,7 @@ function ReaderScreen() {
 
 // ─── Reader Page Component ─────────────────────────────────────────────
 
-function ReaderPage({ uri, index, isActive, bg, onLoad }: {
+const ReaderPage = React.memo(function ReaderPage({ uri, index, isActive, bg, onLoad }: {
   uri: string;
   index: number;
   isActive: boolean;
@@ -492,11 +492,13 @@ function ReaderPage({ uri, index, isActive, bg, onLoad }: {
           resizeMode="contain"
           onLoad={() => { setLoaded(true); onLoad?.(); }}
           onError={() => setFailed(true)}
+          accessibilityLabel={`Manga page ${index + 1}`}
+          accessibilityRole="image"
         />
       )}
     </View>
   );
-}
+});
 
 // ─── Reader Controls Overlay ───────────────────────────────────────────
 

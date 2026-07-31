@@ -40,7 +40,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               An unexpected error occurred. Please try again.{'\n\n'}
               {this.state.error?.message ?? ''}
             </Text>
-            <Pressable style={s.button} onPress={this.handleRetry}>
+            <Pressable style={s.button} onPress={this.handleRetry} accessibilityRole="button" accessibilityLabel="Try again" accessibilityHint="Reloads the screen after an error">
               <Feather name="refresh-cw" size={16} color={C.white} />
               <Text style={s.buttonText}>Try Again</Text>
             </Pressable>

@@ -12,6 +12,7 @@ import {
   RefreshControl,
   LayoutChangeEvent,
   ViewStyle,
+  Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { CardViewStyles } from '../../styles/global';
@@ -179,6 +180,9 @@ const CardView: React.FC<Props> = ({
           onPress={() => onPressItem?.(item)}
           onLongPress={() => !selectionMode && onLongPress?.(item)}
           delayLongPress={400}
+          accessibilityRole="button"
+          accessibilityLabel={item.title || 'Manga item'}
+          accessibilityHint="Tap to view manga details"
           style={[
             CardViewStyles.gridCard,
             { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight },
@@ -206,6 +210,9 @@ const CardView: React.FC<Props> = ({
         onPress={() => onPressItem?.(item)}
         onLongPress={() => !selectionMode && onLongPress?.(item)}
         delayLongPress={400}
+        accessibilityRole="button"
+        accessibilityLabel={item.title || 'Manga item'}
+        accessibilityHint="Tap to view manga details"
         style={[
           CardViewStyles.rowCard,
           { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight, alignItems: 'center' },
@@ -285,6 +292,10 @@ const CardView: React.FC<Props> = ({
         ListFooterComponent={Footer}
         ListEmptyComponent={Empty}
         ListHeaderComponent={headerComponent}
+        windowSize={7}
+        maxToRenderPerBatch={10}
+        initialNumToRender={8}
+        removeClippedSubviews={Platform.OS === 'android'}
         {...({ contentContainerStyle: listContentStyle } as any)}
         ref={listRef as any}
         onScrollBeginDrag={onScrollBeginDrag}

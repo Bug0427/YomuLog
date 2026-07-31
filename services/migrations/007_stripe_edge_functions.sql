@@ -1,0 +1,108 @@
+-- services/migrations/007_stripe_edge_functions.sql
+-- Reference for Supabase Edge Functions needed for Stripe integration.
+-- These are NOT SQL migrations — they are Deno/TypeScript edge functions
+-- deployed to Supabase via `supabase functions deploy`.
+--
+-- Files to create:
+--   supabase/functions/stripe-checkout/index.ts
+--   supabase/functions/stripe-portal/index.ts
+--   supabase/functions/stripe-cancel/index.ts
+--   supabase/functions/stripe-webhook/index.ts
+--
+-- Required secrets (set via `supabase secrets set`):
+--   STRIPE_SECRET_KEY=sk_live_...
+--   STRIPE_WEBHOOK_SECRET=whsec_...
+--   STRIPE_MONTHLY_PRICE_ID=price_...
+--   STRIPE_YEARLY_PRICE_ID=price_...
+--   SUPABASE_URL=https://sqnttowomvbckdvztuja.supabase.co
+--   SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
+--
+-- Environment variables in .env (client-side):
+--   EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
+--   EXPO_PUBLIC_SUPABASE_URL=https://sqnttowomvbckdvztuja.supabase.co
+--   EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
+
+-- The edge function creates a Stripe Checkout Session for subscriptions
+-- and returns the client_secret for the React Native SDK.
+
+-- ─────────────────────────────────────────────────────────────────────
+-- stripe-checkout Edge Function (pseudocode):
+-- ─────────────────────────────────────────────────────────────────────
+--
+-- import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+-- import Stripe from 'https://esm.sh/stripe@13.11.0'
+--
+-- const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!)
+-- const MONTHLY_PRICE = Deno.env.get('STRIPE_MONTHLY_PRICE_ID')!
+-- const YEARLY_PRICE = Deno.env.get('STRIPE_YEARLY_PRICE_ID')!
+--
+-- serve(async (req) => {
+--   const { plan, userId } = await req.json()
+--   const priceId = plan === 'yearly' ? YEARLY_PRICE : MONTHLY_PRICE
+--
+--   const session = await stripe.checkout.sessions.create({
+--     mode: 'subscription',
+--     line_items: [{ price: priceId, quantity: 1 }],
+--     client_reference_id: userId,
+--     success_url: 'yomulog://subscription-success',
+--     cancel_url: 'yomulog://subscription-cancel',
+--   })
+--
+--   return new Response(JSON.stringify({ clientSecret: session.client_secret }), {
+--     headers: { 'Content-Type': 'application/json' },
+--   })
+-- })
+--
+-- ─────────────────────────────────────────────────────────────────────
+-- stripe-webhook Edge Function (pseudocode):
+-- ─────────────────────────────────────────────────────────────────────
+--
+-- serve(async (req) => {
+--   const sig = req.headers.get('stripe-signature')!
+--   const body = await req.text()
+--   const event = stripe.webhooks.constructEvent(body, sig, WEBHOOK_SECRET)
+--
+--   switch (event.type) {
+--     case 'checkout.session.completed': {
+--       const session = event.data.object
+--       const userId = session.client_reference_id
+--       const subscription = await stripe.subscriptions.retrieve(session.subscription)
+--       // Call upsert_subscription(userId, ...) via Supabase
+--       break
+--     }
+--     case 'customer.subscription.updated':
+--     case 'customer.subscription.deleted': {
+--       const sub = event.data.object
+--       // Find user by stripe_customer_id, update subscription status
+--       break
+--     }
+--   }
+--   return new Response(JSON.stringify({ received: true }))
+-- })
+--
+-- ─────────────────────────────────────────────────────────────────────
+-- stripe-portal Edge Function (pseudocode):
+-- ─────────────────────────────────────────────────────────────────────
+--
+-- serve(async (req) => {
+--   const { userId } = await req.json()
+--   // Look up stripe_customer_id from user_subscriptions
+--   const portal = await stripe.billingPortal.sessions.create({
+--     customer: customerId,
+--     return_url: 'yomulog://settings',
+--   })
+--   return new Response(JSON.stringify({ url: portal.url }))
+-- })
+--
+-- ─────────────────────────────────────────────────────────────────────
+-- stripe-cancel Edge Function (pseudocode):
+-- ─────────────────────────────────────────────────────────────────────
+--
+-- serve(async (req) => {
+--   const { userId } = await req.json()
+--   // Cancel at period end
+--   await stripe.subscriptions.update(subscriptionId, {
+--     cancel_at_period_end: true,
+--   })
+--   return new Response(JSON.stringify({ success: true }))
+-- })

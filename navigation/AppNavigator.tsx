@@ -28,6 +28,8 @@ import ReadingStatsScreen from '../screens/main/ReadingStatsScreen';
 import AuthScreen from '../screens/auth/AuthScreen';
 import OnboardingFlow from '../screens/onboarding/OnboardingFlow';
 import ReaderThemeSettingsScreen from '../screens/settings/ReaderThemeSettingsScreen';
+import UpgradeScreen from '../screens/premium/UpgradeScreen';
+import ManageSubscriptionScreen from '../screens/premium/ManageSubscriptionScreen';
 import { RootStackParamList } from '../navigation/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -69,6 +71,8 @@ export default function AppNavigator() {
             <Stack.Screen name="AuthScreen" component={AuthScreen} />
             <Stack.Screen name="OnboardingFlow" component={OnboardingFlow} />
             <Stack.Screen name="ReaderThemeSettingsScreen" component={ReaderThemeSettingsScreen} />
+            <Stack.Screen name="UpgradeScreen" component={UpgradeScreen} />
+            <Stack.Screen name="ManageSubscriptionScreen" component={ManageSubscriptionScreen} />
         </Stack.Navigator>
         </NavigationContainer>
       </ErrorBoundary>
