@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
-import { spacing } from '../../styles/tokens';
+import { colors, spacing } from '../../styles/tokens';
 
 type Props = {
   mangaId: string;
@@ -53,7 +53,7 @@ export default function TagEditor({ mangaId, tags, onAddTag, onRemoveTag }: Prop
           returnKeyType="done"
         />
         <Pressable onPress={handleSubmit} style={[styles.addBtn, { backgroundColor: theme.accent }]}>
-          <Feather name="plus" size={16} color="#fff" />
+          <Feather name="plus" size={16} color={colors.white} />
         </Pressable>
       </View>
     </View>
