@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, FlatList, Image, Pressable } from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import { View, Text, FlatList, Image, Pressable, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { GeneralStyles } from '../../styles/global';
 import { MangaSliderStyles } from '../../styles/IndependentStyles/MangaSliderStyles';
@@ -66,10 +66,44 @@ const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress, fo
     contentContainerStyle: [MangaSliderStyles.sliderContainer],
   } as any;
 
-  // Build data with trailing "See More" card
-  const displayData = seeMoreOnPress
-    ? [...data, { id: '__see_more__', title: 'See More', image: '', onPress: seeMoreOnPress } as MangaItem]
-    : data;
+  // Build data with trailing "See More" card — memoized
+  const displayData = useMemo(() =>
+    seeMoreOnPress
+      ? [...data, { id: '__see_more__', title: 'See More', image: '', onPress: seeMoreOnPress } as MangaItem]
+      : data,
+    [data, seeMoreOnPress]
+  );
+
+  // Memoized renderItem to avoid re-renders on parent state changes
+  const renderItem = useCallback(({ item, index }: { item: MangaItem; index: number }) => {
+    const isLast = index === displayData.length - 1;
+    const isSeeMore = item.id === '__see_more__';
+
+    if (isSeeMore) {
+      return (
+        <Pressable
+          style={[MangaSliderStyles.seeMoreCard, isLast && MangaSliderStyles.lastCard]}
+          onPress={item.onPress}
+        >
+          <MaterialCommunityIcons name="chevron-right-circle" size={28} color={colors.creamWhite} />
+          <Text style={MangaSliderStyles.seeMoreText}>{item.title}</Text>
+        </Pressable>
+      );
+    }
+
+    return (
+      <Pressable
+        style={[
+          MangaSliderStyles.card,
+          isLast && MangaSliderStyles.lastCard
+        ]}
+        onPress={item.onPress}
+      >
+        <Image source={{ uri: item.image }} style={MangaSliderStyles.image} />
+        <Text style={MangaSliderStyles.title} numberOfLines={1}>{item.title}</Text>
+      </Pressable>
+    );
+  }, [displayData.length]);
 
   return (
     <View style={MangaSliderStyles.outerWrap}>
@@ -104,36 +138,9 @@ const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress, fo
             showsHorizontalScrollIndicator={false}
             keyExtractor={(item) => item.id}
             {...listExtraProps}
-            renderItem={({ item, index }: { item: MangaItem; index: number }) => {
-              const isLast = index === displayData.length - 1;
-              const isSeeMore = item.id === '__see_more__';
-
-              if (isSeeMore) {
-                return (
-                  <Pressable
-                    style={[MangaSliderStyles.seeMoreCard, isLast && MangaSliderStyles.lastCard]}
-                    onPress={item.onPress}
-                  >
-                    <MaterialCommunityIcons name="chevron-right-circle" size={28} color={colors.creamWhite} />
-                    <Text style={MangaSliderStyles.seeMoreText}>{item.title}</Text>
-                  </Pressable>
-                );
-              }
-
-              return (
-                <Pressable
-                  style={[
-                    MangaSliderStyles.card,
-                    isLast && MangaSliderStyles.lastCard
-                  ]}
-                  onPress={item.onPress}
-                >
-                  <Image source={{ uri: item.image }} style={MangaSliderStyles.image} />
-                  <Text style={MangaSliderStyles.title} numberOfLines={1}>{item.title}</Text>
-                </Pressable>
-              );
-            }}
+            renderItem={renderItem}
             ListFooterComponent={footerComponent}
+            removeClippedSubviews={Platform.OS === 'android'}
           />
           )}
         </View>

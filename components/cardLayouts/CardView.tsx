@@ -12,6 +12,7 @@ import {
   RefreshControl,
   LayoutChangeEvent,
   ViewStyle,
+  Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { CardViewStyles } from '../../styles/global';
@@ -285,6 +286,10 @@ const CardView: React.FC<Props> = ({
         ListFooterComponent={Footer}
         ListEmptyComponent={Empty}
         ListHeaderComponent={headerComponent}
+        windowSize={7}
+        maxToRenderPerBatch={10}
+        initialNumToRender={8}
+        removeClippedSubviews={Platform.OS === 'android'}
         {...({ contentContainerStyle: listContentStyle } as any)}
         ref={listRef as any}
         onScrollBeginDrag={onScrollBeginDrag}
