@@ -17,7 +17,7 @@ import { colors as tokens, spacing } from '../../styles/tokens';
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
-type BatchAction = 'delete' | 'unlike' | 'markRead';
+type BatchAction = 'delete' | 'unlike' | 'markRead' | 'addToCollection';
 
 type Props = {
   /** Whether the bar is visible */
@@ -82,6 +82,31 @@ const SelectionActionBar: React.FC<Props> = ({
 
       {/* Center: action buttons */}
       <View style={styles.actions}>
+        <Pressable
+          onPress={() => selectedCount > 0 && onAction('addToCollection')}
+          style={({ pressed }) => [
+            styles.actionBtn,
+            pressed && styles.pressed,
+            selectedCount === 0 && styles.disabled,
+          ]}
+          accessibilityLabel={`Add ${selectedCount} to collection`}
+          disabled={selectedCount === 0}
+        >
+          <MaterialCommunityIcons
+            name="folder-plus-outline"
+            size={26}
+            color={selectedCount > 0 ? theme.accent : theme.textMuted}
+          />
+          <Text
+            style={[
+              styles.actionLabel,
+              { color: selectedCount > 0 ? theme.accent : theme.textMuted },
+            ]}
+          >
+            Collect
+          </Text>
+        </Pressable>
+
         <Pressable
           onPress={() => selectedCount > 0 && onAction('markRead')}
           style={({ pressed }) => [
