@@ -1,6 +1,7 @@
 // React & React Native
 import React, { useState, useCallback } from 'react';
-import { View, Text, Pressable, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
+import { View, Text, Pressable, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Navigation
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
