@@ -21,6 +21,8 @@ import {
 import { colors, spacing } from '../../styles/tokens';
 import { useTheme, type ThemeMode } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
+import { ReaderThemeProvider, useReaderTheme } from '../../context/ReaderThemeContext';
+import ThemePicker from '../../components/reader/ThemePicker';
 import {
   loadAllPreferences,
   setLanguage as saveLanguage,
@@ -144,6 +146,7 @@ export default function SettingsScreen() {
   });
   const [syncLoading, setSyncLoading] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showReaderThemeModal, setShowReaderThemeModal] = useState(false);
   const { isPremium, activatePremium } = usePremium();
 
   // Load persisted preferences on mount
@@ -599,6 +602,17 @@ export default function SettingsScreen() {
             <GridItem label="Manage downloads" onPress={() => navigation.navigate('ManageDownloadsScreen' as never)}>
               <Feather name="download" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
             </GridItem>
+            <GridItem
+              label="Reader Theme"
+              onPress={() => setShowReaderThemeModal(true)}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Feather name="palette" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
+                {!isPremium && (
+                  <Feather name="lock" size={10} color={theme.textMuted} style={{ marginLeft: -4, marginTop: -8 }} />
+                )}
+              </View>
+            </GridItem>
             {isAdmin ? (
               <GridItem label="Admin" onPress={goAdmin}>
                 <Feather name="shield" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
@@ -632,6 +646,14 @@ export default function SettingsScreen() {
           }
         }}
       />
+
+      {/* Reader Theme Picker Modal */}
+      <ReaderThemeProvider>
+        <ThemePicker
+          visible={showReaderThemeModal}
+          onClose={() => setShowReaderThemeModal(false)}
+        />
+      </ReaderThemeProvider>
 
       <Anchor scrollRef={scrollRef} isScrolling={isScrolling} />
     </View>
