@@ -4,8 +4,8 @@
 // Genres are handled by the capsule bar on SearchScreen — no longer rendered here.
 import React, { useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { colors, borders, spacing, u } from '../../styles/tokens';
-import { useTheme } from '../../context/ThemeContext';
+import { borders, spacing } from '../../styles/tokens';
+import { useTheme, type ThemeColors } from '../../context/ThemeContext';
 import {
   PUB_STATUS_OPTIONS,
   PubStatusValue,
@@ -27,7 +27,7 @@ export default function Filter({
   onChange,
   showReadingStatus,
 }: Props) {
-  const theme = useTheme();
+  const { colors: theme } = useTheme();
 
   /** Multi-select toggle for pub status */
   const togglePub = useCallback(
@@ -129,7 +129,7 @@ export default function Filter({
 
 // ── Section header ───────────────────────────────────────────
 
-function SectionLabel({ label, theme }: { label: string; theme: ReturnType<typeof useTheme> }) {
+function SectionLabel({ label, theme }: { label: string; theme: ThemeColors }) {
   return (
     <Text
       style={{
@@ -161,7 +161,7 @@ function CheckboxItem({
   radio?: boolean;
   onPress: () => void;
 }) {
-  const theme = useTheme();
+  const theme = useTheme().colors;
   const shape = radio ? s.radio : s.checkbox;
   const activeShape = radio ? s.radioActive : s.checkboxActive;
   const inner = radio
@@ -176,7 +176,7 @@ function CheckboxItem({
         alignItems: 'center',
         paddingVertical: spacing.p8,
         paddingHorizontal: 4,
-        borderRadius: borders.br6,
+        borderRadius: 8,
         backgroundColor: pressed ? theme.bgSecondary : 'transparent',
         minHeight: 40,
       })}
@@ -206,7 +206,7 @@ function ClearAllButton({
   theme,
 }: {
   onPress: () => void;
-  theme: ReturnType<typeof useTheme>;
+  theme: ThemeColors;
 }) {
   return (
     <Pressable

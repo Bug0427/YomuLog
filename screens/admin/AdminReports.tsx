@@ -9,6 +9,7 @@ import usePagedTable from '../../hooks/admin/UsePagedTable';
 import RowEditorModal, { RowEditorField } from '../../components/adminView/RowEditorModal';
 import { AdminSearchBarStyles } from '../../styles/global';
 import { colors } from '../../styles/tokens';
+import { useTheme } from '../../context/ThemeContext';
 
 type CategoryType = typeof CATEGORY_OPTIONS[number];
 const CATEGORY_OPTIONS = ['Reported Issues', 'Reviews', 'Ratings'] as const;
@@ -35,6 +36,7 @@ function toEditorFields(row: ReportRow): RowEditorField[] {
 }
 
 export default function AdminReports() {
+  const { colors: theme } = useTheme();
   const [category, setCategory] = useState<CategoryType | null>(null);
   const [catOpen, setCatOpen] = useState(false);
   const [catValue, setCatValue] = useState<CategoryType | null>(null);
@@ -230,7 +232,7 @@ export default function AdminReports() {
           style={[AdminSearchBarStyles.dropdown, { minHeight: 36 }]}
           dropDownContainerStyle={AdminSearchBarStyles.dropdown}
           textStyle={{ color: '#412d5cff', fontWeight: '600' }}
-          placeholderStyle={{ color: '#595360' }}
+          placeholderStyle={{ color: theme.placeholder }}
           selectedItemLabelStyle={{ fontWeight: '900' }}
         />
       </View>

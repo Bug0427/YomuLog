@@ -256,7 +256,7 @@ export default function DownLoadsScreen() {
                       backgroundColor: theme.accent + '22',
                       borderRadius: 6,
                       paddingHorizontal: spacing.p6,
-                      paddingVertical: spacing.p2,
+                      paddingVertical: spacing.p3,
                       gap: 3,
                     }}
                   >

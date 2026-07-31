@@ -21,6 +21,7 @@ const AUTO_DISMISS_MS = 4000; // hide after 4s on success
 const ANIM_DURATION = 300;
 
 export default function SyncStatusBanner({
+  const { colors: theme } = useTheme();
   status,
   lastSyncedAt,
   lastError,
@@ -76,9 +77,9 @@ export default function SyncStatusBanner({
   const isSynced = status === 'synced';
   const isError = status === 'error';
 
-  const bgColor = isSyncing ? '#2d1f4e' : isSynced ? '#1a3a2a' : '#3a1a1a';
-  const borderColor = isSyncing ? '#7c5cbf' : isSynced ? '#3a8a5a' : '#bf5c5c';
-  const iconColor = isSyncing ? '#b49dff' : isSynced ? '#5ad88a' : '#ff6b6b';
+  const bgColor = isSyncing ? theme.bgSecondary : isSynced ? theme.bgCard : '#3a1a1a';
+  const borderColor = isSyncing ? theme.accent : isSynced ? theme.success : theme.error;
+  const iconColor = isSyncing ? theme.accentLight : isSynced ? theme.success : theme.error;
 
   const icon = isSyncing ? (
     <ActivityIndicator size="small" color={iconColor} />
@@ -119,7 +120,7 @@ export default function SyncStatusBanner({
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
         {icon}
-        <Text style={{ color: '#e0d8f0', fontSize: 12, fontWeight: '600', flex: 1 }} numberOfLines={2}>
+        <Text style={{ color: theme.textPrimary, fontSize: 12, fontWeight: '600', flex: 1 }} numberOfLines={2}>
           {message}
         </Text>
       </View>
