@@ -49,7 +49,7 @@ export default function PremiumGuard({
     return (
       <>
         <View style={s.inlineLock}>
-          <Feather name="lock" size={12} color={theme.textMuted} />
+          <Feather name="lock" size={12} color={theme.textMuted} accessibilityLabel="Premium feature" />
           <Text style={[s.inlineText, { color: theme.textMuted }]}>Premium</Text>
         </View>
         <PremiumUpgradeModal
@@ -76,6 +76,9 @@ export default function PremiumGuard({
         <Pressable
           style={s.overlayTouch}
           onPress={() => setShowModal(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`Unlock ${featureName} — Premium feature`}
+          accessibilityHint="Tap to upgrade to Premium"
         >
           <View style={[s.lockBadge, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
             <Feather name="lock" size={18} color={theme.accent} />

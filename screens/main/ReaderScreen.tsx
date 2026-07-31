@@ -492,6 +492,8 @@ const ReaderPage = React.memo(function ReaderPage({ uri, index, isActive, bg, on
           resizeMode="contain"
           onLoad={() => { setLoaded(true); onLoad?.(); }}
           onError={() => setFailed(true)}
+          accessibilityLabel={`Manga page ${index + 1}`}
+          accessibilityRole="image"
         />
       )}
     </View>

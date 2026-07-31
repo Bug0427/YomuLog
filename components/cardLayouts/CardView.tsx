@@ -180,6 +180,9 @@ const CardView: React.FC<Props> = ({
           onPress={() => onPressItem?.(item)}
           onLongPress={() => !selectionMode && onLongPress?.(item)}
           delayLongPress={400}
+          accessibilityRole="button"
+          accessibilityLabel={item.title || 'Manga item'}
+          accessibilityHint="Tap to view manga details"
           style={[
             CardViewStyles.gridCard,
             { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight },
@@ -207,6 +210,9 @@ const CardView: React.FC<Props> = ({
         onPress={() => onPressItem?.(item)}
         onLongPress={() => !selectionMode && onLongPress?.(item)}
         delayLongPress={400}
+        accessibilityRole="button"
+        accessibilityLabel={item.title || 'Manga item'}
+        accessibilityHint="Tap to view manga details"
         style={[
           CardViewStyles.rowCard,
           { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight, alignItems: 'center' },
