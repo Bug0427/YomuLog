@@ -450,7 +450,7 @@ function ReaderScreen() {
 
 // ─── Reader Page Component ─────────────────────────────────────────────
 
-function ReaderPage({ uri, index, isActive, bg, onLoad }: {
+const ReaderPage = React.memo(function ReaderPage({ uri, index, isActive, bg, onLoad }: {
   uri: string;
   index: number;
   isActive: boolean;
@@ -493,7 +493,7 @@ function ReaderPage({ uri, index, isActive, bg, onLoad }: {
       )}
     </View>
   );
-}
+});
 
 // ─── Reader Controls Overlay ───────────────────────────────────────────
 
