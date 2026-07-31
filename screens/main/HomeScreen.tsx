@@ -201,9 +201,7 @@ export default function HomeScreen() {
           </RefreshControl>
         }
       >
-        <View style={{ paddingHorizontal: 12, backgroundColor: theme.bg }}>
-          <Header />
-        </View>
+        <Header />
 
         {/* Loading */}
         {loading && (

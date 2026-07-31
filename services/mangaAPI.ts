@@ -60,13 +60,31 @@ export async function fetchMangaList(params: MangaListParams = {}): Promise<Mang
   try {
     const res = await fetch(`${BASE_URL}/manga?${query.toString()}`);
     const json = await res.json();
-    return (json?.data ?? []).map((item: any) => {
+    const rawItems: any[] = json?.data ?? [];
+    // Deduplicate by manga ID — keep the entry with the most complete data
+    const dedupMap = new Map<string, Manga>();
+    for (const item of rawItems) {
       const id = item.id; const attrs = item.attributes ?? {};
       const coverRel = (item.relationships ?? []).find((r: any) => r.type === 'cover_art');
       const coverFileName = coverRel?.attributes?.fileName;
       const tags: string[] = (attrs.tags ?? []).map((t: any) => t.attributes?.name?.en ?? 'Unknown');
-      return { id, title: extractTitle(attrs), altTitles: attrs.altTitles?.map((t: any) => Object.values(t)[0] as string), status: attrs.status ?? undefined, coverImageUrl: coverFileName ? `${COVER_BASE}/${id}/${coverFileName}.256.jpg` : '', description: attrs.description?.en ?? undefined, year: attrs.year ?? undefined, contentRating: attrs.contentRating ?? undefined, updatedAt: attrs.updatedAt ?? undefined, genres: tags, };
-    });
+      const manga: Manga = {
+        id, title: extractTitle(attrs),
+        altTitles: attrs.altTitles?.map((t: any) => Object.values(t)[0] as string),
+        status: attrs.status ?? undefined,
+        coverImageUrl: coverFileName ? `${COVER_BASE}/${id}/${coverFileName}.256.jpg` : '',
+        description: attrs.description?.en ?? undefined,
+        year: attrs.year ?? undefined,
+        contentRating: attrs.contentRating ?? undefined,
+        updatedAt: attrs.updatedAt ?? undefined,
+        genres: tags,
+      };
+      const existing = dedupMap.get(id);
+      if (!existing || (manga.description ? 1 : 0) + (manga.genres?.length ?? 0) > (existing.description ? 1 : 0) + (existing.genres?.length ?? 0)) {
+        dedupMap.set(id, manga);
+      }
+    }
+    return Array.from(dedupMap.values());
   } catch (err) { console.warn('Failed to fetch manga list:', err); return []; }
 }
 
