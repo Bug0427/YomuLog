@@ -7,7 +7,8 @@ import {
 import { useNavigation, RouteProp, useRoute } from '@react-navigation/native';
 import { getChapterPages, buildPageUrlsFromChapterData, getMangaFeed } from '../../services/mangaAPI';
 import { RootStackParamList } from '../../navigation/navigation';
-import { colors, spacing } from '../../styles/tokens';
+import { spacing } from '../../styles/tokens';
+import { useTheme } from '../../context/ThemeContext';
 import BackButton from '../../components/general/BackButton';
 import {
   updateChapterProgress,
@@ -42,6 +43,7 @@ export default function ReaderScreenWrapper() {
 }
 
 function ReaderScreen() {
+  const { colors: theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute<ReaderRoute>();
   const { chapterId, mangaId, chapterNum } = route.params ?? {};
@@ -278,7 +280,7 @@ function ReaderScreen() {
     return (
       <View style={[styles.container, { backgroundColor: activeConfig.bg }]}>
         <StatusBar hidden />
-        <ActivityIndicator size="large" color={colors.lavender} />
+        <ActivityIndicator size="large" color={theme.accentLight} />
         <Text style={[styles.loadingText, { color: activeConfig.text }]}>
           Loading chapter...
         </Text>
@@ -472,7 +474,7 @@ function ReaderPage({ uri, index, isActive, bg, onLoad }: {
     <View style={styles.pageWrap}>
       {!loaded && !failed && (
         <View style={[styles.pagePlaceholder, { backgroundColor: bg }]}>
-          <ActivityIndicator size="small" color={colors.lavender} />
+          <ActivityIndicator size="small" color={theme.accentLight} />
         </View>
       )}
       {failed ? (
@@ -583,7 +585,7 @@ function ReaderControls({
 
 // ─── Styles ────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const styles = useMemo(() => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -603,11 +605,11 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingVertical: 10,
     paddingHorizontal: 24,
-    backgroundColor: colors.lavender,
+    backgroundColor: theme.accentLight,
     borderRadius: 8,
   },
   backBtnText: {
-    color: colors.deepPlum,
+    color: theme.accentDark,
     fontWeight: '600',
   },
   pageContainer: {
@@ -675,7 +677,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: colors.lavender,
+    backgroundColor: theme.accentLight,
     borderRadius: 2,
   },
   bottomRow: {
@@ -688,7 +690,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   readBadge: {
-    color: colors.success,
+    color: theme.success,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -701,7 +703,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: colors.lavender,
+    backgroundColor: theme.accentLight,
     borderRadius: 6,
     alignItems: 'center',
   },
@@ -709,7 +711,7 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   chapterNavBtnText: {
-    color: colors.deepPlum,
+    color: theme.accentDark,
     fontWeight: '600',
     fontSize: 13,
   },
@@ -740,4 +742,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
-});
+}), [theme]);
