@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Keyboard } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 import { FeedbackStyles } from '../../styles/global';
 
 export type TextBoxProps = {
@@ -23,6 +24,7 @@ showCounter = true,
 onChangeText,
 onSubmit,
 }: TextBoxProps) {
+const { colors: theme } = useTheme();
 const [value, setValue] = useState(initialValue);
 
 const handleChange = (t: string) => {
@@ -46,7 +48,7 @@ return (
         value={value}
         onChangeText={handleChange}
         placeholder={placeholder}
-        placeholderTextColor="#543C27"
+        placeholderTextColor={theme.placeholder}
         maxLength={maxLength}
         returnKeyType="done"
         onSubmitEditing={handleSubmit}

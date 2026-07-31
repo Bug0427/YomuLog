@@ -91,7 +91,7 @@ export default function LeaveReview() {
                 }}
                 multiline
                 placeholder="Please type here…"
-                placeholderTextColor="#6b5a8e"
+                placeholderTextColor={theme.placeholder}
                 value={text}
                 onChangeText={setText}
                 maxLength={MAX_CHARS}

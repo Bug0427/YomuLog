@@ -325,7 +325,7 @@ export default function DownLoadsScreen() {
                       opacity: processing ? 0.6 : 1,
                     }}
                   >
-                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>
+                    <Text style={{ color: theme.textInverse, fontWeight: '600', fontSize: 13 }}>
                       Retry Failed
                     </Text>
                   </Pressable>

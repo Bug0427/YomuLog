@@ -262,7 +262,7 @@ export default function LibraryScreen() {
             onPress={() => navigation.navigate('RecentlyReadScreen' as never)}
             accessibilityLabel="Recently read"
           >
-            <MaterialCommunityIcons name="history" size={22} color="#463B54" />
+            <MaterialCommunityIcons name="history" size={22} color={theme.accent} />
           </Pressable>
           <Pressable
             onPress={() => setViewMode(viewMode === 'grid' ? 'row' : 'grid')}
@@ -271,7 +271,7 @@ export default function LibraryScreen() {
             <MaterialCommunityIcons
               name={viewMode === 'grid' ? 'view-grid' : 'view-agenda'}
               size={24}
-              color="#463B54"
+              color={theme.accent}
             />
           </Pressable>
         </View>
@@ -284,7 +284,7 @@ export default function LibraryScreen() {
     <View style={[GeneralStyles.container, { backgroundColor: theme.bg }]}>
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg }}>
-          <ActivityIndicator size="large" color="#463B54" />
+          <ActivityIndicator size="large" color={theme.accent} />
         </View>
       ) : (
         <CardView

@@ -50,7 +50,7 @@ export default function RowEditorModal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={[u.absFill, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Pressable onPress={onClose} style={[u.absFill, { backgroundColor: 'theme.overlay' }]} />
+        <Pressable onPress={onClose} style={[u.absFill, { backgroundColor: colors.overlayScrim }]} />
         <View style={{ width: '84%', maxHeight: '76%', backgroundColor: colors.paleLavender, borderWidth: 2, borderColor: colors.deepPlum, borderRadius: 4, padding: 16 }}>
           <Text style={{ color: colors.deepPlum, fontWeight: '900', fontSize: 16, marginBottom: 12, textAlign: 'center' }}>
             {title}
@@ -71,7 +71,7 @@ export default function RowEditorModal({
                   style={{
                     borderWidth: 1,
                     borderColor: colors.deepPlum,
-                    backgroundColor: readOnly ? colors.lavender : '#fff',
+                    backgroundColor: readOnly ? colors.lavender : colors.white,
                     color: colors.deepPlum,
                     padding: 8,
                     fontSize: 14,
@@ -98,11 +98,11 @@ export default function RowEditorModal({
                     }}
                     style={[AdminTabStyles.panel, { flex: 1, backgroundColor: colors.success }]}
                   >
-                    <Text style={[AdminTabStyles.text, { color: '#fff' }]}>Save</Text>
+                    <Text style={[AdminTabStyles.text, { color: colors.white }]}>Save</Text>
                   </Pressable>
                 )}
                 <Pressable onPress={handleDelete} style={[AdminTabStyles.panel, { flex: 1, backgroundColor: colors.error }]}>
-                  <Text style={[AdminTabStyles.text, { color: '#fff' }]}>Delete</Text>
+                  <Text style={[AdminTabStyles.text, { color: colors.white }]}>Delete</Text>
                 </Pressable>
               </>
             )}

@@ -161,11 +161,11 @@ function CheckboxItem({
   radio?: boolean;
   onPress: () => void;
 }) {
-  const theme = useTheme().colors;
+  const { colors: theme } = useTheme();
   const shape = radio ? s.radio : s.checkbox;
   const activeShape = radio ? s.radioActive : s.checkboxActive;
   const inner = radio
-    ? (active ? <View style={s.radioDot} /> : null)
+    ? (active ? <View style={[s.radioDot, { backgroundColor: theme.textInverse }]} /> : null)
     : (active ? <Text style={{ color: theme.bgCard, fontSize: 11, fontWeight: '700' }}>✓</Text> : null);
 
   return (
@@ -269,6 +269,5 @@ const s = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#fff',
   },
 });

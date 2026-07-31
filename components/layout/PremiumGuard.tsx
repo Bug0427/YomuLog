@@ -36,7 +36,7 @@ export default function PremiumGuard({
   onUpgradeRequest,
 }: PremiumGuardProps) {
   const { isPremium } = usePremium();
-  const theme = useTheme();
+  const { colors: theme } = useTheme();
   const [showModal, setShowModal] = useState(false);
 
   // Bypass or premium active → render children normally
@@ -49,8 +49,8 @@ export default function PremiumGuard({
     return (
       <>
         <View style={s.inlineLock}>
-          <Feather name="lock" size={12} color={theme.colors.textMuted} />
-          <Text style={[s.inlineText, { color: theme.colors.textMuted }]}>Premium</Text>
+          <Feather name="lock" size={12} color={theme.textMuted} />
+          <Text style={[s.inlineText, { color: theme.textMuted }]}>Premium</Text>
         </View>
         <PremiumUpgradeModal
           visible={showModal}
@@ -77,10 +77,10 @@ export default function PremiumGuard({
           style={s.overlayTouch}
           onPress={() => setShowModal(true)}
         >
-          <View style={[s.lockBadge, { backgroundColor: theme.colors.bgCard, borderColor: theme.colors.border }]}>
-            <Feather name="lock" size={18} color={theme.colors.accent} />
-            <Text style={[s.lockLabel, { color: theme.colors.accent }]}>Premium</Text>
-            <Text style={[s.lockSub, { color: theme.colors.textMuted }]}>
+          <View style={[s.lockBadge, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+            <Feather name="lock" size={18} color={theme.accent} />
+            <Text style={[s.lockLabel, { color: theme.accent }]}>Premium</Text>
+            <Text style={[s.lockSub, { color: theme.textMuted }]}>
               Unlock {featureName}
             </Text>
           </View>
@@ -109,7 +109,6 @@ const s = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'theme.overlay',
     borderRadius: borders.br8,
   },
   lockBadge: {

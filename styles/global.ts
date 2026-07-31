@@ -73,7 +73,7 @@ const CardViewStyles = StyleSheet.create({
     },
     selectedCard: {
       borderWidth: 2,
-      borderColor: '#7bd88f',
+      borderColor: colors.success,
       borderRadius: 8,
     },
     });

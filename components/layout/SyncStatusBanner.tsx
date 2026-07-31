@@ -78,7 +78,7 @@ export default function SyncStatusBanner({
   const isSynced = status === 'synced';
   const isError = status === 'error';
 
-  const bgColor = isSyncing ? theme.bgSecondary : isSynced ? theme.bgCard : '#3a1a1a';
+  const bgColor = isSyncing ? theme.bgSecondary : isSynced ? theme.bgCard : theme.bgSecondary; // dark error bg ideally needs a theme token like 'errorBackground'
   const borderColor = isSyncing ? theme.accent : isSynced ? theme.success : theme.error;
   const iconColor = isSyncing ? theme.accentLight : isSynced ? theme.success : theme.error;
 
@@ -138,11 +138,11 @@ export default function SyncStatusBanner({
               borderRadius: 6,
             }}
           >
-            <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>Retry</Text>
+            <Text style={{ color: theme.textInverse, fontSize: 11, fontWeight: '700' }}>Retry</Text>
           </Pressable>
         )}
         <Pressable onPress={hide} hitSlop={8}>
-          <Feather name="x" size={16} color="#888" />
+          <Feather name="x" size={16} color={theme.placeholder} />
         </Pressable>
       </View>
     </Animated.View>

@@ -147,7 +147,7 @@ export default function FileReport() {
                   <TextInput
                     style={[FeedbackStyles.item, { color: theme.textPrimary, minHeight: 40, paddingVertical: 10 }]}
                     placeholder="Please specify"
-                    placeholderTextColor="#6b5a8e"
+                    placeholderTextColor={theme.placeholder}
                     value={selectedIssue ?? ''}
                     onChangeText={setSelectedIssue}
                     maxLength={SUB_CAT_MAX_CHARS}
@@ -213,7 +213,7 @@ export default function FileReport() {
                       }}
                       multiline
                       placeholder="Describe the problem…"
-                      placeholderTextColor="#6b5a8e"
+                      placeholderTextColor={theme.placeholder}
                       value={commentText}
                       onChangeText={setCommentText}
                       maxLength={MAX_CHARS}

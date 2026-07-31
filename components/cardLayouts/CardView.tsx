@@ -2,7 +2,7 @@ function toRNImageSource(img: any): any {
   if (!img) return undefined;
   return typeof img === 'string' ? { uri: img } : img;
 }
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   FlatList,
   View,
@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { CardViewStyles } from '../../styles/global';
+import { colors } from '../../styles/tokens';
 import { useWindowWidth } from '../../utils/findDimensions';
 import FallbackImage from '../general/FallbackImage';
 import MarqueeTitle from '../general/MarqueeTitle';
@@ -147,7 +148,7 @@ const CardView: React.FC<Props> = ({
   const gridWidth = columns > 1 ? (columns * cardWidth + (columns - 1) * itemSpacing) : cardWidth;
   const sidePad = Math.max(contentPadding, Math.floor((available - gridWidth) / 2));
 
-  const renderItem = ({ item, index }: { item: CardItem; index: number }) => {
+  const renderItem = useCallback(({ item, index }: { item: CardItem; index: number }) => {
     const isLastInRow = columns > 1 ? (index % columns) === columns - 1 : true;
     const marginRight = columns > 1 && !isLastInRow ? itemSpacing : 0;
     const isSelected = selectionMode && selectedIds?.has(String(item.id));
@@ -165,7 +166,7 @@ const CardView: React.FC<Props> = ({
           <MaterialCommunityIcons
             name="check-circle"
             size={28}
-            color="#7bd88f"
+            color={colors.success}
             style={CardViewStyles.selectionCheck}
           />
         )}
@@ -224,7 +225,7 @@ const CardView: React.FC<Props> = ({
         </View>
       </Pressable>
     );
-  };
+  }, [viewMode, columns, cardWidth, cardHeight, itemSpacing, rowThumbW, rowThumbH, onPressItem, onLongPress, selectionMode, selectedIds, itemStyle, mediaStyle]);
 
   const Footer = () => {
     if (isLoading && safeData.length === 0) return null;

@@ -336,7 +336,7 @@ export default function UserAccount() {
                     onPress={() => (canEditUsername ? handleUpdateUsername() : openVerify('username'))}
                     style={[FeedbackStyles.item, { marginLeft: 8, width: 50, alignItems: 'center', justifyContent: 'center' }]}
                     >
-                    <Ionicons name={canEditUsername ? 'checkmark-outline' : 'create-outline'} size={20} color="#463B54" />
+                    <Ionicons name={canEditUsername ? 'checkmark-outline' : 'create-outline'} size={20} color={theme.accent} />
                     </Pressable>
                 </View>
 
@@ -356,7 +356,7 @@ export default function UserAccount() {
                     onPress={() => (canEditPassword ? handleUpdatePassword() : openVerify('password'))}
                     style={[FeedbackStyles.item, { marginLeft: 8, width: 50, alignItems: 'center', justifyContent: 'center' }]}
                     >
-                    <Ionicons name={canEditPassword ? 'checkmark-outline' : 'create-outline'} size={20} color="#463B54" />
+                    <Ionicons name={canEditPassword ? 'checkmark-outline' : 'create-outline'} size={20} color={theme.accent} />
                     </Pressable>
                 </View>
 
@@ -377,7 +377,7 @@ export default function UserAccount() {
                         onPress={() => setEmailRevealed(prev => !prev)}
                         style={[FeedbackStyles.item, { marginLeft: 4, width: 44, alignItems: 'center', justifyContent: 'center' }]}
                       >
-                        <Ionicons name={emailRevealed ? 'eye-off-outline' : 'eye-outline'} size={20} color="#463B54" />
+                        <Ionicons name={emailRevealed ? 'eye-off-outline' : 'eye-outline'} size={20} color={theme.accent} />
                       </Pressable>
                     ) : null}
                     <Pressable
@@ -385,7 +385,7 @@ export default function UserAccount() {
                     onPress={() => (canEditEmail ? handleUpdateEmail() : openVerify('email'))}
                     style={[FeedbackStyles.item, { marginLeft: 4, width: 50, alignItems: 'center', justifyContent: 'center' }]}
                     >
-                    <Ionicons name={canEditEmail ? 'checkmark-outline' : 'create-outline'} size={20} color="#463B54" />
+                    <Ionicons name={canEditEmail ? 'checkmark-outline' : 'create-outline'} size={20} color={theme.accent} />
                     </Pressable>
                 </View>
                 </View>
@@ -393,7 +393,7 @@ export default function UserAccount() {
 
             {/* Error / status */}
             {error ? (
-                <Text style={[FeedbackStyles.helper, { color: '#d33', marginTop: 8 }]}>{error}</Text>
+                <Text style={[FeedbackStyles.helper, { color: theme.error, marginTop: 8 }]}>{error}</Text>
             ) : null}
 
             {/* Logout */}
@@ -433,7 +433,7 @@ export default function UserAccount() {
                     autoComplete="new-password"
                     textContentType="newPassword"
                 />
-                {verifyError ? (<Text style={[FeedbackStyles.helper, { color: '#d33', marginBottom: 8 }]}>{verifyError}</Text>) : null}
+                {verifyError ? (<Text style={[FeedbackStyles.helper, { color: theme.error, marginBottom: 8 }]}>{verifyError}</Text>) : null}
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
                     <Pressable onPress={() => setShowVerify(false)} style={[FeedbackStyles.item, { paddingHorizontal: 16 }]}>
                     <Text style={FeedbackStyles.itemText}>Cancel</Text>
@@ -448,7 +448,7 @@ export default function UserAccount() {
 
             <Modal visible={showDeleteConfirm} transparent animationType="fade" onRequestClose={() => setShowDeleteConfirm(false)}>
             <View style={{ flex: 1, backgroundColor: 'theme.overlay', alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ backgroundColor: '#bfb9deff', padding: 16, borderRadius: 8, width: '86%' }}>
+                <View style={{ backgroundColor: theme.bgSecondary, padding: 16, borderRadius: 8, width: '86%' }}>
                 <Text style={[FeedbackStyles.itemText, { marginBottom: 8 }]}>Delete account?</Text>
                 <Text style={[FeedbackStyles.helper, { marginBottom: 12 }]}>This will permanently remove your account and related data. This action cannot be undone.</Text>
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
