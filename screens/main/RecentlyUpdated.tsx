@@ -1,6 +1,6 @@
 // React & React Native
 import React, { useState, useCallback } from 'react';
-import { View, Text, Pressable, Alert, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, Pressable, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
 
 // Navigation
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
@@ -121,7 +121,7 @@ export default function RecentlyUpdated() {
           justifyContent: 'space-between',
           paddingHorizontal: 12,
           paddingVertical: 10,
-          paddingTop: Platform.OS === 'ios' ? 50 : 10,
+          // paddingTop handled by SafeAreaView
           backgroundColor: theme.bg,
         }}
       >

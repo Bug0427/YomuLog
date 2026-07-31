@@ -1,0 +1,115 @@
+{
+  "root": true,
+  "extends": [
+    "eslint:recommended"
+  ],
+  "plugins": [
+    "import"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "env": {
+    "es6": true,
+    "node": true
+  },
+  "settings": {
+    "import/resolver": {
+      "typescript": {
+        "alwaysTryTypes": true
+      }
+    }
+  },
+  "rules": {
+    "import/order": [
+      "warn",
+      {
+        "groups": [
+          "builtin",
+          "external",
+          "internal",
+          ["parent", "sibling"],
+          "index",
+          "type"
+        ],
+        "newlines-between": "always",
+        "alphabetize": { "order": "asc", "caseInsensitive": true }
+      }
+    ],
+    "import/no-restricted-paths": [
+      "error",
+      {
+        "zones": [
+          {
+            "target": "./components",
+            "from": "./screens",
+            "message": "Components must not import from screens — screens are higher-level consumers."
+          },
+          {
+            "target": "./services",
+            "from": "./components",
+            "message": "Services must not import from components — components are higher-level UI."
+          },
+          {
+            "target": "./services",
+            "from": "./screens",
+            "message": "Services must not import from screens — screens are higher-level consumers."
+          },
+          {
+            "target": "./utils",
+            "from": "./components",
+            "message": "Utils must not import from components."
+          },
+          {
+            "target": "./utils",
+            "from": "./screens",
+            "message": "Utils must not import from screens."
+          },
+          {
+            "target": "./context",
+            "from": "./components",
+            "message": "Context must not import from components except layout wrappers."
+          },
+          {
+            "target": "./styles",
+            "from": "./screens",
+            "message": "Styles must not import from screens."
+          },
+          {
+            "target": "./styles",
+            "from": "./components",
+            "message": "Styles must not import from individual components — use services or context."
+          }
+        ]
+      }
+    ],
+    "import/no-cycle": ["error", { "maxDepth": 5 }],
+    "import/no-duplicates": "error",
+    "import/no-unused-modules": "off"
+  },
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx"],
+      "rules": {
+        "no-undef": "off"
+      }
+    },
+    {
+      "files": ["screens/**/*.tsx"],
+      "rules": {
+        "import/no-restricted-paths": "off"
+      }
+    },
+    {
+      "files": ["App.tsx", "navigation/**/*.tsx"],
+      "rules": {
+        "import/no-restricted-paths": "off"
+      }
+    }
+  ]
+}

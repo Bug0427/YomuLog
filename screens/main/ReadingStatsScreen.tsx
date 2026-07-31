@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, ScrollView, Pressable, ActivityIndicator,
-  StyleSheet, Dimensions, Platform,
+  StyleSheet, Dimensions, SafeAreaView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -303,11 +303,11 @@ export default function ReadingStatsScreen() {
 
 function Header({ onBack }: { onBack: () => void }) {
   return (
-    <View style={s.header}>
+    <SafeAreaView style={s.header}>
       <BackButton onPress={onBack} />
       <Text style={s.headerTitle}>Reading Stats</Text>
       <View style={{ width: 70 }} />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -382,7 +382,7 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.creamWhite },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.p16, paddingTop: Platform.OS === 'ios' ? 50 : 10,
+    paddingHorizontal: spacing.p16,
     paddingBottom: spacing.p12, backgroundColor: colors.sand,
     borderBottomWidth: 1, borderBottomColor: colors.lavender,
   },
