@@ -31,6 +31,9 @@ export default function LoginIcon({ userImage }: { userImage?: string }) {
         }
       }}
       style={IconStyles.iconContainer}
+      accessibilityRole="button"
+      accessibilityLabel="Account"
+      accessibilityHint="Opens account login or profile"
     >
       {userImage ? (
         <Image source={{ uri: userImage }} style={IconStyles.profileImage} />

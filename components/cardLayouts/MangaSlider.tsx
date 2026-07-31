@@ -84,6 +84,9 @@ const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress, fo
         <Pressable
           style={[MangaSliderStyles.seeMoreCard, isLast && MangaSliderStyles.lastCard]}
           onPress={item.onPress}
+          accessibilityRole="button"
+          accessibilityLabel={item.title}
+          accessibilityHint="View more manga in search"
         >
           <MaterialCommunityIcons name="chevron-right-circle" size={28} color={colors.creamWhite} />
           <Text style={MangaSliderStyles.seeMoreText}>{item.title}</Text>
@@ -98,6 +101,9 @@ const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress, fo
           isLast && MangaSliderStyles.lastCard
         ]}
         onPress={item.onPress}
+        accessibilityRole="button"
+        accessibilityLabel={item.title || 'Manga'}
+        accessibilityHint="Tap to view manga details"
       >
         <Image source={{ uri: item.image }} style={MangaSliderStyles.image} />
         <Text style={MangaSliderStyles.title} numberOfLines={1}>{item.title}</Text>
