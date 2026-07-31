@@ -7,6 +7,7 @@ import { GeneralStyles } from '../../styles/global';
 import FBHeader from '../../components/layout/FBHeader';
 
 export default function LeaveRating() {
+  const { colors: theme } = useTheme();
     const navigation = useNavigation<any>();
     const [rating, setRating] = React.useState<number>(0); // 0 = none selected
     const [submitting, setSubmitting] = React.useState(false);
@@ -88,7 +89,7 @@ return (
                 marginTop: 30,
                 margin:20,
                 borderWidth: 2,
-                borderColor: '#2c1f42',
+                borderColor: theme.textPrimary,
                 paddingVertical: 30,
                 alignItems: 'center',
             }}

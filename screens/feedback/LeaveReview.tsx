@@ -10,6 +10,7 @@ import { GeneralStyles, FeedbackStyles } from '../../styles/global';
 const MAX_CHARS = 360;
 
 export default function LeaveReview() {
+  const { colors: theme } = useTheme();
   const navigation = useNavigation<any>();
   const [text, setText] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
@@ -77,7 +78,7 @@ export default function LeaveReview() {
               style={{
                 marginTop: 24,
                 borderWidth: 2,
-                borderColor: '#2c1f42',
+                borderColor: theme.textPrimary,
                 padding: 12,
               }}
             >
@@ -85,7 +86,7 @@ export default function LeaveReview() {
                 style={{
                   minHeight: 165,
                   textAlignVertical: 'top',
-                  color: '#2c1f42',
+                  color: theme.textPrimary,
                 }}
                 multiline
                 placeholder="Please type here…"
@@ -97,7 +98,7 @@ export default function LeaveReview() {
             </View>
 
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
-                <Text style={{ color: '#2c1f42', fontWeight: '600' }}>
+                <Text style={{ color: theme.textPrimary, fontWeight: '600' }}>
                     {remaining} characters left
                 </Text>
             </View>

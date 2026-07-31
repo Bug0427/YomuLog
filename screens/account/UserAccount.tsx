@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useTheme } from '../../context/ThemeContext';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ActivityIndicator, Modal, Image } from 'react-native';
 import { useNavigation, StackActions } from '@react-navigation/native';
 import { FeedbackStyles, GeneralStyles } from '../../styles/global';
@@ -32,12 +33,13 @@ function maskEmail(email: string): string {
 }
 
 export default function UserAccount() {
+  const { colors: theme } = useTheme();
     const navigation = useNavigation<any>();
 
     useEffect(() => {
         try {
-            navigation.setOptions?.({ contentStyle: { backgroundColor: '#AFA6DD' } });
-            navigation.setOptions?.({ cardStyle: { backgroundColor: '#AFA6DD' } });
+            navigation.setOptions?.({ contentStyle: { backgroundColor: theme.bg } });
+            navigation.setOptions?.({ cardStyle: { backgroundColor: theme.bg } });
         } catch {}
     }, [navigation]);
 
@@ -282,9 +284,9 @@ export default function UserAccount() {
     }
 
     return (
-        <KeyboardAvoidingView style={[FeedbackStyles.screen, { backgroundColor: '#AFA6DD' }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={[FeedbackStyles.screen, { backgroundColor: theme.bg }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-            <View style={{ flex: 1, padding: 16, backgroundColor: '#AFA6DD' }}>
+            <View style={{ flex: 1, padding: 16, backgroundColor: theme.bg }}>
             {/* Back */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 50 }}>
                 <Pressable
@@ -302,7 +304,7 @@ export default function UserAccount() {
                 <Pressable
                 accessibilityRole="button"
                 onPress={() => navigation.navigate('ChooseProfileIcon' as never)}
-                style={{ width: 120, height: 177, borderWidth: 2, borderColor: '#463B54', borderRadius: 8, justifyContent: 'center', backgroundColor:'#ffffffff' }}
+                style={{ width: 120, height: 177, borderWidth: 2, borderColor: theme.accent, borderRadius: 8, justifyContent: 'center', backgroundColor:theme.textInverse }}
                 >
                 {profileIconId ? (
                     <Image
@@ -409,8 +411,8 @@ export default function UserAccount() {
             </Pressable>
 
             <Modal visible={showVerify} transparent animationType="fade" onRequestClose={() => setShowVerify(false)}>
-            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ backgroundColor: '#D7D2EE', padding: 16, borderRadius: 8, width: '86%' }}>
+            <View style={{ flex: 1, backgroundColor: 'theme.overlay', alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ backgroundColor: theme.bgSecondary, padding: 16, borderRadius: 8, width: '86%' }}>
                 <Text style={[FeedbackStyles.itemText, { marginBottom: 8 }]}>Verify your identity</Text>
                 <TextInput
                     style={[FeedbackStyles.item, { marginBottom: 8, minHeight: 44 }]}
@@ -445,7 +447,7 @@ export default function UserAccount() {
             </Modal>
 
             <Modal visible={showDeleteConfirm} transparent animationType="fade" onRequestClose={() => setShowDeleteConfirm(false)}>
-            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ flex: 1, backgroundColor: 'theme.overlay', alignItems: 'center', justifyContent: 'center' }}>
                 <View style={{ backgroundColor: '#bfb9deff', padding: 16, borderRadius: 8, width: '86%' }}>
                 <Text style={[FeedbackStyles.itemText, { marginBottom: 8 }]}>Delete account?</Text>
                 <Text style={[FeedbackStyles.helper, { marginBottom: 12 }]}>This will permanently remove your account and related data. This action cannot be undone.</Text>

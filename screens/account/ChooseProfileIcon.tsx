@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTheme } from '../../context/ThemeContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -21,6 +22,7 @@ const ICON_ITEMS = [
 ];
 
 export default function ChooseProfileIcon() {
+  const { colors: theme } = useTheme();
   const navigation = useNavigation<any>();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const listRef = React.useRef<any>(null);
@@ -95,7 +97,7 @@ export default function ChooseProfileIcon() {
 
   const HeaderContent = (
     <View>
-      <View style={[GeneralStyles.header, { marginTop: 30, marginBottom: 15, paddingBottom: 20, borderBottomWidth: 2, borderColor: '#463B54' }]}>
+      <View style={[GeneralStyles.header, { marginTop: 30, marginBottom: 15, paddingBottom: 20, borderBottomWidth: 2, borderColor: theme.accent }]}>
         <Pressable onPress={navigateToUserAccount} style={[FeedbackStyles.item, { width: 57, paddingVertical: 7 }]}>
           <Text style={GeneralStyles.plainText}>Back</Text>
         </Pressable>
@@ -126,7 +128,7 @@ export default function ChooseProfileIcon() {
         onMomentumScrollEnd={handleScrollEnd}
         itemStyle={(item: any) =>
           item.id === selectedId
-            ? { borderColor: '#463B54', borderWidth: 3, backgroundColor: '#D7D2EE' }
+            ? { borderColor: theme.accent, borderWidth: 3, backgroundColor: theme.bgSecondary }
             : undefined
         }
       />

@@ -5,6 +5,7 @@
 import React from 'react';
 import { View, Text, Pressable, Modal, TouchableWithoutFeedback, StyleSheet } from 'react-native';
 import { colors } from '../../styles/tokens';
+import { useTheme } from '../../context/ThemeContext';
 
 export type SortOption = {
   key: string;
@@ -21,6 +22,7 @@ export type SortModalProps = {
 };
 
 export default function SortModal({
+  const { colors: theme } = useTheme();
   visible,
   title = 'Sort Order',
   options,
@@ -71,7 +73,7 @@ export default function SortModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'theme.overlay',
     justifyContent: 'center',
     alignItems: 'center',
   },
