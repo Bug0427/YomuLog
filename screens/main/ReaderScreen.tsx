@@ -60,7 +60,8 @@ function ReaderScreen() {
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [showControls, setShowControls] = useState(true);
-  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
+  /** Image load tracking — useRef avoids re-renders on every page load */
+  const loadedImagesRef = useRef<Set<number>>(new Set());
   const [mangaTitle, setMangaTitle] = useState('');
   const [chapterList, setChapterList] = useState<Array<{ id: string; chapter: string }>>([]);
   const [currentChapterIdx, setCurrentChapterIdx] = useState(-1);
@@ -94,7 +95,7 @@ function ReaderScreen() {
         setPageUrls(localUris);
         setLoading(false);
         setCurrentPage(0);
-        setLoadedImages(new Set());
+        loadedImagesRef.current = new Set();
         return;
       }
 
@@ -110,7 +111,7 @@ function ReaderScreen() {
         setPageUrls(urls);
         setLoading(false);
         setCurrentPage(0);
-        setLoadedImages(new Set());
+        loadedImagesRef.current = new Set();
       }).catch((err) => {
         if (!cancelled) {
           setError(err?.message || 'Failed to load chapter');
@@ -130,7 +131,7 @@ function ReaderScreen() {
         setPageUrls(urls);
         setLoading(false);
         setCurrentPage(0);
-        setLoadedImages(new Set());
+        loadedImagesRef.current = new Set();
       }).catch((err) => {
         if (!cancelled) {
           setError(err?.message || 'Failed to load chapter');
@@ -170,12 +171,12 @@ function ReaderScreen() {
   // ─── Prefetch neighbouring pages ──────────────────────────────────────
 
   const prefetchPage = useCallback((index: number) => {
-    if (index >= 0 && index < pageUrls.length && !loadedImages.has(index)) {
+    if (index >= 0 && index < pageUrls.length && !loadedImagesRef.current.has(index)) {
       Image.prefetch(pageUrls[index]).then(() => {
-        setLoadedImages((prev) => new Set(prev).add(index));
+        loadedImagesRef.current.add(index);
       }).catch(() => {});
     }
-  }, [pageUrls, loadedImages]);
+  }, [pageUrls]);
 
   useEffect(() => {
     if (pageUrls.length > 0) {
@@ -312,7 +313,7 @@ function ReaderScreen() {
       index={index}
       isActive={index === currentPage}
       bg={activeConfig.bg}
-      onLoad={() => setLoadedImages((prev) => new Set(prev).add(index))}
+      onLoad={() => { loadedImagesRef.current.add(index); }}
     />
   );
 
