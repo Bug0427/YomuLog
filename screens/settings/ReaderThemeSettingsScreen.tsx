@@ -14,6 +14,7 @@ import {
   Alert,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import BackButton from '../../components/general/BackButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
@@ -198,9 +199,7 @@ export default function ReaderThemeSettingsScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Feather name="arrow-left" size={24} color={theme.textPrimary} />
-          </Pressable>
+          <BackButton onPress={() => navigation.goBack()} />
           <Text style={[styles.title, { color: theme.textPrimary }]}>Reading Themes</Text>
         </View>
 
