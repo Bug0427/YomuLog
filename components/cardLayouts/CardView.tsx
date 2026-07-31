@@ -262,8 +262,12 @@ const CardView: React.FC<Props> = ({
     );
   };
 
-  // Define list content container style
-  const listContentStyle: ViewStyle = { paddingHorizontal: sidePad, paddingBottom: contentPadding };
+  // Define list content container style — flexGrow when empty so pull-down works
+  const listContentStyle: ViewStyle = {
+    paddingHorizontal: sidePad,
+    paddingBottom: contentPadding,
+    ...(safeData.length === 0 ? { flexGrow: 1 } : {}),
+  };
 
   return (
     <View onLayout={onLayout} style={{ flex: 1 }}>
