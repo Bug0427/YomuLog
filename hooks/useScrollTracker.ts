@@ -10,8 +10,8 @@ export function useScrollTracker() {
     }, []);
 
     const handleScrollEnd = useCallback(() => {
-        // 150ms delay — snappy re-appearance after scrolling stops (BUG-03 fix)
-        setTimeout(() => setIsScrolling(false), 150);
+        // 600ms delay — anchors stay hidden during scroll micro-pauses, reappear after deliberate stop
+        setTimeout(() => setIsScrolling(false), 600);
     }, []);
 
     return {
