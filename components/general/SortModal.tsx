@@ -22,7 +22,6 @@ export type SortModalProps = {
 };
 
 export default function SortModal({
-  const { colors: theme } = useTheme();
   visible,
   title = 'Sort Order',
   options,
@@ -30,6 +29,7 @@ export default function SortModal({
   onSelect,
   onClose,
 }: SortModalProps) {
+  const { colors: theme } = useTheme();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
