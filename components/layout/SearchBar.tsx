@@ -3,28 +3,30 @@ import { View, Pressable, Text, TextInput, Platform } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { GeneralStyles, SearchBarStyles } from '../../styles/global';
 import { colors } from '../../styles/tokens';
-import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useBreakpoint } from '../../utils/findDimensions';
 
 
 export type SearchBarProps = {
-onOpenOrder?: () => void;
-onSearchPress?: () => void;
-onFilterPress?: () => void;
-value?: string;                 
-onChangeText?: (t: string) => void; 
-placeholder?: string;           
-showFilters?: boolean;          
+  onOpenOrder?: () => void;
+  onSearchPress?: () => void;
+  onFilterPress?: () => void;
+  onGenrePress?: () => void;
+  value?: string;
+  onChangeText?: (t: string) => void;
+  placeholder?: string;
+  showFilters?: boolean;
 };
 
 const SearchBar: FC<SearchBarProps> = ({
-onOpenOrder,
-onSearchPress,
-onFilterPress,
-value,
-onChangeText,
-placeholder = 'Search',
-showFilters = true,
+  onOpenOrder,
+  onSearchPress,
+  onFilterPress,
+  onGenrePress,
+  value,
+  onChangeText,
+  placeholder = 'Search',
+  showFilters = true,
 }) => {
 
 // Single source of truth for layout decisions
@@ -85,16 +87,26 @@ return (
         />
     </View>
 
-    {/* Filters button (can hide on very small width if desired) */}
+    {/* Filters button */}
     {showFilters !== false && (
+      <>
         <Pressable
-        style={[SearchBarStyles.filter, filterButton]}
-        onPress={onFilterPress}
-        accessibilityRole="button"
-        accessibilityLabel="Open filters"
+          style={[SearchBarStyles.filter, filterButton]}
+          onPress={onGenrePress}
+          accessibilityRole="button"
+          accessibilityLabel="Open genre filters"
         >
-        <MaterialCommunityIcons name="filter-outline" size={iconSize} color={colors.cocoa} />
+          <MaterialCommunityIcons name="bookmark-box-multiple-outline" size={iconSize} color={colors.cocoa} />
         </Pressable>
+        <Pressable
+          style={[SearchBarStyles.filter, filterButton]}
+          onPress={onFilterPress}
+          accessibilityRole="button"
+          accessibilityLabel="Open filters"
+        >
+          <MaterialCommunityIcons name="filter-outline" size={iconSize} color={colors.cocoa} />
+        </Pressable>
+      </>
     )}
     </View>
 );
