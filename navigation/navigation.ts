@@ -23,4 +23,7 @@ export type RootStackParamList = {
     LeaveReview: undefined;
     AuthScreen: undefined;
     OnboardingFlow: undefined;
+    UpgradeScreen: undefined;
+    ManageSubscriptionScreen: undefined;
+    ReaderThemeSettingsScreen: undefined;
 };

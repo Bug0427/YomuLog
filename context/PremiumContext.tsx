@@ -1,7 +1,8 @@
 // context/PremiumContext.tsx
-// Premium subscription state management with AsyncStorage persistence.
-// Provides isPremium flag, upgrade/downgrade, and feature-gate helpers.
-// Stripe payment flow will be wired later — currently uses a local toggle for testing.
+// Premium subscription state management with Stripe integration.
+// On mount, fetches real subscription status from Supabase (set by Stripe webhooks).
+// Falls back to cached AsyncStorage status when offline.
+// Listens to Supabase Realtime for immediate status updates.
 
 import React, {
   createContext,
@@ -10,20 +11,30 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
   type ReactNode,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  fetchSubscriptionStatus,
+  subscribeToSubscriptionChanges,
+  type SubscriptionStatus,
+} from '../services/stripeService';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
 export type PremiumContextValue = {
   /** Whether the user currently has an active premium subscription */
   isPremium: boolean;
-  /** Activate premium (simulated — will be replaced with Stripe webhook) */
+  /** Raw subscription status from Stripe/Supabase */
+  subscriptionStatus: SubscriptionStatus | null;
+  /** Whether the initial status check is still loading */
+  loading: boolean;
+  /** Activate premium (called after successful Stripe checkout) */
   activatePremium: () => Promise<void>;
-  /** Deactivate premium (graceful downgrade — preserves local data) */
+  /** Deactivate premium (called when subscription ends or is cancelled) */
   deactivatePremium: () => Promise<void>;
-  /** Toggle for dev testing */
+  /** Toggle for dev testing (only when not using real Stripe) */
   togglePremium: () => Promise<void>;
 };
 
@@ -31,7 +42,7 @@ export type PremiumContextValue = {
 
 const STORAGE_KEY = '@YomuLog:premium';
 
-async function loadPremium(): Promise<boolean> {
+async function loadCachedPremium(): Promise<boolean> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     return raw === 'true';
@@ -40,7 +51,7 @@ async function loadPremium(): Promise<boolean> {
   }
 }
 
-async function savePremium(value: boolean): Promise<void> {
+async function saveCachedPremium(value: boolean): Promise<void> {
   await AsyncStorage.setItem(STORAGE_KEY, value ? 'true' : 'false');
 }
 
@@ -50,25 +61,67 @@ const PremiumContext = createContext<PremiumContextValue | null>(null);
 
 export function PremiumProvider({ children }: { children: ReactNode }) {
   const [isPremium, setIsPremium] = useState<boolean>(false);
-  const [ready, setReady] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const realtimeUnsubRef = useRef<(() => void) | null>(null);
 
+  // On mount: fetch real subscription status from Stripe via Supabase
   useEffect(() => {
-    loadPremium().then((v) => {
-      setIsPremium(v);
-      setReady(true);
+    let mounted = true;
+
+    (async () => {
+      try {
+        // Load cached value first for instant rendering
+        const cached = await loadCachedPremium();
+        if (mounted) setIsPremium(cached);
+
+        // Then fetch real status from Supabase
+        const status = await fetchSubscriptionStatus();
+        if (mounted) {
+          setSubscriptionStatus(status);
+          setIsPremium(status.isActive);
+
+          // Sync cache with real status
+          await saveCachedPremium(status.isActive);
+        }
+      } catch {
+        // Keep cached value on error
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, []);
+
+  // Subscribe to real-time status changes via Supabase Realtime
+  useEffect(() => {
+    const unsub = subscribeToSubscriptionChanges((status) => {
+      setSubscriptionStatus(status);
+      setIsPremium(status.isActive);
+      saveCachedPremium(status.isActive);
     });
+    realtimeUnsubRef.current = unsub;
+    return () => { unsub(); };
   }, []);
 
   const activatePremium = useCallback(async () => {
     setIsPremium(true);
-    await savePremium(true);
+    await saveCachedPremium(true);
+    // Re-fetch real status to confirm
+    const status = await fetchSubscriptionStatus();
+    setSubscriptionStatus(status);
+    setIsPremium(status.isActive);
+    await saveCachedPremium(status.isActive);
   }, []);
 
   const deactivatePremium = useCallback(async () => {
-    // Graceful downgrade: local data is preserved.
-    // Cloud sync will be paused by the sync service when isPremium flips to false.
     setIsPremium(false);
-    await savePremium(false);
+    await saveCachedPremium(false);
+    const status = await fetchSubscriptionStatus();
+    setSubscriptionStatus(status);
+    setIsPremium(status.isActive);
+    await saveCachedPremium(status.isActive);
   }, []);
 
   const togglePremium = useCallback(async () => {
@@ -80,11 +133,9 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
   }, [isPremium, activatePremium, deactivatePremium]);
 
   const value = useMemo<PremiumContextValue>(
-    () => ({ isPremium, activatePremium, deactivatePremium, togglePremium }),
-    [isPremium, activatePremium, deactivatePremium, togglePremium],
+    () => ({ isPremium, subscriptionStatus, loading, activatePremium, deactivatePremium, togglePremium }),
+    [isPremium, subscriptionStatus, loading, activatePremium, deactivatePremium, togglePremium],
   );
-
-  if (!ready) return null;
 
   return <PremiumContext.Provider value={value}>{children}</PremiumContext.Provider>;
 }
