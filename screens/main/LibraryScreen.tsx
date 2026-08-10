@@ -47,6 +47,9 @@ import { getCollections, type Collection } from '../../services/collectionServic
 // Sort
 import { useSortPreference, applySortOrder } from '../../hooks/useSortPreference';
 
+// Sort
+import { useSortPreference, applySortOrder } from '../../hooks/useSortPreference';
+
 // Filters
 import { FilterState, DEFAULT_FILTER_STATE, hasActiveFilters } from '../../utils/filters';
 
