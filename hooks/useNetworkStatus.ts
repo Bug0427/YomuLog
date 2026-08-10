@@ -1,5 +1,6 @@
 // hooks/useNetworkStatus.ts
 import { useState, useEffect } from 'react';
+import { resolveMangaDexUrl } from '../services/mangaDexProxy';
 
 type NetworkState = {
   isOnline: boolean;
@@ -40,7 +41,7 @@ export function useNetworkStatus(): NetworkState {
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
-        await fetch('https://api.mangadex.org/ping', {
+        await fetch(resolveMangaDexUrl('/ping'), {
           method: 'HEAD',
           signal: controller.signal,
         });
