@@ -23,6 +23,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import type { BookmarkedManga } from './favoritesService';
 import type { ChapterProgress } from './readingProgress';
+import { resolveMangaDexUrl } from './mangaDexProxy';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -776,12 +777,15 @@ export async function resetSync(): Promise<void> {
 
 /**
  * Check if the device has internet connectivity.
+ * Pings MangaDex via the shared resolver so the check also works on web
+ * (direct api.mangadex.org is CORS-blocked in the browser, which would
+ * otherwise make every sync attempt report "offline").
  */
 export async function checkConnectivity(): Promise<boolean> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch('https://api.mangadex.org/ping', {
+    const res = await fetch(resolveMangaDexUrl('/ping'), {
       method: 'HEAD',
       signal: controller.signal,
     });
