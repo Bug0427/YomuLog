@@ -226,7 +226,6 @@ export default function MangaInfoScreen() {
 
   const handleToggleBookmark = async () => {
     if (!manga) return;
-    console.log('[BUG-10] handleToggleBookmark fired', { mangaId: manga.id, currentlyBookmarked: bookmarked });
     try {
       const newState = await toggleFavorite(
         manga.id,
@@ -234,22 +233,19 @@ export default function MangaInfoScreen() {
         manga.coverImageUrl,
         manga.genres,
       );
-      console.log('[BUG-10] toggleFavorite returned', { newState });
       setBookmarked(newState);
-      // Record for personalised recommendation engine
       if (newState) {
         onFavoriteAdded(manga.id, manga.title, manga.genres);
       } else {
         onFavoriteRemoved(manga.id);
       }
     } catch (e) {
-      console.warn('[BUG-10] handleToggleBookmark error:', e);
+      console.warn('handleToggleBookmark error:', e);
       Alert.alert('Error', 'Failed to update favorites. Please try again.');
     }
   };
 
   const handleDownloadAll = async () => {
-    console.log('[BUG-10] handleDownloadAll fired', { mangaId: manga?.id, chaptersLength: chapters.length });
     if (!manga || chapters.length === 0) {
       Alert.alert('No Chapters', 'No chapters available to download.');
       return;

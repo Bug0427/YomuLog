@@ -418,6 +418,28 @@ export default function SettingsScreen() {
               </Pressable>
             )}
 
+            {/* AuthScreen navigation */}
+            <Pressable
+              onPress={() => navigation.navigate('AuthScreen')}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+                paddingVertical: spacing.p10,
+                paddingHorizontal: spacing.p12,
+                backgroundColor: theme.bgCard,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: theme.border,
+                marginBottom: 8,
+              }}
+            >
+              <Feather name="cloud" size={16} color={theme.accent} />
+              <Text style={{ fontSize: 13, fontWeight: '600', color: theme.accent }}>
+                Sign in with Supabase Account
+              </Text>
+            </Pressable>
+
             {syncState.syncEnabled && syncState.status === 'synced' && syncState.scopeTimestamps && (
               <View style={{ paddingHorizontal: spacing.p8, paddingVertical: spacing.p4, marginTop: spacing.p3 }}>
                 {(['favorites', 'progress', 'downloads', 'preferences'] as const).map((scope) => {
