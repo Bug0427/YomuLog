@@ -55,6 +55,49 @@ const DOWNLOADED_CHAPTERS_KEY = '@YomuLog:downloadedChapters';
 const MAX_RETRIES = 3;
 /** Maximum concurrent page downloads */
 const CONCURRENCY_LIMIT = 3;
+/**
+ * Free-tier offline download cap (chapters queued + downloaded).
+ * Premium users are unlimited. Chosen as a sensible free-taste limit:
+ * a few chapters to try offline reading, with an upsell prompt at the cap.
+ */
+export const FREE_DOWNLOAD_LIMIT = 5;
+
+/** Thrown by enqueueDownload when a free user hits the free-tier cap. */
+export class DownloadLimitError extends Error {
+  constructor(public readonly limit: number) {
+    super(`Free tier limit reached (${limit} chapters). Upgrade to Premium for unlimited downloads.`);
+    this.name = 'DownloadLimitError';
+  }
+}
+
+/** True when the cached premium entitlement is set (fail-closed: false on error). */
+export async function isCachedPremium(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem('@YomuLog:premium')) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/** Chapters currently queued (non-failed) or already downloaded. */
+export async function getDownloadUsage(): Promise<number> {
+  const queue = await getDownloadQueue();
+  const queued = queue.filter((j) => j.status !== 'failed').length;
+  const downloaded = (await getDownloadedChapters()).length;
+  return queued + downloaded;
+}
+
+/** Free-tier allowance snapshot for the UI (upsell prompt at the cap). */
+export async function getDownloadAllowance(): Promise<{
+  premium: boolean;
+  limit: number;
+  used: number;
+  allowed: boolean;
+}> {
+  const premium = await isCachedPremium();
+  const used = await getDownloadUsage();
+  return { premium, limit: FREE_DOWNLOAD_LIMIT, used, allowed: premium || used < FREE_DOWNLOAD_LIMIT };
+}
 
 let _downloadBaseDir: string | null = null;
 async function resolveBaseDir(): Promise<string> {
@@ -117,6 +160,11 @@ export async function enqueueDownload(
     await saveQueue(queue);
     return existing;
   }
+
+  // Free-tier cap — premium users are unlimited; free users get FREE_DOWNLOAD_LIMIT.
+  // Fail-closed: cached entitlement read; throws so the UI can show the upsell.
+  const { allowed } = await getDownloadAllowance();
+  if (!allowed) throw new DownloadLimitError(FREE_DOWNLOAD_LIMIT);
 
   const job: DownloadJob = {
     jobId: generateJobId(),
