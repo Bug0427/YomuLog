@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, Pressable, Text, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import Header from '../../components/layout/Header';
@@ -21,14 +22,11 @@ import {
 import { colors, spacing } from '../../styles/tokens';
 import { useTheme, type ThemeMode } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
-import { ReaderThemeProvider, useReaderTheme } from '../../context/ReaderThemeContext';
-import ThemePicker from '../../components/reader/ThemePicker';
 import {
   loadAllPreferences,
   setAlertsOn as saveAlertsOn,
   setAISearchOn as saveAISearchOn,
   setDirectionMode as saveDirectionMode,
-  type Language,
   type DirectionMode,
 } from '../../services/preferencesService';
 
@@ -42,15 +40,34 @@ const DIRECTIONS: DirectionMode[] = ['ltr', 'rtl', 'vertical'];
 const GridItem = ({ label, children, onPress }: { label: string; children?: React.ReactNode; onPress?: () => void }) => {
   const { colors: theme } = useTheme();
   return (
-    <View style={SettingButtonStyles.cell}>
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 4,
+      marginBottom: 4,
+    }}>
       <Pressable
-        style={[SettingButtonStyles.button, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: 12,
+          backgroundColor: theme.bgCard,
+          borderWidth: 2,
+          borderColor: theme.border,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
         onPress={onPress}
         hitSlop={10}
       >
         {children}
       </Pressable>
-      <Text style={[SettingButtonStyles.cellLabel, { color: theme.textSecondary }]}>{label}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: theme.textPrimary }}>{label}</Text>
+      </View>
+      <Feather name="chevron-right" size={18} color={theme.textMuted} />
     </View>
   );
 };
@@ -120,7 +137,6 @@ const SyncGridItem = ({
 export default function SettingsScreen() {
   const { mode: themeMode, cycleTheme, colors: theme } = useTheme();
   const [directionMode, setDirectionMode] = useState<DirectionMode>('ltr');
-  const [language, setLanguage] = useState<Language>('en');
   const [alertsOn, setAlertsOn] = useState(true);
   const [aiSearchOn, setAISearchOn] = useState(false);
   const { scrollRef, isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
@@ -141,7 +157,6 @@ export default function SettingsScreen() {
   });
   const [syncLoading, setSyncLoading] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [showReaderThemeModal, setShowReaderThemeModal] = useState(false);
   const { isPremium, activatePremium } = usePremium();
 
   // Load persisted preferences on mount
@@ -150,7 +165,6 @@ export default function SettingsScreen() {
     (async () => {
       const prefs = await loadAllPreferences();
       if (!isMounted) return;
-      setLanguage(prefs.language);
       setAlertsOn(prefs.alertsOn);
       setAISearchOn(prefs.aiSearchOn);
       setDirectionMode(prefs.directionMode);
@@ -198,15 +212,6 @@ export default function SettingsScreen() {
   }, []));
 
   // ─── Preference handlers (with persistence) ─────────────────────
-
-  const cycleLanguage = useCallback(async () => {
-    Alert.alert(
-      'Language',
-      'English is currently the only supported language.\nJapanese and Korean translations are coming soon.',
-      [{ text: 'OK' }],
-    );
-    // Keep preference for future use; don't cycle to empty translation
-  }, []);
 
   const toggleAlerts = useCallback(async () => {
     const next = !alertsOn;
@@ -365,7 +370,7 @@ export default function SettingsScreen() {
     <View style={[GeneralStyles.container, { backgroundColor: theme.bg }]}>
       <ScrollView ref={scrollRef} onScrollBeginDrag={handleScrollStart} onScrollEndDrag={handleScrollEnd} onMomentumScrollEnd={handleScrollEnd}
         contentContainerStyle={{ paddingBottom: spacing.p24 }}>
-        <View style={{ backgroundColor: theme.bg }}>
+        <View style={{ backgroundColor: theme.bg, paddingTop: spacing.p12 }}>
           <Header />
 
           {/* ─── Cloud Sync & Backup Section ─────────────────────── */}
@@ -415,27 +420,8 @@ export default function SettingsScreen() {
               </Pressable>
             )}
 
-            {/* AuthScreen navigation */}
-            <Pressable
-              onPress={() => navigation.navigate('AuthScreen' as never)}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 8,
-                paddingVertical: spacing.p10,
-                paddingHorizontal: spacing.p12,
-                backgroundColor: theme.bgCard,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: theme.border,
-                marginBottom: 8,
-              }}
-            >
-              <Feather name="cloud" size={16} color={theme.accent} />
-              <Text style={{ fontSize: 13, fontWeight: '600', color: theme.accent }}>
-                Manage Cloud Account
-              </Text>
-            </Pressable>
+            {/* AuthScreen navigation — hidden; not user-facing */}
+            {/* <Pressable ...> removed per review — backend tech must not be exposed */}
 
             {syncState.syncEnabled && syncState.status === 'synced' && syncState.scopeTimestamps && (
               <View style={{ paddingHorizontal: spacing.p8, paddingVertical: spacing.p4, marginTop: spacing.p3 }}>
@@ -569,9 +555,9 @@ export default function SettingsScreen() {
             marginHorizontal: 4,
           }} />
 
-          {/* ─── Settings Grid ────────────────────────────────────── */}
-          <View style={[SettingButtonStyles.grid, { backgroundColor: theme.bgSecondary }]}>
-            <GridItem label={`App Theme: ${themeMode}`} onPress={cycleTheme}>
+          {/* ─── Settings List ────────────────────────────────────── */}
+          <View style={{ flexDirection: 'column', padding: spacing.p10, backgroundColor: theme.bgSecondary }}>
+            <GridItem label={`Theme: ${themeMode}`} onPress={cycleTheme}>
               {themeMode === 'light' && <Feather name="sun" style={[SettingButtonStyles.icon, { color: theme.accent }]} />}
               {themeMode === 'dark' && <Feather name="moon" style={[SettingButtonStyles.icon, { color: theme.accent }]} />}
               {themeMode === 'sepia' && <Feather name="coffee" style={[SettingButtonStyles.icon, { color: theme.accent }]} />}
@@ -585,9 +571,6 @@ export default function SettingsScreen() {
                   <Feather name="chevrons-down" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
                 </View>
               )}
-            </GridItem>
-            <GridItem label="Language: English" onPress={cycleLanguage}>
-              <Text style={SettingButtonStyles.flag}>🇺🇸</Text>
             </GridItem>
             <GridItem label="Chapter alerts" onPress={toggleAlerts}>
               <Feather name={alertsOn ? "bell" : "bell-off"} style={[SettingButtonStyles.icon, { color: theme.accent }]} />
@@ -620,17 +603,6 @@ export default function SettingsScreen() {
             </GridItem>
             <GridItem label="Manage downloads" onPress={() => navigation.navigate('ManageDownloadsScreen' as never)}>
               <Feather name="download" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
-            </GridItem>
-            <GridItem
-              label="Reader Theme"
-              onPress={() => setShowReaderThemeModal(true)}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Feather name="eye" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
-                {!isPremium && (
-                  <Feather name="lock" size={10} color={theme.textMuted} style={{ marginLeft: -4, marginTop: -8 }} />
-                )}
-              </View>
             </GridItem>
             {isAdmin ? (
               <GridItem label="Admin" onPress={goAdmin}>
@@ -665,14 +637,6 @@ export default function SettingsScreen() {
           }
         }}
       />
-
-      {/* Reader Theme Picker Modal */}
-      <ReaderThemeProvider>
-        <ThemePicker
-          visible={showReaderThemeModal}
-          onClose={() => setShowReaderThemeModal(false)}
-        />
-      </ReaderThemeProvider>
 
       <Anchor scrollRef={scrollRef} isScrolling={isScrolling} />
     </View>
