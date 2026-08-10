@@ -1,13 +1,50 @@
-import * as SecureStore from 'expo-secure-store';
 // utils/idGenerator.ts
+// Secure storage wrapper — uses AsyncStorage on web (where SecureStore is unavailable),
+// and expo-secure-store on native platforms. All access is lazy to avoid bundler crashes.
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 let counter = 0; // keeps track across calls
 
 const SEQ_STORE_PREFIX = 'id_seq_v1_';       // per-day counter for generic IDs
 const USER_SEQ_STORE_PREFIX = 'user_id_v1_'; // last value guard for user IDs
 
+/** Lazy-loaded secure store — only imported on native platforms. */
+let _SecureStore: typeof import('expo-secure-store') | null = null;
+async function getSecureStore() {
+  if (_SecureStore) return _SecureStore;
+  try {
+    _SecureStore = await import('expo-secure-store');
+    return _SecureStore;
+  } catch {
+    // Web / unsupported platform — fall back to AsyncStorage below
+    return null;
+  }
+}
+
+async function secureGetItem(key: string): Promise<string | null> {
+  const SecureStore = await getSecureStore();
+  if (SecureStore) {
+    return SecureStore.getItemAsync(key);
+  }
+  // Fallback: AsyncStorage (works on all platforms including web)
+  return AsyncStorage.getItem(key);
+}
+
+async function secureSetItem(key: string, value: string): Promise<void> {
+  const SecureStore = await getSecureStore();
+  if (SecureStore) {
+    await SecureStore.setItemAsync(key, value, {
+      keychainAccessible: SecureStore.WHEN_UNLOCKED,
+    });
+    return;
+  }
+  // Fallback: AsyncStorage
+  await AsyncStorage.setItem(key, value);
+}
+
 async function loadSeq(key: string): Promise<{ counter: number; lastId: string | null }>{
   try {
-    const raw = await SecureStore.getItemAsync(key);
+    const raw = await secureGetItem(key);
     if (!raw) return { counter: 0, lastId: null };
     const parsed = JSON.parse(raw);
     return { counter: Number(parsed.counter) || 0, lastId: parsed.lastId ?? null };
@@ -17,9 +54,7 @@ async function loadSeq(key: string): Promise<{ counter: number; lastId: string |
 }
 
 async function saveSeq(key: string, counter: number, lastId: string){
-  await SecureStore.setItemAsync(key, JSON.stringify({ counter, lastId }), {
-    keychainAccessible: SecureStore.WHEN_UNLOCKED,
-  });
+  await secureSetItem(key, JSON.stringify({ counter, lastId }));
 }
 
 function numToAlphaSeq(n: number): string {
