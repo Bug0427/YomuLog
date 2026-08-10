@@ -1,7 +1,6 @@
 // React & React Native
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, Pressable, ActivityIndicator, Alert, Modal, TouchableWithoutFeedback, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Navigation
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
@@ -279,7 +278,6 @@ export default function LibraryScreen() {
 
       {/* Active filter indicator */}
       {hasActiveFilters(filterState) && (
-        <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.p12, marginTop: spacing.p4, gap: spacing.p6 }}>
             <Text style={{ fontSize: 12, color: theme.textSecondary, fontWeight: '600' }}>
               Filtered: {filterState.readingStatus ? filterLabel : `${filterState.pubStatus.length} statuses`}
@@ -291,7 +289,6 @@ export default function LibraryScreen() {
               <Text style={{ color: theme.textPrimary, fontSize: 10, fontWeight: '700' }}>✕ Clear</Text>
             </Pressable>
           </View>
-        </SafeAreaView>
       )}
 
       <MangaSlider
