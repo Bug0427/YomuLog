@@ -1,6 +1,9 @@
 // screens/premium/UpgradeScreen.tsx
-// Premium subscription paywall — shows plan comparison and Stripe checkout flow.
-// Matches business plan pricing: $2.99/month or $24.99/year.
+// Premium subscription paywall — shows what Premium unlocks, the
+// $2.99/month price, and an "Upgrade" button that opens the Stripe
+// Hosted Checkout link (Linking.openURL on native / window.open on web).
+// Entitlement is granted server-side after payment confirmation and the
+// app learns about it via Supabase Realtime (PremiumContext).
 
 import React, { useState, useCallback } from 'react';
 import {
@@ -18,56 +21,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
 import { colors, spacing } from '../../styles/tokens';
-import {
-  SUBSCRIPTION_PLANS,
-  getPremiumFeatures,
-  startCheckout,
-  type SubscriptionPlan,
-} from '../../services/stripeService';
-
-type PlanCardProps = {
-  plan: (typeof SUBSCRIPTION_PLANS)[SubscriptionPlan];
-  isSelected: boolean;
-  onSelect: () => void;
-};
-
-function PlanCard({ plan, isSelected, onSelect }: PlanCardProps) {
-  const { colors: theme } = useTheme();
-  return (
-    <Pressable
-      style={[
-        styles.planCard,
-        {
-          backgroundColor: theme.bgCard,
-          borderColor: isSelected ? colors.lavender : theme.border,
-          borderWidth: isSelected ? 2 : 1,
-        },
-      ]}
-      onPress={onSelect}
-    >
-      {plan.savingsLabel && (
-        <View style={[styles.savingsBadge, { backgroundColor: colors.success }]}>
-          <Text style={styles.savingsText}>{plan.savingsLabel}</Text>
-        </View>
-      )}
-      <Text style={[styles.planName, { color: theme.textPrimary }]}>{plan.name}</Text>
-      <Text style={[styles.planPrice, { color: colors.lavender }]}>{plan.priceLabel}</Text>
-      {plan.savingsLabel && (
-        <Text style={[styles.planEquivalent, { color: theme.textSecondary }]}>
-          ${(plan.priceUSD / 12).toFixed(2)}/month
-        </Text>
-      )}
-      <View
-        style={[
-          styles.radioOuter,
-          { borderColor: isSelected ? colors.lavender : theme.textSecondary },
-        ]}
-      >
-        {isSelected && <View style={[styles.radioInner, { backgroundColor: colors.lavender }]} />}
-      </View>
-    </Pressable>
-  );
-}
+import { getPremiumFeatures, openPremiumCheckout } from '../../services/stripeService';
 
 function FeatureRow({ icon, title, description }: { icon: string; title: string; description: string }) {
   const { colors: theme } = useTheme();
@@ -86,33 +40,28 @@ function FeatureRow({ icon, title, description }: { icon: string; title: string;
 
 export default function UpgradeScreen() {
   const navigation = useNavigation();
-  const { isPremium, activatePremium } = usePremium();
+  const { isPremium } = usePremium();
   const { colors: theme } = useTheme();
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>('yearly');
   const [loading, setLoading] = useState(false);
 
-  const handleSubscribe = useCallback(async () => {
+  const handleUpgrade = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await startCheckout(selectedPlan);
-      if (result.canceled) {
-        // User dismissed the payment sheet — do nothing
-        return;
-      }
+      const result = await openPremiumCheckout();
       if (result.success) {
-        await activatePremium();
-        Alert.alert('Welcome to Premium! 🎉', 'All premium features are now unlocked.', [
-          { text: 'Continue', onPress: () => navigation.goBack() },
-        ]);
+        Alert.alert(
+          'Checkout Opened',
+          'Complete payment in the secure Stripe checkout to activate your subscription. Premium unlocks automatically once payment is confirmed.',
+        );
       } else {
-        Alert.alert('Payment Failed', result.error || 'Something went wrong. Please try again.');
+        Alert.alert('Could Not Open Checkout', result.error || 'Please try again.');
       }
-    } catch (e) {
+    } catch {
       Alert.alert('Error', 'An unexpected error occurred. Please try again later.');
     } finally {
       setLoading(false);
     }
-  }, [selectedPlan, activatePremium, navigation]);
+  }, []);
 
   if (isPremium) {
     return (
@@ -153,37 +102,30 @@ export default function UpgradeScreen() {
           </Text>
         </View>
 
-        {/* Plan selection */}
-        <View style={styles.plans}>
-          <PlanCard
-            plan={SUBSCRIPTION_PLANS.monthly}
-            isSelected={selectedPlan === 'monthly'}
-            onSelect={() => setSelectedPlan('monthly')}
-          />
-          <PlanCard
-            plan={SUBSCRIPTION_PLANS.yearly}
-            isSelected={selectedPlan === 'yearly'}
-            onSelect={() => setSelectedPlan('yearly')}
-          />
+        {/* Price */}
+        <View style={[styles.priceCard, { backgroundColor: theme.bgCard, borderColor: colors.lavender }]}>
+          <Text style={[styles.priceAmount, { color: theme.textPrimary }]}>$2.99</Text>
+          <Text style={[styles.pricePeriod, { color: theme.textSecondary }]}>/ month</Text>
+          <Text style={[styles.priceNote, { color: theme.textSecondary }]}>
+            Cancel anytime. Billed securely via Stripe.
+          </Text>
         </View>
 
-        {/* Subscribe button */}
+        {/* Upgrade button */}
         <Pressable
-          style={[styles.subscribeButton, { backgroundColor: colors.plum, opacity: loading ? 0.7 : 1 }]}
-          onPress={handleSubscribe}
+          style={[styles.upgradeButton, { backgroundColor: colors.plum, opacity: loading ? 0.7 : 1 }]}
+          onPress={handleUpgrade}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color={colors.white} size="small" />
           ) : (
-            <Text style={styles.subscribeButtonText}>
-              Subscribe — {SUBSCRIPTION_PLANS[selectedPlan].priceLabel}
-            </Text>
+            <>
+              <Feather name="zap" size={18} color={colors.white} style={{ marginRight: 8 }} />
+              <Text style={styles.upgradeButtonText}>Upgrade to Premium — $2.99/month</Text>
+            </>
           )}
         </Pressable>
-        <Text style={[styles.termsText, { color: theme.textSecondary }]}>
-          Cancel anytime. Payment will be charged to your Apple ID / Google Play account.
-        </Text>
 
         {/* Feature list */}
         <View style={styles.featuresSection}>
@@ -206,43 +148,27 @@ const styles = StyleSheet.create({
   closeBtn: { position: 'absolute', top: spacing.p16, right: spacing.p16, zIndex: 1 },
   headline: { fontSize: 26, fontWeight: '700', marginTop: spacing.p12 },
   subheadline: { fontSize: 15, marginTop: spacing.p6, textAlign: 'center' },
-  plans: { flexDirection: 'row', paddingHorizontal: spacing.p12, gap: spacing.p10, marginTop: spacing.p24 },
-  planCard: {
-    flex: 1,
+  priceCard: {
+    marginHorizontal: spacing.p16,
+    marginTop: spacing.p24,
     borderRadius: 14,
-    padding: spacing.p16,
-    alignItems: 'center',
-    position: 'relative',
-  },
-  savingsBadge: {
-    position: 'absolute',
-    top: -8,
-    paddingHorizontal: spacing.p10,
-    paddingVertical: spacing.p3,
-    borderRadius: 8,
-  },
-  savingsText: { color: colors.white, fontSize: 11, fontWeight: '700' },
-  planName: { fontSize: 16, fontWeight: '600', marginTop: spacing.p10 },
-  planPrice: { fontSize: 20, fontWeight: '700', marginTop: spacing.p6 },
-  planEquivalent: { fontSize: 12, marginTop: spacing.p3 },
-  radioOuter: {
-    width: 20, height: 20,
-    borderRadius: 10,
     borderWidth: 2,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.p12,
+    paddingVertical: spacing.p18,
   },
-  radioInner: { width: 10, height: 10, borderRadius: 5 },
-  subscribeButton: {
+  priceAmount: { fontSize: 34, fontWeight: '800' },
+  pricePeriod: { fontSize: 15, fontWeight: '600', marginTop: 2 },
+  priceNote: { fontSize: 12, marginTop: spacing.p10, paddingHorizontal: spacing.p16, textAlign: 'center' },
+  upgradeButton: {
     marginHorizontal: spacing.p16,
-    marginTop: spacing.p20,
+    marginTop: spacing.p16,
     paddingVertical: spacing.p14,
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
   },
-  subscribeButtonText: { color: colors.white, fontSize: 17, fontWeight: '700' },
-  termsText: { fontSize: 11, textAlign: 'center', marginTop: spacing.p8, paddingHorizontal: spacing.p24 },
+  upgradeButtonText: { color: colors.white, fontSize: 16, fontWeight: '700' },
   featuresSection: { marginTop: spacing.p24, paddingHorizontal: spacing.p16 },
   sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: spacing.p14 },
   featureRow: { flexDirection: 'row', marginBottom: spacing.p14, alignItems: 'flex-start' },
