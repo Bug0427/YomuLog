@@ -14,6 +14,7 @@ const WEB_MAX_WIDTH = 1200;
 
 function StatusBarTheme() {
   const { mode, colors } = useTheme();
+  if (Platform.OS === 'web') return null;
   const barStyle = mode === 'dark' ? 'light-content' : 'dark-content';
   return <StatusBar barStyle={barStyle} backgroundColor={colors.bg} translucent={false} />;
 }
