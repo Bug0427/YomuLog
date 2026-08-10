@@ -302,6 +302,29 @@ export default function ManageDownloadsScreen() {
           </View>
         </View>
 
+        {/* Navigation link to Downloads screen */}
+        <Pressable
+        onPress={() => navigation.navigate('DownLoadsScreen')}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          paddingVertical: spacing.p10,
+          marginHorizontal: spacing.p16,
+          marginBottom: spacing.p8,
+          backgroundColor: theme.bgCard,
+          borderRadius: 8,
+          borderWidth: 1,
+          borderColor: theme.border,
+        }}
+        >
+        <Feather name="download" size={14} color={theme.textMuted} />
+        <Text style={{ fontSize: 12, color: theme.textMuted, fontWeight: '600' }}>
+          View My Downloads
+        </Text>
+        </Pressable>
+
         {/* ─── Per-Title Breakdown ─────────────────────────────────── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Storage by Title</Text>

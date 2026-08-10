@@ -346,6 +346,29 @@ export default function DownLoadsScreen() {
               </View>
             )}
 
+            {/* Manage Storage link */}
+            <Pressable
+              onPress={() => navigation.navigate('ManageDownloadsScreen')}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                paddingVertical: spacing.p8,
+                marginHorizontal: spacing.p12,
+                marginBottom: spacing.p10,
+                backgroundColor: theme.bgCard,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: theme.border,
+              }}
+            >
+              <Feather name="hard-drive" size={14} color={theme.textMuted} />
+              <Text style={{ fontSize: 12, color: theme.textMuted, fontWeight: '600' }}>
+                Manage Storage
+              </Text>
+            </Pressable>
+
             {/* Queue section */}
             {queue.length > 0 && (
               <>
