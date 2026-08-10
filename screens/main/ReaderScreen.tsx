@@ -4,7 +4,7 @@ import {
   Dimensions, StyleSheet, StatusBar, ScrollView, NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, RouteProp, useRoute } from '@react-navigation/native';
 import { getChapterPages, buildPageUrlsFromChapterData, getMangaFeed } from '../../services/mangaAPI';
 import { RootStackParamList } from '../../navigation/navigation';
@@ -48,6 +48,7 @@ export default function ReaderScreenWrapper() {
 
 function ReaderScreen() {
   const { colors: theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const route = useRoute<ReaderRoute>();
   const { chapterId, mangaId, chapterNum } = route.params ?? {};
@@ -527,6 +528,7 @@ function ReaderControls({
 }) {
   const { activeConfig } = useReaderTheme();
   const { colors: theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const modeLabels: Record<ReaderMode, string> = {
     vertical: 'Scroll',
     ltr: 'L→R',
@@ -538,7 +540,7 @@ function ReaderControls({
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       {/* Top bar */}
-      <View style={[styles.topBar, { backgroundColor: overlayBg }]}>
+      <View style={[styles.topBar, { backgroundColor: overlayBg, paddingTop: insets.top + spacing.p8 }]}>
         <Pressable onPress={onClose} style={styles.controlBtn}>
           <Text style={[styles.controlBtnText, { color: textColor }]}>✕</Text>
         </Pressable>
@@ -560,7 +562,7 @@ function ReaderControls({
       </View>
 
       {/* Bottom bar */}
-      <View style={[styles.bottomBar, { backgroundColor: overlayBg }]}>
+      <View style={[styles.bottomBar, { backgroundColor: overlayBg, paddingBottom: insets.bottom + spacing.p8 }]}>
         {/* Progress bar */}
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: `${Math.min(100, scrollPercent)}%`, backgroundColor: theme.accent }]} />

@@ -291,7 +291,7 @@ export default function UserAccount() {
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <View style={{ flex: 1, padding: 16, backgroundColor: theme.bg }}>
             {/* Back */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 50 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16 }}>
                 <Pressable
                     onPress={handleBack}
                     style={[FeedbackStyles.item, { width: 67, marginTop: 0, marginRight: 12 }]}
