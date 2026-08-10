@@ -3,7 +3,7 @@ import { View, Text, FlatList, Image, Pressable, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { GeneralStyles } from '../../styles/global';
 import { MangaSliderStyles } from '../../styles/IndependentStyles/MangaSliderStyles';
-import { colors } from '../../styles/tokens';
+import { colors, spacing } from '../../styles/tokens';
 import { useTheme } from '../../context/ThemeContext';
 import { useWindowWidth } from '../../utils/findDimensions';
 
@@ -22,9 +22,11 @@ interface MangaSliderProps {
   footerComponent?: React.ReactElement;
   /** If provided, renders a "See More" trailing card that navigates to Search */
   seeMoreOnPress?: () => void;
+  /** Message to display when data is empty (e.g. "No manga available in this genre") */
+  emptyMessage?: string;
 }
 
-const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress, footerComponent, seeMoreOnPress }) => {
+const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress, footerComponent, seeMoreOnPress, emptyMessage }) => {
   const { colors: theme } = useTheme();
   const screenWidth = useWindowWidth();
 
@@ -121,22 +123,59 @@ const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress, fo
         ) : null}
         <View style={[MangaSliderStyles.sliderWrapper, { width: containerWidth }]}> 
           {displayData.length === 0 ? (
-            /* Placeholder cards when no data */
-            <View style={{ flexDirection: 'row' }}>
-              {[1, 2, 3].map((i) => (
-                <View
-                  key={`placeholder-${i}`}
-                  style={[
-                    MangaSliderStyles.card,
-                    MangaSliderStyles.placeholderCard,
-                    i === 3 && MangaSliderStyles.lastCard,
-                  ]}
+            emptyMessage ? (
+              /* Empty-state message — no manga available for this slider */
+              <View
+                style={[
+                  MangaSliderStyles.card,
+                  {
+                    width: containerWidth - (spacing.p7 * 2), // fill slider padding
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderStyle: 'dashed',
+                    backgroundColor: theme.bgCard,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingVertical: spacing.p20,
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="book-open-outline"
+                  size={24}
+                  color={theme.textMuted}
+                  style={{ marginBottom: spacing.p6 }}
+                />
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: theme.textMuted,
+                    fontStyle: 'italic',
+                    textAlign: 'center',
+                    paddingHorizontal: spacing.p8,
+                  }}
                 >
-                  <View style={[MangaSliderStyles.image, { backgroundColor: theme.bgSecondary }]} />
-                  <View style={{ height: 14, backgroundColor: theme.bgSecondary, borderRadius: 4, marginTop: 4, width: '80%', alignSelf: 'center' }} />
-                </View>
-              ))}
-            </View>
+                  {emptyMessage}
+                </Text>
+              </View>
+            ) : (
+              /* Placeholder cards when loading / no data */
+              <View style={{ flexDirection: 'row' }}>
+                {[1, 2, 3].map((i) => (
+                  <View
+                    key={`placeholder-${i}`}
+                    style={[
+                      MangaSliderStyles.card,
+                      MangaSliderStyles.placeholderCard,
+                      i === 3 && MangaSliderStyles.lastCard,
+                    ]}
+                  >
+                    <View style={[MangaSliderStyles.image, { backgroundColor: theme.bgSecondary }]} />
+                    <View style={{ height: 14, backgroundColor: theme.bgSecondary, borderRadius: 4, marginTop: 4, width: '80%', alignSelf: 'center' }} />
+                  </View>
+                ))}
+              </View>
+            )
           ) : (
           <FlatList<MangaItem>
             data={displayData}
