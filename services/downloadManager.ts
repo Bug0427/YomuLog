@@ -450,7 +450,7 @@ export async function getDownloadStats(): Promise<{
 
 /** Clear all download data (for testing / user reset). */
 export async function clearAllDownloads(): Promise<void> {
-  await AsyncStorage.removeMany([DOWNLOAD_QUEUE_KEY, DOWNLOADED_CHAPTERS_KEY]);
+  await AsyncStorage.multiRemove([DOWNLOAD_QUEUE_KEY, DOWNLOADED_CHAPTERS_KEY]);
   const baseDir = await resolveBaseDir();
   await deleteFileAsync(baseDir, { idempotent: true });
 }
