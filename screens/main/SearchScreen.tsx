@@ -32,7 +32,6 @@ import { usePremium } from '../../context/PremiumContext';
 import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
 import GenreFilterModal, { genreLabel as genreDisplay } from '../../components/layout/GenreFilterModal';
 import ReverseImageSearchModal from '../../components/layout/ReverseImageSearchModal';
-import GenreSuggestions from '../../components/search/GenreSuggestions';
 import { pickImageFromLibrary, searchByImage, RisMatch } from '../../services/reverseImageSearch';
 
 const LIMIT = 20;
@@ -294,7 +293,6 @@ export default function SearchScreen() {
         placeholder="Search items..."
       />
       {/* AI mode toggle + Reverse Image Search */}
-      <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: spacing.p12, marginTop: spacing.p4, gap: spacing.p8 }}>
           {/* Reverse image search button */}
           <Pressable
@@ -354,7 +352,6 @@ export default function SearchScreen() {
             </Text>
           </Pressable>
         </View>
-      </SafeAreaView>
       {aiSummary ? (
         <View
           style={{
@@ -371,15 +368,6 @@ export default function SearchScreen() {
           </Text>
         </View>
       ) : null}
-      <GenreSuggestions
-        selectedGenres={filter.genres}
-        excludedGenres={excludedGenres}
-        onGenrePress={(tag) => {
-          if (!filter.genres.includes(tag)) {
-            setFilter((prev) => ({ ...prev, genres: [...prev.genres, tag] }));
-          }
-        }}
-      />
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
         <GenreSlider genres={genreSliderItems} onGenrePress={handleGenrePress} selectedGenres={filter.genres.map(genreLabel)} excludedGenres={Array.from(excludedGenres).map(genreLabel)} />
       </View>
