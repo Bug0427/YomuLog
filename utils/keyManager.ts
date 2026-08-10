@@ -1,6 +1,57 @@
 // utils/keyManager.ts
-import * as SecureStore from 'expo-secure-store';
-import * as Random from 'expo-random';
+// Native module imports are lazy-loaded to avoid bundler crashes on web.
+// - expo-secure-store: dynamic import with AsyncStorage fallback
+// - expo-random: dynamic import with crypto.getRandomValues fallback
+// - react-native-libsodium: already lazy-loaded
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+/** Lazy-loaded secure store — only imported on native platforms. */
+let _SecureStore: typeof import('expo-secure-store') | null = null;
+async function getSecureStore() {
+  if (_SecureStore) return _SecureStore;
+  try {
+    _SecureStore = await import('expo-secure-store');
+    return _SecureStore;
+  } catch {
+    return null;
+  }
+}
+
+async function secureGetItem(key: string): Promise<string | null> {
+  const SS = await getSecureStore();
+  if (SS) return SS.getItemAsync(key);
+  return AsyncStorage.getItem(key);
+}
+
+async function secureSetItem(key: string, value: string): Promise<void> {
+  const SS = await getSecureStore();
+  if (SS) {
+    await SS.setItemAsync(key, value, { keychainAccessible: SS.WHEN_UNLOCKED });
+    return;
+  }
+  await AsyncStorage.setItem(key, value);
+}
+
+/** Cross-platform random bytes: expo-crypto (native) or Web Crypto API (web). */
+async function getRandomBytes(length: number): Promise<Uint8Array> {
+  // Try expo-crypto first (recommended replacement for deprecated expo-random)
+  try {
+    const cryptoMod = await import('expo-crypto');
+    const bytes = await cryptoMod.getRandomBytesAsync(length);
+    return new Uint8Array(bytes);
+  } catch {
+    // Fallback: Web Crypto API (works on web and modern RN)
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const buf = new Uint8Array(length);
+      crypto.getRandomValues(buf);
+      return buf;
+    }
+    // Ultimate fallback: Math.random (not cryptographically secure)
+    const buf = new Uint8Array(length);
+    for (let i = 0; i < length; i++) buf[i] = Math.floor(Math.random() * 256);
+    return buf;
+  }
+}
 
 /**
  * We lazy-load libsodium so it doesn't slow cold start.
@@ -35,7 +86,7 @@ export type KeyEntry = {
 
 /** Load the keyring from SecureStore (may return empty array) */
 async function loadKeyring(): Promise<KeyEntry[]> {
-    const raw = await SecureStore.getItemAsync(KEYRING_SLOT); // read string (or null)
+    const raw = await secureGetItem(KEYRING_SLOT);
     if (!raw) return [];                                      // no data -> empty ring
     try { return JSON.parse(raw) as KeyEntry[]; }             // parse JSON
     catch { return []; }                                      // bad JSON -> empty ring
@@ -43,9 +94,7 @@ async function loadKeyring(): Promise<KeyEntry[]> {
 
 /** Persist the keyring back to SecureStore */
 async function saveKeyring(ring: KeyEntry[]) {
-    await SecureStore.setItemAsync(KEYRING_SLOT, JSON.stringify(ring), {
-        keychainAccessible: SecureStore.WHEN_UNLOCKED,
-    });
+    await secureSetItem(KEYRING_SLOT, JSON.stringify(ring));
 }
 
 /** Make a readable key id (timestamp + short random suffix) */
@@ -61,8 +110,8 @@ export async function ensureCurrentKey(): Promise<KeyEntry> {
     if (ring.length > 0) return ring[0];
 
     const s = await sodium();
-    const raw = await Random.getRandomBytesAsync(s.crypto_aead_xchacha20poly1305_ietf_KEYBYTES);
-    const keyB64 = s.to_base64(new Uint8Array(raw), s.base64_variants.ORIGINAL);
+    const raw = await getRandomBytes(s.crypto_aead_xchacha20poly1305_ietf_KEYBYTES);
+    const keyB64 = s.to_base64(raw, s.base64_variants.ORIGINAL);
     const entry: KeyEntry = {
         kid: newKid(),
         keyB64,
@@ -85,8 +134,8 @@ export async function ensureCurrentKey(): Promise<KeyEntry> {
 export async function rotateKey(): Promise<KeyEntry> {
     const ring = await getKeyring();
     const s = await sodium();
-    const raw = await Random.getRandomBytesAsync(s.crypto_aead_xchacha20poly1305_ietf_KEYBYTES);
-    const keyB64 = s.to_base64(new Uint8Array(raw), s.base64_variants.ORIGINAL);
+    const raw = await getRandomBytes(s.crypto_aead_xchacha20poly1305_ietf_KEYBYTES);
+    const keyB64 = s.to_base64(raw, s.base64_variants.ORIGINAL);
     const entry: KeyEntry = {
         kid: newKid(),
         keyB64,

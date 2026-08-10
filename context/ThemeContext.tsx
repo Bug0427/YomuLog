@@ -11,6 +11,7 @@ import React, {
   useMemo,
   type ReactNode,
 } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -194,11 +195,27 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     [mode, colors, setTheme, cycleTheme],
   );
 
-  // Don't render children until theme is loaded to avoid flash
-  if (!ready) return null;
+  // Show a loading indicator while theme loads from storage
+  // instead of returning null (which causes a blank white screen on slow AsyncStorage)
+  if (!ready) {
+    return (
+      <View style={loadingStyles.container}>
+        <ActivityIndicator size="large" color="#AFA6DD" />
+      </View>
+    );
+  }
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
+
+const loadingStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#AFA6DD',
+  },
+});
 
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
