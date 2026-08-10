@@ -44,6 +44,9 @@ import { colors, spacing } from '../../styles/tokens';
 import CollectionManager from '../../components/library/CollectionManager';
 import { getCollections, type Collection } from '../../services/collectionService';
 
+// Sort
+import { useSortPreference, applySortOrder } from '../../hooks/useSortPreference';
+
 // Filters
 import { FilterState, DEFAULT_FILTER_STATE, hasActiveFilters } from '../../utils/filters';
 
@@ -71,6 +74,9 @@ export default function LibraryScreen() {
   const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null);
   const [showCollectionManager, setShowCollectionManager] = useState(false);
   const [collectionTargetIds, setCollectionTargetIds] = useState<string[]>([]);
+
+  // ── Sort state (persisted via AsyncStorage) ──────────────────────────
+  const { sortOrder, cycleSort, label: sortLabel, icon: sortIcon } = useSortPreference();
 
   // ── Fetch on focus ────────────────────────────────────────────────
   useFocusEffect(
@@ -228,8 +234,10 @@ export default function LibraryScreen() {
         result = result.filter((item) => idSet.has(item.mangaId));
       }
     }
+    // Apply sort order
+    result = applySortOrder(result, sortOrder, (item) => item.mangaTitle);
     return result;
-  }, [favorites, filterState.readingStatus, activeCollectionId, collections]);
+  }, [favorites, filterState.readingStatus, activeCollectionId, collections, sortOrder]);
 
   const activeCollection = activeCollectionId
     ? collections.find(c => c.id === activeCollectionId)
@@ -386,6 +394,13 @@ export default function LibraryScreen() {
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
         <Text style={GeneralStyles.h1}>Library ({filteredFavorites.length})</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Pressable
+            onPress={cycleSort}
+            accessibilityLabel={`Sort: ${sortLabel}`}
+            accessibilityRole="button"
+          >
+            <MaterialCommunityIcons name={sortIcon} size={20} color="#463B54" />
+          </Pressable>
           <Pressable
             onPress={() => navigation.navigate('RecentlyReadScreen' as never)}
             accessibilityLabel="Recently read"
