@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, Pressable, Text, Alert, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { Feather } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import Header from '../../components/layout/Header';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
 import Anchor from '../../components/layout/Anchor';
 import { resetDatabase } from '../../services/devResetDB';
-import { logout } from '../../data/SettingsButtonActions/Logout';
 import ChangeLoginModal from '../../components/admin/ChangeLoginModal';
 import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
 import { GeneralStyles, SettingButtonStyles } from '../../styles/global';
@@ -20,13 +19,15 @@ import {
   type SyncState,
 } from '../../services/supabaseSyncService';
 import { colors, spacing } from '../../styles/tokens';
-import { useTheme, type ThemeMode } from '../../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
 import {
   loadAllPreferences,
+  setLanguage as saveLanguage,
   setAlertsOn as saveAlertsOn,
   setAISearchOn as saveAISearchOn,
   setDirectionMode as saveDirectionMode,
+  type Language,
   type DirectionMode,
 } from '../../services/preferencesService';
 
@@ -34,40 +35,21 @@ type VerifyRow = { SECURITYLVL: SecurityLevel } | null;
 const isAdminLevel = (lvl: any) => lvl === SecurityLevel?.Admin || lvl === 1 || lvl === '1' || lvl === 'Admin';
 const isFeedbackAllowed = (lvl: any) => lvl === 2 || lvl === 3 || lvl === '2' || lvl === '3' || lvl === (SecurityLevel as any)?.Level2 || lvl === (SecurityLevel as any)?.Level3;
 
+/** Language cycle order */
+const LANGUAGES: Language[] = ['en', 'ja', 'ko'];
+const LANGUAGE_FLAGS: Record<Language, string> = { en: '🇺🇸', ja: '🇯🇵', ko: '🇰🇷' };
+
 /** Direction cycle order */
 const DIRECTIONS: DirectionMode[] = ['ltr', 'rtl', 'vertical'];
 
 const GridItem = ({ label, children, onPress }: { label: string; children?: React.ReactNode; onPress?: () => void }) => {
   const { colors: theme } = useTheme();
   return (
-    <View style={{
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      paddingVertical: 12,
-      paddingHorizontal: 4,
-      marginBottom: 4,
-    }}>
-      <Pressable
-        style={{
-          width: 56,
-          height: 56,
-          borderRadius: 12,
-          backgroundColor: theme.bgCard,
-          borderWidth: 2,
-          borderColor: theme.border,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-        onPress={onPress}
-        hitSlop={10}
-      >
+    <View style={SettingButtonStyles.cell}>
+      <Pressable style={[SettingButtonStyles.button, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={onPress} hitSlop={10}>
         {children}
       </Pressable>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: theme.textPrimary }}>{label}</Text>
-      </View>
-      <Feather name="chevron-right" size={18} color={theme.textMuted} />
+      <Text style={[SettingButtonStyles.cellLabel, { color: theme.textSecondary }]}>{label}</Text>
     </View>
   );
 };
@@ -137,6 +119,7 @@ const SyncGridItem = ({
 export default function SettingsScreen() {
   const { mode: themeMode, cycleTheme, colors: theme } = useTheme();
   const [directionMode, setDirectionMode] = useState<DirectionMode>('ltr');
+  const [language, setLanguage] = useState<Language>('en');
   const [alertsOn, setAlertsOn] = useState(true);
   const [aiSearchOn, setAISearchOn] = useState(false);
   const { scrollRef, isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
@@ -168,6 +151,7 @@ export default function SettingsScreen() {
       setAlertsOn(prefs.alertsOn);
       setAISearchOn(prefs.aiSearchOn);
       setDirectionMode(prefs.directionMode);
+      setLanguage(prefs.language);
       setPrefsLoaded(true);
     })();
     return () => { isMounted = false; };
@@ -231,6 +215,13 @@ export default function SettingsScreen() {
     setDirectionMode(next);
     await saveDirectionMode(next);
   }, [directionMode]);
+
+  const cycleLanguage = useCallback(async () => {
+    const idx = LANGUAGES.indexOf(language);
+    const next = LANGUAGES[(idx + 1) % LANGUAGES.length];
+    setLanguage(next);
+    await saveLanguage(next);
+  }, [language]);
 
   // ─── Action handlers with confirmation ──────────────────────────
 
@@ -523,27 +514,6 @@ export default function SettingsScreen() {
                 color={theme.textMuted}
               />
             </Pressable>
-
-            {/* Dev toggle — hidden in production */}
-            {isPremium && (
-              <Pressable
-                onPress={async () => {
-                  const { deactivatePremium } = usePremium();
-                  // Access via context; we'll add a dev handler
-                  Alert.alert('Premium Active', 'Manage your subscription in Account Settings.', [{ text: 'OK' }]);
-                }}
-                style={{
-                  marginTop: spacing.p8,
-                  alignSelf: 'flex-end',
-                  paddingHorizontal: spacing.p10,
-                  paddingVertical: spacing.p4,
-                }}
-              >
-                <Text style={{ fontSize: 11, color: theme.textMuted }}>
-                  Subscribed
-                </Text>
-              </Pressable>
-            )}
           </View>
 
           {/* ─── Divider before settings grid ─────────────────────── */}
@@ -555,8 +525,8 @@ export default function SettingsScreen() {
             marginHorizontal: 4,
           }} />
 
-          {/* ─── Settings List ────────────────────────────────────── */}
-          <View style={{ flexDirection: 'column', padding: spacing.p10, backgroundColor: theme.bgSecondary }}>
+          {/* ─── Settings Grid ────────────────────────────────────── */}
+          <View style={[SettingButtonStyles.grid, { backgroundColor: theme.bgSecondary }]}>
             <GridItem label={`Theme: ${themeMode}`} onPress={cycleTheme}>
               {themeMode === 'light' && <Feather name="sun" style={[SettingButtonStyles.icon, { color: theme.accent }]} />}
               {themeMode === 'dark' && <Feather name="moon" style={[SettingButtonStyles.icon, { color: theme.accent }]} />}
@@ -571,6 +541,9 @@ export default function SettingsScreen() {
                   <Feather name="chevrons-down" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
                 </View>
               )}
+            </GridItem>
+            <GridItem label="Language" onPress={cycleLanguage}>
+              <Text style={SettingButtonStyles.flag}>{LANGUAGE_FLAGS[language]}</Text>
             </GridItem>
             <GridItem label="Chapter alerts" onPress={toggleAlerts}>
               <Feather name={alertsOn ? "bell" : "bell-off"} style={[SettingButtonStyles.icon, { color: theme.accent }]} />

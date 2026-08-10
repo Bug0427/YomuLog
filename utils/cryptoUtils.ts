@@ -6,6 +6,8 @@
 // this caused a blank-screen crash on web because crypto is not
 // available in React Native / Expo web bundles.
 
+import { Platform } from 'react-native';
+
 // ─── Constants ───────────────────────────────────────────────────────
 
 const PBKDF2_ITERATIONS = 100_000; // OWASP recommended minimum for PBKDF2-HMAC-SHA256
@@ -107,7 +109,10 @@ export async function hashPassword(password: string): Promise<string> {
   }
 
   // Fallback for environments without crypto.subtle (extremely rare)
-  // Defer to bcryptjs only on native (it's lazy-loaded)
+  // bcryptjs is Node-only — skip on web to prevent module resolution crash
+  if (Platform.OS === 'web') {
+    throw new Error('Password hashing unavailable on web without crypto.subtle');
+  }
   try {
     const bcrypt = await import('bcryptjs');
     const saltRounds = 12;
@@ -161,6 +166,11 @@ export async function verifyPassword(
   }
 
   // Fallback: bcryptjs format (for backward compatibility with existing hashes)
+  // bcryptjs is Node-only — skip on web to prevent module resolution crash
+  if (Platform.OS === 'web') {
+    console.warn('[cryptoUtils] bcryptjs verification not supported on web');
+    return false;
+  }
   try {
     const bcrypt = await import('bcryptjs');
     return bcrypt.compare(candidate, hashed);
