@@ -256,23 +256,17 @@ export default function HomeScreen() {
               const isLast = idx === SLIDER_CONFIGS.length - 1;
               // Show failed as retry card, empty as placeholder, or data as slider
               if ((!items || items.length === 0) && !isFailed) {
-                // Show simple italic empty state matching MangaInfo pattern
+                // Render slider with emptyMessage — maintains visual structure
                 return (
                   <View key={`${config.title}-${refreshKey}`}>
-                    <View style={{ marginBottom: spacing.p20, paddingHorizontal: spacing.p12 }}>
-                      <Text style={{
-                        fontSize: 18,
-                        fontWeight: '700',
-                        color: theme.textPrimary,
-                        marginBottom: 8,
-                      }}>
-                        {config.title}
-                      </Text>
-                      <Text style={{ fontSize: 14, color: theme.textMuted, fontStyle: 'italic', textAlign: 'center', marginTop: 12 }}>
-                        No manga available
-                      </Text>
-                    </View>
-                    {isLast && <RefreshCard onRefresh={handleRefresh} />}
+                    <MangaSlider
+                      title={config.title}
+                      data={[]}
+                      emptyMessage={`No manga available in ${config.title}`}
+                      footerComponent={
+                        isLast ? <RefreshCard onRefresh={handleRefresh} /> : undefined
+                      }
+                    />
                   </View>
                 );
               }
