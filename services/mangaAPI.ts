@@ -143,45 +143,81 @@ export async function searchManga(title: string, limit = 20): Promise<Manga[]> {
   return fetchMangaList({ title, limit });
 }
 
-export type MangaResult<T> = { data: T[]; total: number; limit: number; offset: number; };
+export type MangaResult<T> = {
+  data: T[];
+  total: number;
+  limit: number;
+  offset: number;
+  /** True when the result fell back from English-only to all languages because no English chapters exist */
+  languageFallback?: boolean;
+};
 
-export async function getMangaFeed(mangaId: string, limit = 100, offset = 0): Promise<MangaResult<MangaChapter>> {
+/** Internal helper: fetch manga feed with an optional language filter */
+async function _fetchFeed(
+  mangaId: string,
+  limit: number,
+  offset: number,
+  language?: string,
+): Promise<{ data: MangaChapter[]; total: number }> {
   const query = new URLSearchParams();
   query.set('limit', String(Math.min(limit, 100)));
   query.set('offset', String(offset));
-  query.set('translatedLanguage[]', 'en');
+  if (language) query.set('translatedLanguage[]', language);
   query.set('order[chapter]', 'desc');
-  // Include all content ratings so erotica/pornographic manga chapters don't come back empty
   query.set('contentRating[]', 'safe');
   query.set('contentRating[]', 'suggestive');
   query.set('contentRating[]', 'erotica');
   query.set('contentRating[]', 'pornographic');
   query.set('includes[]', 'scanlation_group');
+  const res = await fetch(`${BASE_URL}/manga/${mangaId}/feed?${query.toString()}`);
+  if (!res.ok) {
+    console.warn(`getMangaFeed HTTP ${res.status} for manga ${mangaId}`);
+    return { data: [], total: 0 };
+  }
+  const json = await res.json();
+  if (json.result !== 'ok') {
+    console.warn(`getMangaFeed API error for manga ${mangaId}:`, json.errors);
+    return { data: [], total: 0 };
+  }
+  const data: MangaChapter[] = (json?.data ?? []).map((item: any) => {
+    const scanRel = (item.relationships ?? []).find((r: any) => r.type === 'scanlation_group');
+    return {
+      id: item.id, mangaId,
+      chapter: item.attributes?.chapter ?? '0',
+      title: item.attributes?.title,
+      volume: item.attributes?.volume,
+      pages: item.attributes?.pages ?? 0,
+      updatedAt: item.attributes?.updatedAt,
+      language: item.attributes?.translatedLanguage ?? 'en',
+      scanlationGroup: scanRel?.attributes?.name ?? undefined,
+    };
+  });
+  return { data, total: json?.total ?? data.length };
+}
+
+export async function getMangaFeed(
+  mangaId: string,
+  limit = 100,
+  offset = 0,
+): Promise<MangaResult<MangaChapter>> {
   try {
-    const res = await fetch(`${BASE_URL}/manga/${mangaId}/feed?${query.toString()}`);
-    if (!res.ok) {
-      console.warn(`getMangaFeed HTTP ${res.status} for manga ${mangaId}`);
-      return { data: [], total: 0, limit, offset };
+    // Try English first (most users prefer English)
+    const enResult = await _fetchFeed(mangaId, limit, offset, 'en');
+
+    // If English returned chapters, use that
+    if (enResult.data.length > 0) {
+      return { data: enResult.data, total: enResult.total, limit, offset };
     }
-    const json = await res.json();
-    if (json.result !== 'ok') {
-      console.warn(`getMangaFeed API error for manga ${mangaId}:`, json.errors);
-      return { data: [], total: 0, limit, offset };
-    }
-    const data: MangaChapter[] = (json?.data ?? []).map((item: any) => {
-      const scanRel = (item.relationships ?? []).find((r: any) => r.type === 'scanlation_group');
-      return {
-        id: item.id, mangaId,
-        chapter: item.attributes?.chapter ?? '0',
-        title: item.attributes?.title,
-        volume: item.attributes?.volume,
-        pages: item.attributes?.pages ?? 0,
-        updatedAt: item.attributes?.updatedAt,
-        language: item.attributes?.translatedLanguage ?? 'en',
-        scanlationGroup: scanRel?.attributes?.name ?? undefined,
-      };
-    });
-    return { data, total: json?.total ?? data.length, limit, offset };
+
+    // Fallback: retry without language filter to get chapters in any language
+    const allResult = await _fetchFeed(mangaId, limit, offset);
+    return {
+      data: allResult.data,
+      total: allResult.total,
+      limit,
+      offset,
+      languageFallback: allResult.data.length > 0,
+    };
   } catch (err) {
     console.warn(`getMangaFeed network error for manga ${mangaId}:`, err);
     return { data: [], total: 0, limit, offset };
