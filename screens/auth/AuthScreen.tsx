@@ -22,6 +22,7 @@ import { usePremium } from '../../context/PremiumContext';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing } from '../../styles/tokens';
 import { RootStackParamList } from '../../navigation/navigation';
+import { verifyUser } from '../../services/feedbackRepo';
 
 type Mode = 'signIn' | 'signUp';
 
@@ -32,22 +33,32 @@ export default function AuthScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const [mode, setMode] = useState<Mode>('signIn');
-  const [inputAccountId, setInputAccountId] = useState('');
   const [inputUsername, setInputUsername] = useState('');
+  const [inputPassword, setInputPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSignIn = () => {
-    const id = inputAccountId.trim();
+  const handleSignIn = async () => {
     const name = inputUsername.trim();
+    const pwd = inputPassword;
 
-    if (!id || !name) {
-      Alert.alert('Error', 'Please enter both Account ID and Username.');
+    if (!name || !pwd) {
+      Alert.alert('Error', 'Please enter both username and password.');
       return;
     }
 
     setLoading(true);
     try {
-      login(id, name, 1); // default security level for regular users
+      const row: any = await verifyUser(name, pwd);
+      if (!row) {
+        Alert.alert('Authentication Failed', 'Invalid username or password. Please try again.');
+        setLoading(false);
+        return;
+      }
+      login(row.ACCOUNTID, row.USERNM, row.SECURITYLVL ?? 1);
+      // isLoggedIn becomes true through React state; the component re-renders to show authenticated view
+    } catch (e) {
+      console.error('Auth sign-in failed', e);
+      Alert.alert('Error', 'Authentication failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -181,15 +192,17 @@ export default function AuthScreen() {
 
         {mode === 'signIn' ? (
           <>
-            {/* Account ID */}
-            <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>Account ID</Text>
+            {/* Username */}
+            <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>Username</Text>
             <TextInput
-              value={inputAccountId}
-              onChangeText={setInputAccountId}
-              placeholder="Your account ID"
+              value={inputUsername}
+              onChangeText={setInputUsername}
+              placeholder="Your username"
               placeholderTextColor={theme.placeholder}
               autoCapitalize="none"
               autoCorrect={false}
+              textContentType="username"
+              autoComplete="username"
               style={{
                 backgroundColor: theme.bgCard,
                 borderWidth: 1,
@@ -202,15 +215,16 @@ export default function AuthScreen() {
               }}
             />
 
-            {/* Username */}
-            <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>Username</Text>
+            {/* Password */}
+            <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>Password</Text>
             <TextInput
-              value={inputUsername}
-              onChangeText={setInputUsername}
-              placeholder="Your username"
+              value={inputPassword}
+              onChangeText={setInputPassword}
+              placeholder="Your password"
               placeholderTextColor={theme.placeholder}
-              autoCapitalize="none"
-              autoCorrect={false}
+              secureTextEntry
+              textContentType="password"
+              autoComplete="current-password"
               style={{
                 backgroundColor: theme.bgCard,
                 borderWidth: 1,
@@ -219,7 +233,7 @@ export default function AuthScreen() {
                 padding: spacing.p14,
                 color: theme.textPrimary,
                 fontSize: 15,
-                marginBottom: 20,
+                marginBottom: 14,
               }}
             />
 
