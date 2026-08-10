@@ -1,6 +1,6 @@
 // screens/main/SearchScreen.tsx
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, Text, Pressable, Modal, TouchableWithoutFeedback, ScrollView } from 'react-native';
+import { View, Text, Pressable, Modal, TouchableWithoutFeedback, ScrollView, Alert } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
 import Header from '../../components/layout/Header';
@@ -29,6 +29,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
 import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
+import { openPremiumCheckout } from '../../services/stripeService';
 import GenreFilterModal, { genreLabel as genreDisplay } from '../../components/layout/GenreFilterModal';
 import ReverseImageSearchModal from '../../components/layout/ReverseImageSearchModal';
 import { pickImageFromLibrary, searchByImage, RisMatch } from '../../services/reverseImageSearch';
@@ -447,6 +448,12 @@ export default function SearchScreen() {
       <PremiumUpgradeModal
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
+        onUpgrade={async () => {
+          const result = await openPremiumCheckout();
+          if (!result.success) {
+            Alert.alert('Could Not Open Checkout', result.error || 'Please try again.');
+          }
+        }}
       />
       {/* Reverse image search modal */}
       <ReverseImageSearchModal

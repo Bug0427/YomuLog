@@ -3,7 +3,7 @@
 // Tapping a downloaded chapter navigates to ReaderScreen.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, Pressable, FlatList, Modal, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, Pressable, FlatList, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
 import Header from '../../components/layout/Header';
@@ -16,6 +16,7 @@ import { colors, spacing, t } from '../../styles/tokens';
 import { useTheme } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
 import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
+import { openPremiumCheckout } from '../../services/stripeService';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
 import {
@@ -444,6 +445,12 @@ export default function DownLoadsScreen() {
       <PremiumUpgradeModal
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
+        onUpgrade={async () => {
+          const result = await openPremiumCheckout();
+          if (!result.success) {
+            Alert.alert('Could Not Open Checkout', result.error || 'Please try again.');
+          }
+        }}
       />
     </View>
   );

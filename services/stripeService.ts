@@ -1,16 +1,14 @@
 // services/stripeService.ts
 // Stripe subscription integration for YomuLog Premium.
-// Uses @stripe/stripe-react-native for payment sheet presentation.
-// Backend checkout sessions are created via Supabase Edge Function.
 //
-// Environment variables required:
-//   EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
-//   EXPO_PUBLIC_SUPABASE_URL=https://...
+// Purchases use the Stripe Hosted Checkout payment link (created by the
+// business lead via Stripe Dashboard) — the app never calls Stripe APIs.
+// The link is opened with Linking.openURL (native) / window.open (web).
 //
-// The Supabase Edge Function (stripe-checkout) handles:
-//   POST /stripe-checkout — creates a Checkout Session or Customer Portal session
-//   POST /stripe-webhook  — receives webhook events, updates user_subscriptions table
+// Subscription status is read from Supabase (user_subscriptions table,
+// maintained by Stripe webhooks) and kept fresh via Supabase Realtime.
 
+import { Linking, Platform } from 'react-native';
 import { isSupabaseConfigured, supabase } from './supabaseClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -62,6 +60,17 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, SubscriptionTier> = {
   },
 };
 
+// ─── Hosted Checkout ─────────────────────────────────────────────────
+
+/**
+ * Stripe Hosted Checkout payment link for YomuLog Premium Monthly ($2.99/mo).
+ * Created by the business lead in the Stripe Dashboard (product prod_Uv4y6lI1wyA2rs,
+ * price price_1TvEozDe09OesIbmCcWKwh4a). The app opens this link — it never
+ * calls Stripe APIs directly.
+ */
+export const PREMIUM_CHECKOUT_URL =
+  'https://buy.stripe.com/00w4gz6pudxJ1wy3f57ss08';
+
 // ─── Storage keys ────────────────────────────────────────────────────
 
 const SUBSCRIPTION_CACHE_KEY = '@YomuLog:subscriptionStatus';
@@ -89,40 +98,34 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   };
 }
 
-// ─── Stripe SDK helpers ──────────────────────────────────────────────
-
-let stripeModule: any = null;
-
-async function getStripe() {
-  if (stripeModule) return stripeModule;
-  try {
-    const mod = await import('@stripe/stripe-react-native');
-    stripeModule = mod;
-    return mod;
-  } catch {
-    console.warn('[@stripe/stripe-react-native] not available — Stripe functionality disabled');
-    return null;
-  }
-}
+// ─── Checkout flow ───────────────────────────────────────────────────
 
 /**
- * Initialize Stripe with publishable key.
- * Call once at app startup (e.g. in App.tsx or StripeProvider).
+ * Open the Stripe Hosted Checkout page for YomuLog Premium.
+ * Native: Linking.openURL. Web: window.open (new tab).
+ * No Stripe SDK calls — entitlement is granted server-side after payment
+ * is confirmed (Supabase Realtime updates the app automatically).
  */
-export async function initStripe(): Promise<void> {
-  const stripe = await getStripe();
-  if (!stripe) return;
+export async function openPremiumCheckout(): Promise<CheckoutResult> {
+  try {
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && typeof window.open === 'function') {
+        window.open(PREMIUM_CHECKOUT_URL, '_blank', 'noopener,noreferrer');
+        return { success: true };
+      }
+      return { success: false, error: 'Unable to open checkout in this browser' };
+    }
 
-  const publishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-  if (!publishableKey) {
-    console.warn('EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY not set — Stripe payments disabled');
-    return;
+    const supported = await Linking.canOpenURL(PREMIUM_CHECKOUT_URL);
+    if (!supported) {
+      return { success: false, error: 'Unable to open the secure checkout page' };
+    }
+    await Linking.openURL(PREMIUM_CHECKOUT_URL);
+    return { success: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Failed to open checkout';
+    return { success: false, error: msg };
   }
-
-  await stripe.initStripe({
-    publishableKey,
-    merchantIdentifier: 'merchant.com.yomulog',
-  });
 }
 
 // ─── Subscription status ─────────────────────────────────────────────
@@ -221,79 +224,6 @@ export function subscribeToSubscriptionChanges(
   };
 }
 
-// ─── Checkout flow ───────────────────────────────────────────────────
-
-/**
- * Start a new subscription via Stripe Checkout.
- * Calls the Supabase Edge Function to create a Checkout Session,
- * then presents the Stripe payment sheet.
- */
-export async function startCheckout(plan: SubscriptionPlan): Promise<CheckoutResult> {
-  const userId = await getUserId();
-  if (!userId || !isSupabaseConfigured()) {
-    return { success: false, error: 'You must be signed in to subscribe' };
-  }
-
-  try {
-    // 1. Call Supabase Edge Function to create a checkout session
-    const response = await fetch(getSupabaseFunctionUrl('stripe-checkout'), {
-      method: 'POST',
-      headers: await getAuthHeaders(),
-      body: JSON.stringify({ plan, userId }),
-    });
-
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || `Server error: ${response.status}`);
-    }
-
-    const { clientSecret, paymentIntentClientSecret } = await response.json();
-
-    // 2. Present Stripe payment sheet
-    const stripe = await getStripe();
-    if (!stripe) {
-      return { success: false, error: 'Stripe SDK not available' };
-    }
-
-    if (paymentIntentClientSecret) {
-      // PaymentIntent flow (one-time setup for subscription)
-      const { error: initError } = await stripe.initPaymentSheet({
-        paymentIntentClientSecret,
-        merchantDisplayName: 'YomuLog',
-      });
-      if (initError) throw new Error(initError.message);
-
-      const { error: presentError } = await stripe.presentPaymentSheet();
-      if (presentError) {
-        if (presentError.code === 'Canceled') {
-          return { success: false, canceled: true };
-        }
-        throw new Error(presentError.message);
-      }
-    } else if (clientSecret) {
-      // Checkout Session flow (subscription — Stripe handles the UI)
-      // This opens a browser-based checkout
-      const { error: redirectError } = await stripe.openApplePaySetup();
-
-      // Fallback: open the hosted checkout URL in browser
-      const { error: confirmError } = await stripe.confirmPayment(clientSecret);
-      if (confirmError) {
-        if (confirmError.code === 'Canceled') {
-          return { success: false, canceled: true };
-        }
-        throw new Error(confirmError.message);
-      }
-    }
-
-    // 3. Re-fetch subscription status after payment
-    const status = await fetchSubscriptionStatus();
-    return { success: status.isActive };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Payment failed';
-    return { success: false, error: msg };
-  }
-}
-
 // ─── Customer Portal ────────────────────────────────────────────────
 
 /**
@@ -321,8 +251,6 @@ export async function openCustomerPortal(): Promise<{ success: boolean; error?: 
     const { url } = await response.json();
     if (!url) throw new Error('No portal URL returned');
 
-    // In a real app, use Linking.openURL or a WebView
-    const { Linking } = await import('react-native');
     await Linking.openURL(url);
 
     return { success: true };

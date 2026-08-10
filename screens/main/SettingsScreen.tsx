@@ -21,6 +21,7 @@ import {
 import { colors, spacing } from '../../styles/tokens';
 import { useTheme } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
+import { openPremiumCheckout } from '../../services/stripeService';
 import {
   loadAllPreferences,
   setLanguage as saveLanguage,
@@ -140,7 +141,7 @@ export default function SettingsScreen() {
   });
   const [syncLoading, setSyncLoading] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const { isPremium, activatePremium } = usePremium();
+  const { isPremium } = usePremium();
 
   // Load persisted preferences on mount
   useEffect(() => {
@@ -600,13 +601,9 @@ export default function SettingsScreen() {
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
         onUpgrade={async () => {
-          await activatePremium();
-          setSyncLoading(true);
-          const newState = await setSyncEnabled(true);
-          setSyncState(newState);
-          setSyncLoading(false);
-          if (newState.status === 'synced') {
-            Alert.alert('Welcome to Premium!', `Cloud Sync is now enabled.\nLast synced: ${formatSyncTimestamp(newState.lastSyncedAt)}`, [{ text: 'OK' }]);
+          const result = await openPremiumCheckout();
+          if (!result.success) {
+            Alert.alert('Could Not Open Checkout', result.error || 'Please try again.');
           }
         }}
       />
