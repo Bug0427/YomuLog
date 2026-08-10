@@ -1,4 +1,17 @@
 // services/mangaAPI.ts — MangaDex API Integration with tag caching
+
+/** Structured API error for UI error state propagation */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status?: number,
+    public readonly endpoint?: string,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 export type Manga = {
   id: string; title: string; altTitles?: string[]; author?: string; artist?: string;
   genres?: string[]; status?: 'ongoing' | 'completed' | 'hiatus' | 'cancelled';
@@ -85,7 +98,10 @@ export async function fetchMangaList(params: MangaListParams = {}): Promise<Mang
       }
     }
     return Array.from(dedupMap.values());
-  } catch (err) { console.warn('Failed to fetch manga list:', err); return []; }
+  } catch (err) {
+    console.warn('Failed to fetch manga list:', err);
+    throw new ApiError('Failed to fetch manga list', undefined, '/manga');
+  }
 }
 
 export async function fetchMangaById(id: string): Promise<Manga | null> {
@@ -129,14 +145,14 @@ export async function fetchMangaById(id: string): Promise<Manga | null> {
     };
   } catch (err) {
     console.warn(`Failed to fetch manga ${id}:`, err);
-    return null;
+    throw new ApiError(`Failed to fetch manga ${id}`, undefined, `/manga/${id}`);
   }
 }
 
 export async function fetchChapters(mangaId: string, limit = 100, offset = 0): Promise<MangaChapter[]> {
   const query = new URLSearchParams(); query.set('manga', mangaId); query.set('limit', String(limit)); query.set('offset', String(offset)); query.set('translatedLanguage[]', 'en'); query.set('order[chapter]', 'desc');
   try { const res = await fetch(`${BASE_URL}/chapter?${query.toString()}`); const json = await res.json(); return (json?.data ?? []).map((item: any) => ({ id: item.id, mangaId, chapter: item.attributes?.chapter ?? '0', title: item.attributes?.title, volume: item.attributes?.volume, pages: item.attributes?.pages ?? 0, updatedAt: item.attributes?.updatedAt, language: item.attributes?.translatedLanguage ?? 'en', })); }
-  catch (err) { console.warn(`Failed to fetch chapters for ${mangaId}:`, err); return []; }
+  catch (err) { console.warn(`Failed to fetch chapters for ${mangaId}:`, err); throw new ApiError(`Failed to fetch chapters for ${mangaId}`, undefined, '/chapter'); }
 }
 
 export async function searchManga(title: string, limit = 20): Promise<Manga[]> {
@@ -220,7 +236,7 @@ export async function getMangaFeed(
     };
   } catch (err) {
     console.warn(`getMangaFeed network error for manga ${mangaId}:`, err);
-    return { data: [], total: 0, limit, offset };
+    throw new ApiError(`Failed to fetch feed for manga ${mangaId}`, undefined, `/manga/${mangaId}/feed`);
   }
 }
 
@@ -252,7 +268,7 @@ export async function fetchSimilarManga(mangaId: string, limit = 10): Promise<Si
       .slice(0, limit)
       .map((m) => ({ id: m.id, title: m.title, coverImageUrl: m.coverImageUrl }));
   } catch {
-    return [];
+    throw new ApiError(`Failed to fetch similar manga for ${mangaId}`, undefined, '/manga');
   }
 }
 
@@ -266,7 +282,7 @@ export async function getChapterPages(
     const json = await res.json();
     if (json.result !== 'ok') return null;
     return { baseUrl: json.baseUrl, chapterHash: json.chapter.hash, pages: json.chapter.data, dataSaverPages: json.chapter.dataSaver };
-  } catch { return null; }
+  } catch { throw new ApiError(`Failed to fetch pages for chapter ${chapterId}`, undefined, `/at-home/server/${chapterId}`); }
 }
 
 export function buildChapterImageUrls(
