@@ -4,6 +4,7 @@ import {
   Dimensions, StyleSheet, StatusBar, ScrollView, NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, RouteProp, useRoute } from '@react-navigation/native';
 import { getChapterPages, buildPageUrlsFromChapterData, getMangaFeed } from '../../services/mangaAPI';
 import { RootStackParamList } from '../../navigation/navigation';
@@ -282,13 +283,15 @@ function ReaderScreen() {
 
   if (loading) {
     return (
+      <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
       <View style={[styles.container, { backgroundColor: activeConfig.bg }]}>
-        <StatusBar hidden />
-        <ActivityIndicator size="large" color={theme.accentLight} />
-        <Text style={[styles.loadingText, { color: activeConfig.text }]}>
-          Loading chapter...
-        </Text>
-      </View>
+          <StatusBar hidden />
+          <ActivityIndicator size="large" color={theme.accentLight} />
+          <Text style={[styles.loadingText, { color: activeConfig.text }]}>
+            Loading chapter...
+          </Text>
+        </View>
+      </SafeAreaView>
     );
   }
 

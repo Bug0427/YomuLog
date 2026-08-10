@@ -1,6 +1,7 @@
 // screens/main/SearchScreen.tsx
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { View, Text, Pressable, Modal, TouchableWithoutFeedback, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
 import Header from '../../components/layout/Header';
@@ -293,65 +294,67 @@ export default function SearchScreen() {
         placeholder="Search items..."
       />
       {/* AI mode toggle + Reverse Image Search */}
+      <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: spacing.p12, marginTop: spacing.p4, gap: spacing.p8 }}>
-        {/* Reverse image search button */}
-        <Pressable
-          onPress={handleRisPress}
-          accessibilityLabel="Search by image"
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 17,
-            borderWidth: 1,
-            borderColor: theme.border,
-            backgroundColor: theme.bgCard,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <MaterialCommunityIcons name="image-search" size={18} color={theme.textPrimary} />
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            if (!isPremium) { setShowPremiumModal(true); return; }
-            setAiMode((prev) => {
-              if (prev === 'auto') return 'on';
-              if (prev === 'on') return 'off';
-              return 'auto';
-            });
-          }}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: spacing.p6,
-            paddingVertical: spacing.p5,
-            paddingHorizontal: spacing.p12,
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: effectiveAiMode ? theme.accent : theme.border,
-            backgroundColor: effectiveAiMode ? theme.accent : 'transparent',
-          }}
-        >
-          <MaterialCommunityIcons
-            name="robot"
-            size={14}
-            color={effectiveAiMode ? theme.textInverse : theme.textMuted}
-          />
-          <Text
+          {/* Reverse image search button */}
+          <Pressable
+            onPress={handleRisPress}
+            accessibilityLabel="Search by image"
             style={{
-              fontSize: 11,
-              fontWeight: '600',
-              color: effectiveAiMode ? theme.textInverse : theme.textMuted,
+              width: 34,
+              height: 34,
+              borderRadius: 17,
+              borderWidth: 1,
+              borderColor: theme.border,
+              backgroundColor: theme.bgCard,
+              justifyContent: 'center',
+              alignItems: 'center',
             }}
           >
-            {aiMode === 'auto'
-              ? (isNaturalLanguage ? '🤖 AI Auto (detected)' : '🤖 AI Auto (standby)')
-              : aiMode === 'on'
-                ? '🤖 AI Enhancer ON'
-                : 'AI Enhancer OFF'}
-          </Text>
-        </Pressable>
-      </View>
+            <MaterialCommunityIcons name="image-search" size={18} color={theme.textPrimary} />
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              if (!isPremium) { setShowPremiumModal(true); return; }
+              setAiMode((prev) => {
+                if (prev === 'auto') return 'on';
+                if (prev === 'on') return 'off';
+                return 'auto';
+              });
+            }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing.p6,
+              paddingVertical: spacing.p5,
+              paddingHorizontal: spacing.p12,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: effectiveAiMode ? theme.accent : theme.border,
+              backgroundColor: effectiveAiMode ? theme.accent : 'transparent',
+            }}
+          >
+            <MaterialCommunityIcons
+              name="robot"
+              size={14}
+              color={effectiveAiMode ? theme.textInverse : theme.textMuted}
+            />
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: '600',
+                color: effectiveAiMode ? theme.textInverse : theme.textMuted,
+              }}
+            >
+              {aiMode === 'auto'
+                ? (isNaturalLanguage ? '🤖 AI Auto (detected)' : '🤖 AI Auto (standby)')
+                : aiMode === 'on'
+                  ? '🤖 AI Enhancer ON'
+                  : 'AI Enhancer OFF'}
+            </Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
       {aiSummary ? (
         <View
           style={{

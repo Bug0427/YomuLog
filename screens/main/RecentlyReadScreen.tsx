@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { View, Text, FlatList, Pressable, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useReadingProgress } from '../../hooks/useReadingProgress';
 import { GeneralStyles, CardViewStyles } from '../../styles/global';
@@ -25,71 +26,73 @@ export default function RecentlyReadScreen() {
         : 0;
 
     return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.lavender }}>
       <Pressable
-        onPress={() =>
-          (navigation as any).navigate('MangaInfoScreen', {
-            mangaId: item.mangaId,
-          })
-        }
-        style={[
-          CardViewStyles.rowCard,
-          { marginBottom: 8, alignItems: 'center' },
-        ]}
-      >
-        {/* Thumbnail */}
-        <View
+          onPress={() =>
+            (navigation as any).navigate('MangaInfoScreen', {
+              mangaId: item.mangaId,
+            })
+          }
           style={[
-            CardViewStyles.rowMediaBase,
-            { width: 50, height: 70 },
+            CardViewStyles.rowCard,
+            { marginBottom: 8, alignItems: 'center' },
           ]}
         >
-          {item.mangaImage ? (
-            <Image
-              source={toImageSource(item.mangaImage)}
-              style={[CardViewStyles.rowImage, { width: 50, height: 70 }]}
-              resizeMode="contain"
-            />
-          ) : (
-            <View
-              style={[
-                CardViewStyles.placeholder,
-                { width: 50, height: 70 },
-              ]}
-            />
-          )}
-        </View>
-
-        {/* Text info */}
-        <View style={[CardViewStyles.rowTextWrap, CardViewStyles.rowTextCenter, { flex: 1 }]}>
-          <Text style={CardViewStyles.rowTitle} numberOfLines={1}>
-            {item.mangaTitle}
-          </Text>
-          <Text style={{ fontSize: 12, color: colors.mutedPlum, marginTop: 2 }}>
-            {item.readChapters}/{item.totalChapters} chapters
-          </Text>
-
-          {/* Progress bar */}
+          {/* Thumbnail */}
           <View
-            style={{
-              marginTop: 6,
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: colors.paleLavender,
-              overflow: 'hidden',
-              width: '100%',
-            }}
+            style={[
+              CardViewStyles.rowMediaBase,
+              { width: 50, height: 70 },
+            ]}
           >
+            {item.mangaImage ? (
+              <Image
+                source={toImageSource(item.mangaImage)}
+                style={[CardViewStyles.rowImage, { width: 50, height: 70 }]}
+                resizeMode="contain"
+              />
+            ) : (
+              <View
+                style={[
+                  CardViewStyles.placeholder,
+                  { width: 50, height: 70 },
+                ]}
+              />
+            )}
+          </View>
+
+          {/* Text info */}
+          <View style={[CardViewStyles.rowTextWrap, CardViewStyles.rowTextCenter, { flex: 1 }]}>
+            <Text style={CardViewStyles.rowTitle} numberOfLines={1}>
+              {item.mangaTitle}
+            </Text>
+            <Text style={{ fontSize: 12, color: colors.mutedPlum, marginTop: 2 }}>
+              {item.readChapters}/{item.totalChapters} chapters
+            </Text>
+
+            {/* Progress bar */}
             <View
               style={{
-                width: `${progressPct}%`,
-                height: '100%',
-                backgroundColor: colors.plum,
+                marginTop: 6,
+                height: 4,
                 borderRadius: 2,
+                backgroundColor: colors.paleLavender,
+                overflow: 'hidden',
+                width: '100%',
               }}
-            />
+            >
+              <View
+                style={{
+                  width: `${progressPct}%`,
+                  height: '100%',
+                  backgroundColor: colors.plum,
+                  borderRadius: 2,
+                }}
+              />
+            </View>
           </View>
-        </View>
-      </Pressable>
+        </Pressable>
+      </SafeAreaView>
     );
   };
 

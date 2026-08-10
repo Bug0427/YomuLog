@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ActivityIndicator, Modal, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, StackActions } from '@react-navigation/native';
 import { FeedbackStyles, GeneralStyles } from '../../styles/global';
 import { queryFirst, runAsync, getUserByUsername, verifyUser } from '../../services/feedbackRepo';
@@ -276,10 +277,12 @@ export default function UserAccount() {
 
     if (loading) {
         return (
+        <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <ActivityIndicator />
-            <Text style={{ marginTop: 8 }}>Loading account…</Text>
-        </View>
+              <ActivityIndicator />
+              <Text style={{ marginTop: 8 }}>Loading account…</Text>
+          </View>
+        </SafeAreaView>
         );
     }
 

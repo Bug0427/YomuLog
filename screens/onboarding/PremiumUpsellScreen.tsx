@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { colors } from '../../styles/tokens';
@@ -25,51 +26,53 @@ export default function PremiumUpsellScreen({ onFinish, onSkip }: Props) {
   const { colors: theme } = useTheme();
 
   return (
+    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={styles.content}>
-        {/* Crown badge */}
-        <View style={[styles.badge, { backgroundColor: theme.warning + '25' }]}>
-          <Feather name="star" size={40} color={theme.warning} />
-        </View>
+        <View style={styles.content}>
+          {/* Crown badge */}
+          <View style={[styles.badge, { backgroundColor: theme.warning + '25' }]}>
+            <Feather name="star" size={40} color={theme.warning} />
+          </View>
 
-        <Text style={[styles.heading, { color: theme.textPrimary }]}>
-          Go Premium
-        </Text>
-        <Text style={[styles.price, { color: theme.accent }]}>
-          $2.99/month
-        </Text>
-
-        <View style={styles.perks}>
-          {PERKS.map((p, i) => (
-            <View key={i} style={styles.perk}>
-              <Feather name={p.icon as any} size={18} color={theme.accent} />
-              <Text style={[styles.perkText, { color: theme.textPrimary }]}>
-                {p.label}
-              </Text>
-            </View>
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.bottom}>
-        <Pressable
-          onPress={onFinish}
-          style={[styles.cta, { backgroundColor: theme.warning }]}
-        >
-          <Feather name="star" size={18} color={colors.white} />
-          <Text style={styles.ctaText}>Try Premium Free</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={onSkip}
-          style={[styles.skipBtn, { borderColor: theme.border }]}
-        >
-          <Text style={[styles.skipText, { color: theme.textMuted }]}>
-            Maybe later
+          <Text style={[styles.heading, { color: theme.textPrimary }]}>
+            Go Premium
           </Text>
-        </Pressable>
+          <Text style={[styles.price, { color: theme.accent }]}>
+            $2.99/month
+          </Text>
+
+          <View style={styles.perks}>
+            {PERKS.map((p, i) => (
+              <View key={i} style={styles.perk}>
+                <Feather name={p.icon as any} size={18} color={theme.accent} />
+                <Text style={[styles.perkText, { color: theme.textPrimary }]}>
+                  {p.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.bottom}>
+          <Pressable
+            onPress={onFinish}
+            style={[styles.cta, { backgroundColor: theme.warning }]}
+          >
+            <Feather name="star" size={18} color={colors.white} />
+            <Text style={styles.ctaText}>Try Premium Free</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={onSkip}
+            style={[styles.skipBtn, { borderColor: theme.border }]}
+          >
+            <Text style={[styles.skipText, { color: theme.textMuted }]}>
+              Maybe later
+            </Text>
+          </Pressable>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

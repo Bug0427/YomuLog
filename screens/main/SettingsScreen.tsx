@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, Pressable, Text, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import Header from '../../components/layout/Header';
@@ -47,16 +48,18 @@ const DIRECTIONS: DirectionMode[] = ['ltr', 'rtl', 'vertical'];
 const GridItem = ({ label, children, onPress }: { label: string; children?: React.ReactNode; onPress?: () => void }) => {
   const { colors: theme } = useTheme();
   return (
+    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
     <View style={SettingButtonStyles.cell}>
-      <Pressable
-        style={[SettingButtonStyles.button, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
-        onPress={onPress}
-        hitSlop={10}
-      >
-        {children}
-      </Pressable>
-      <Text style={[SettingButtonStyles.cellLabel, { color: theme.textSecondary }]}>{label}</Text>
-    </View>
+        <Pressable
+          style={[SettingButtonStyles.button, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
+          onPress={onPress}
+          hitSlop={10}
+        >
+          {children}
+        </Pressable>
+        <Text style={[SettingButtonStyles.cellLabel, { color: theme.textSecondary }]}>{label}</Text>
+      </View>
+    </SafeAreaView>
   );
 };
 

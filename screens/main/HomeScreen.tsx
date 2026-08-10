@@ -1,6 +1,7 @@
 // screens/main/HomeScreen.tsx
 import React, { useState, useCallback } from 'react';
 import { View, ScrollView, Text, Pressable, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
@@ -202,114 +203,116 @@ export default function HomeScreen() {
 
   // ── Render ─────────────────────────────────────────────────────────
   return (
+    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
     <View style={[GeneralStyles.section, { backgroundColor: theme.bg }]}>
-      <ScrollView
-        ref={scrollRef}
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 24 }}
-        onScrollBeginDrag={handleScrollStart}
-        onScrollEndDrag={handleScrollEnd}
-        onMomentumScrollEnd={handleScrollEnd}
-        showsVerticalScrollIndicator={false}
-        showsHorizontalScrollIndicator={false}
-        removeClippedSubviews={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor="transparent"
-            colors={['transparent']}
-            progressViewOffset={20}
-          >
-            <MascotLoader />
-          </RefreshControl>
-        }
-      >
-        <Header />
+        <ScrollView
+          ref={scrollRef}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 24 }}
+          onScrollBeginDrag={handleScrollStart}
+          onScrollEndDrag={handleScrollEnd}
+          onMomentumScrollEnd={handleScrollEnd}
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
+          removeClippedSubviews={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="transparent"
+              colors={['transparent']}
+              progressViewOffset={20}
+            >
+              <MascotLoader />
+            </RefreshControl>
+          }
+        >
+          <Header />
 
-        {/* Stale-data offline indicator */}
-        {usingCachedData && (
-          <View style={{
-            marginHorizontal: spacing.p12, marginTop: spacing.p4, paddingVertical: spacing.p6, paddingHorizontal: spacing.p12,
-            backgroundColor: theme.warning + '18', borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6,
-          }}>
-            <MaterialCommunityIcons name="wifi-off" size={14} color={theme.warning} />
-            <Text style={{ fontSize: 11, color: theme.warning, fontWeight: '600', flex: 1 }}>
-              Showing cached data — pull to refresh when back online
-            </Text>
-          </View>
-        )}
+          {/* Stale-data offline indicator */}
+          {usingCachedData && (
+            <View style={{
+              marginHorizontal: spacing.p12, marginTop: spacing.p4, paddingVertical: spacing.p6, paddingHorizontal: spacing.p12,
+              backgroundColor: theme.warning + '18', borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6,
+            }}>
+              <MaterialCommunityIcons name="wifi-off" size={14} color={theme.warning} />
+              <Text style={{ fontSize: 11, color: theme.warning, fontWeight: '600', flex: 1 }}>
+                Showing cached data — pull to refresh when back online
+              </Text>
+            </View>
+          )}
 
-        {/* Loading */}
-        {loading && (
-          <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-            <ActivityIndicator size="large" color={colors.plum} />
-          </View>
-        )}
+          {/* Loading */}
+          {loading && (
+            <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+              <ActivityIndicator size="large" color={colors.plum} />
+            </View>
+          )}
 
-        {/* Genre / ordered sliders — only render when data loaded */}
-        {!loading && (
-          <View key={`sliders-${refreshKey}`}>
-            {SLIDER_CONFIGS.map((config, idx) => {
-              const items = sliderDataMap[config.title];
-              const isFailed = failedSliders.has(config.title);
-              const isLast = idx === SLIDER_CONFIGS.length - 1;
-              // Show failed as retry card, empty as placeholder, or data as slider
-              if ((!items || items.length === 0) && !isFailed) {
-                // Render slider with emptyMessage — maintains visual structure
+          {/* Genre / ordered sliders — only render when data loaded */}
+          {!loading && (
+            <View key={`sliders-${refreshKey}`}>
+              {SLIDER_CONFIGS.map((config, idx) => {
+                const items = sliderDataMap[config.title];
+                const isFailed = failedSliders.has(config.title);
+                const isLast = idx === SLIDER_CONFIGS.length - 1;
+                // Show failed as retry card, empty as placeholder, or data as slider
+                if ((!items || items.length === 0) && !isFailed) {
+                  // Render slider with emptyMessage — maintains visual structure
+                  return (
+                    <View key={`${config.title}-${refreshKey}`}>
+                      <MangaSlider
+                        title={config.title}
+                        data={[]}
+                        emptyMessage={`No manga available in ${config.title}`}
+                        footerComponent={
+                          isLast ? <RefreshCard onRefresh={handleRefresh} /> : undefined
+                        }
+                      />
+                    </View>
+                  );
+                }
                 return (
                   <View key={`${config.title}-${refreshKey}`}>
-                    <MangaSlider
-                      title={config.title}
-                      data={[]}
-                      emptyMessage={`No manga available in ${config.title}`}
-                      footerComponent={
-                        isLast ? <RefreshCard onRefresh={handleRefresh} /> : undefined
-                      }
-                    />
+                    {isFailed ? (
+                      /* Retry card for failed slider */
+                      <View style={retryCardStyles.wrapper}>
+                        <View style={retryCardStyles.header}>
+                          <Text style={retryCardStyles.title}>{config.title}</Text>
+                        </View>
+                        <Pressable
+                          style={retryCardStyles.retryBtn}
+                          onPress={() => retrySlider(config)}
+                        >
+                          <MaterialCommunityIcons name="refresh" size={18} color={colors.plum} />
+                          <Text style={retryCardStyles.retryText}>Tap to retry</Text>
+                        </Pressable>
+                      </View>
+                    ) : items ? (
+                      <MangaSlider
+                        title={config.title}
+                        data={items}
+                        onTitlePress={() => navigation.navigate('SearchScreen' as never)}
+                        seeMoreOnPress={() =>
+                          (navigation as any).navigate('SearchScreen', {
+                            presetGenre: config.type === 'genre' ? config.genre : undefined,
+                            presetOrder: config.type === 'order' ? config.order : undefined,
+                          })
+                        }
+                        footerComponent={
+                          isLast ? <RefreshCard onRefresh={handleRefresh} /> : undefined
+                        }
+                      />
+                    ) : null}
                   </View>
                 );
-              }
-              return (
-                <View key={`${config.title}-${refreshKey}`}>
-                  {isFailed ? (
-                    /* Retry card for failed slider */
-                    <View style={retryCardStyles.wrapper}>
-                      <View style={retryCardStyles.header}>
-                        <Text style={retryCardStyles.title}>{config.title}</Text>
-                      </View>
-                      <Pressable
-                        style={retryCardStyles.retryBtn}
-                        onPress={() => retrySlider(config)}
-                      >
-                        <MaterialCommunityIcons name="refresh" size={18} color={colors.plum} />
-                        <Text style={retryCardStyles.retryText}>Tap to retry</Text>
-                      </Pressable>
-                    </View>
-                  ) : items ? (
-                    <MangaSlider
-                      title={config.title}
-                      data={items}
-                      onTitlePress={() => navigation.navigate('SearchScreen' as never)}
-                      seeMoreOnPress={() =>
-                        (navigation as any).navigate('SearchScreen', {
-                          presetGenre: config.type === 'genre' ? config.genre : undefined,
-                          presetOrder: config.type === 'order' ? config.order : undefined,
-                        })
-                      }
-                      footerComponent={
-                        isLast ? <RefreshCard onRefresh={handleRefresh} /> : undefined
-                      }
-                    />
-                  ) : null}
-                </View>
-              );
-            })}
-          </View>
-        )}
-      </ScrollView>
-      <Anchor scrollRef={scrollRef} isScrolling={isScrolling} />
-    </View>
+              })}
+            </View>
+          )}
+        </ScrollView>
+        <Anchor scrollRef={scrollRef} isScrolling={isScrolling} />
+      </View>
+    </SafeAreaView>
   );
 }
 

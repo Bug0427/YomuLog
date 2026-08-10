@@ -1,6 +1,8 @@
 // React & React Native
 import React from 'react';
 import { View, ScrollView, Text, Pressable, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { colors } from '../../styles/tokens';
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from '@react-navigation/native';
 
@@ -19,12 +21,14 @@ export const buttonActions = {
 
 const GridItem = ({ label, children, onPress }: { label: string; children?: React.ReactNode; onPress?: () => void }) => {
 return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.lavender }}>
     <View style={SettingButtonStyles.cell}>
-        <Pressable style={SettingButtonStyles.button} onPress={onPress} hitSlop={10}>
-            {children}
-        </Pressable>
-        <Text style={SettingButtonStyles.cellLabel}>{label}</Text>
-    </View>
+          <Pressable style={SettingButtonStyles.button} onPress={onPress} hitSlop={10}>
+              {children}
+          </Pressable>
+          <Text style={SettingButtonStyles.cellLabel}>{label}</Text>
+      </View>
+    </SafeAreaView>
 );
 };
 
