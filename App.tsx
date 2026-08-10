@@ -49,7 +49,7 @@ function SyncWrapper({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, position: 'relative' }}>
       {!bannerDismissed && (
         <SyncStatusBanner
           status={status}
