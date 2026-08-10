@@ -4,7 +4,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, Pressable, FlatList, Modal, TouchableWithoutFeedback } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
 import Header from '../../components/layout/Header';
@@ -39,14 +38,12 @@ import { getFavorites, BookmarkedManga } from '../../services/favoritesService';
 function StatBox({ label, value }: { label: string; value: number }) {
   const { colors: theme } = useTheme();
   return (
-    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
-    <View style={{ alignItems: 'center' }}>
+    <View style={{ flex: 1, alignItems: 'center' }}>
         <Text style={{ fontSize: 20, fontWeight: '700', color: theme.accentDark }}>
           {value}
         </Text>
         <Text style={{ fontSize: 11, color: theme.textMuted }}>{label}</Text>
-      </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -1,7 +1,6 @@
 // screens/main/SearchScreen.tsx
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { View, Text, Pressable, Modal, TouchableWithoutFeedback, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
 import Header from '../../components/layout/Header';
@@ -294,7 +293,6 @@ export default function SearchScreen() {
         placeholder="Search items..."
       />
       {/* AI mode toggle + Reverse Image Search */}
-      <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: spacing.p12, marginTop: spacing.p4, gap: spacing.p8 }}>
           {/* Reverse image search button */}
           <Pressable
@@ -354,7 +352,6 @@ export default function SearchScreen() {
             </Text>
           </Pressable>
         </View>
-      </SafeAreaView>
       {aiSummary ? (
         <View
           style={{

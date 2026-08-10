@@ -1,7 +1,6 @@
 // screens/main/HomeScreen.tsx
 import React, { useState, useCallback } from 'react';
 import { View, ScrollView, Text, Pressable, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
@@ -203,8 +202,7 @@ export default function HomeScreen() {
 
   // ── Render ─────────────────────────────────────────────────────────
   return (
-    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
-    <View style={[GeneralStyles.section, { backgroundColor: theme.bg }]}>
+    <View style={[GeneralStyles.container, { backgroundColor: theme.bg }]}>
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}
@@ -311,8 +309,7 @@ export default function HomeScreen() {
           )}
         </ScrollView>
         <Anchor scrollRef={scrollRef} isScrolling={isScrolling} />
-      </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, Pressable, Text, Alert, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import Header from '../../components/layout/Header';
@@ -366,7 +365,7 @@ export default function SettingsScreen() {
     <View style={[GeneralStyles.container, { backgroundColor: theme.bg }]}>
       <ScrollView ref={scrollRef} onScrollBeginDrag={handleScrollStart} onScrollEndDrag={handleScrollEnd} onMomentumScrollEnd={handleScrollEnd}
         contentContainerStyle={{ paddingBottom: spacing.p24 }}>
-        <View style={{ backgroundColor: theme.bg, paddingTop: spacing.p12 }}>
+        <View style={{ backgroundColor: theme.bg }}>
           <Header />
 
           {/* ─── Cloud Sync & Backup Section ─────────────────────── */}
