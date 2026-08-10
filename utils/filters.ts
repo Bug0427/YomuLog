@@ -11,26 +11,30 @@ export const GENRE_TAGS = [
 export type GenreTag = typeof GENRE_TAGS[number];
 
 export const GENRE_TAG_IDS: Record<GenreTag, string> = {
-  action: 'ee968100-4191-4968-93d3-f82d72be7e46',
-  adventure: '87cc87cd-a395-47af-b27a-93258283e7e4',
-  comedy: '4d2cc4ac-1e7e-4c11-a9bf-d9b217939ce2',
-  drama: 'b13b2a48-c720-44a9-9c77-39c9979373fb',
-  fantasy: 'cdc58593-87dd-415e-bc3b-6b66d7b0c7ba',
-  horror: '0a39b5a1-b235-4886-a747-1dcf0ad156f2',
-  mystery: 'c7f47fd3-eb1a-4d28-9282-4b32f8123c9f',
-  romance: 'a3c35750-d7d3-4155-82d4-33d8b93fc907',
-  'sci-fi': '256978c0-4e5f-45b6-b20f-6a6980f8dde8',
-  'slice-of-life': 'e530cfea-0c62-4219-8ca2-2b46c0e0c4c9',
-  thriller: 'b1e3c6c1-7d6d-4f4a-9b9e-0a5c5d7e8f9a',
-  isekai: '7b2f6c3e-1a4d-4b5c-8d9e-0f1a2b3c4d5e',
-  shounen: '0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d',
-  shoujo: '1b2c3d4e-5f6a-7b8c-9d0e-1f2a3b4c5d6e',
-  seinen: '2c3d4e5f-6a7b-8c9d-0e1f-2a3b4c5d6e7f',
-  josei: '3d4e5f6a-7b8c-9d0e-1f2a-3b4c5d6e7f8a',
-  sports: '4e5f6a7b-8c9d-0e1f-2a3b-4c5d6e7f8a9b',
-  supernatural: '5f6a7b8c-9d0e-1f2a-3b4c-5d6e7f8a9b0c',
-  psychological: '6a7b8c9d-0e1f-2a3b-4c5d-6e7f8a9b0c1d',
-  historical: '7b8c9d0e-1f2a-3b4c-5d6e-7f8a9b0c1d2e',
+  action: '391b0423-d847-456f-aff0-8b0cfc03066b',
+  adventure: '87cc87cd-a395-47af-b27a-93258283bbc6',
+  comedy: '4d32cc48-9f00-4cca-9b5a-a839f0764984',
+  drama: 'b9af3a63-f058-46de-a9a0-e0c13906197a',
+  fantasy: 'cdc58593-87dd-415e-bbc0-2ec27bf404cc',
+  horror: 'cdad7e68-1419-41dd-bdce-27753074a640',
+  mystery: 'ee968100-4191-4968-93d3-f82d72be7e46',
+  romance: '423e2eae-a7a2-4a8b-ac03-a8351462d71d',
+  'sci-fi': '256c8bd9-4904-4360-bf4f-508a76d67183',
+  'slice-of-life': 'e5301a23-ebd9-49dd-a0cb-2add944c7fe9',
+  thriller: '07251805-a27e-4d59-b488-f0bfbec15168',
+  isekai: 'ace04997-f6bd-436e-b261-779182193d3d',
+  // Shounen/Shoujo/Seinen/Josei are demographics (publicationDemographic),
+  // not genre tags. MangaDex does not have these as tag UUIDs.
+  // Slider for these uses the genre tags as closest match, but
+  // full demographic support requires fetchMangaList param extension.
+  shounen: '391b0423-d847-456f-aff0-8b0cfc03066b',  // Action (closest genre proxy)
+  shoujo: '423e2eae-a7a2-4a8b-ac03-a8351462d71d',   // Romance (closest genre proxy)
+  seinen: 'b9af3a63-f058-46de-a9a0-e0c13906197a',   // Drama (closest genre proxy)
+  josei: '3b60b75c-a2d7-4860-ab56-05f391bb889c',    // Psychological (closest genre proxy)
+  sports: '69964a64-2f90-4d33-beeb-f3ed2875eb4c',
+  supernatural: 'eabc5b4c-6aff-42f3-b657-3e90cbd00b75',
+  psychological: '3b60b75c-a2d7-4860-ab56-05f391bb889c',
+  historical: '33771934-028e-4cb3-8744-691e866a923e',
 };
 
 export const PUB_STATUS_OPTIONS = [
