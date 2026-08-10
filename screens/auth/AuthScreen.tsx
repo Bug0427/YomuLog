@@ -1,6 +1,6 @@
 // screens/auth/AuthScreen.tsx
-// Supabase authentication screen — email/password sign-in and sign-up.
-// Premium users authenticate here to enable cloud sync.
+// Account management screen — shows auth status and provides quick account switching.
+// Premium users manage cloud sync credentials here.
 
 import React, { useState } from 'react';
 import {
@@ -16,68 +16,53 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { useAuthContext } from '../../context/AuthContext';
 import { usePremium } from '../../context/PremiumContext';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing } from '../../styles/tokens';
+import { RootStackParamList } from '../../navigation/navigation';
 
 type Mode = 'signIn' | 'signUp';
 
 export default function AuthScreen() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const auth = useAuthContext() as any;
-  // FIXME: AuthScreen uses old Supabase API (signIn/signUp/signOut/user/configured).
-  // The current AuthContext has login/logout/isLoggedIn. Needs full refactor.
-  const { signIn, signUp, signOut, user, configured } = auth;
+  const { isLoggedIn, username, accountId, securityLevel, login, logout } = useAuthContext();
   const { isPremium } = usePremium();
   const { colors: theme } = useTheme();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const [mode, setMode] = useState<Mode>('signIn');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [inputAccountId, setInputAccountId] = useState('');
+  const [inputUsername, setInputUsername] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields.');
-      return;
-    }
+  const handleSignIn = () => {
+    const id = inputAccountId.trim();
+    const name = inputUsername.trim();
 
-    if (mode === 'signUp' && password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match.');
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters.');
+    if (!id || !name) {
+      Alert.alert('Error', 'Please enter both Account ID and Username.');
       return;
     }
 
     setLoading(true);
     try {
-      if (mode === 'signIn') {
-        const { error } = await signIn(email.trim(), password);
-        if (error) Alert.alert('Sign In Failed', error);
-      } else {
-        const { error, needsConfirmation } = await signUp(email.trim(), password);
-        if (error) {
-          Alert.alert('Sign Up Failed', error);
-        } else if (needsConfirmation) {
-          Alert.alert(
-            'Check Your Email',
-            'We sent a confirmation link. Please check your inbox before signing in.'
-          );
-          setMode('signIn');
-        }
-      }
+      login(id, name, 1); // default security level for regular users
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSignOut = () => {
+    logout();
+  };
+
+  const handleSignUp = () => {
+    navigation.navigate('CreateAccount');
+  };
+
   // ── Authenticated state ──────────────────────────────────────────
-  if (user) {
+  if (isLoggedIn) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: theme.bg, padding: spacing.p16 }}>
@@ -94,7 +79,10 @@ export default function AuthScreen() {
             Authenticated
           </Text>
           <Text style={{ color: theme.textMuted, fontSize: 13, textAlign: 'center', marginBottom: 4 }}>
-            {user.email}
+            {username}
+          </Text>
+          <Text style={{ color: theme.textMuted, fontSize: 11, textAlign: 'center', marginBottom: 4 }}>
+            Account: {accountId} · Level: {securityLevel}
           </Text>
           <Text style={{ color: theme.textMuted, fontSize: 12, textAlign: 'center', marginBottom: 16 }}>
             {isPremium
@@ -122,7 +110,7 @@ export default function AuthScreen() {
           )}
 
           <Pressable
-            onPress={signOut}
+            onPress={handleSignOut}
             style={{
               backgroundColor: theme.error,
               borderRadius: 10,
@@ -138,7 +126,7 @@ export default function AuthScreen() {
     );
   }
 
-  // ── Unauthenticated state (login/signup form) ────────────────────
+  // ── Unauthenticated state (login/register) ────────────────────
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>
     <KeyboardAvoidingView
@@ -147,31 +135,16 @@ export default function AuthScreen() {
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1, padding: spacing.p16, justifyContent: 'center' }}>
         <View style={{ alignItems: 'center', marginBottom: 30 }}>
-          <Feather name="cloud" size={48} color={theme.accent} style={{ marginBottom: 12 }} />
+          <Feather name="user" size={48} color={theme.accent} style={{ marginBottom: 12 }} />
           <Text style={{ color: theme.textPrimary, fontSize: 24, fontWeight: '800', marginBottom: 4 }}>
-            Cloud Sync
+            Account
           </Text>
           <Text style={{ color: theme.textMuted, fontSize: 14, textAlign: 'center' }}>
             {isPremium
               ? 'Sign in to sync your library across devices'
-              : 'Premium feature — upgrade to enable cloud sync'}
+              : 'Sign in or create an account to get started'}
           </Text>
         </View>
-
-        {!configured && (
-          <View style={{
-            backgroundColor: theme.bgSecondary,
-            borderRadius: 10,
-            padding: spacing.p12,
-            marginBottom: 16,
-            borderWidth: 1,
-            borderColor: theme.warning,
-          }}>
-            <Text style={{ color: theme.warning, fontSize: 12, textAlign: 'center' }}>
-              Supabase is not configured. Add SUPABASE_URL and SUPABASE_ANON_KEY to your environment.
-            </Text>
-          </View>
-        )}
 
         {/* Mode toggle */}
         <View style={{
@@ -200,66 +173,44 @@ export default function AuthScreen() {
                 fontWeight: '700',
                 fontSize: 14,
               }}>
-                {m === 'signIn' ? 'Sign In' : 'Sign Up'}
+                {m === 'signIn' ? 'Sign In' : 'Register'}
               </Text>
             </Pressable>
           ))}
         </View>
 
-        {/* Email */}
-        <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>Email</Text>
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@example.com"
-          placeholderTextColor={theme.placeholder}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-          style={{
-            backgroundColor: theme.bgCard,
-            borderWidth: 1,
-            borderColor: theme.border,
-            borderRadius: 10,
-            padding: spacing.p14,
-            color: theme.textPrimary,
-            fontSize: 15,
-            marginBottom: 14,
-          }}
-        />
-
-        {/* Password */}
-        <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>Password</Text>
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="At least 6 characters"
-          placeholderTextColor={theme.placeholder}
-          secureTextEntry
-          style={{
-            backgroundColor: theme.bgCard,
-            borderWidth: 1,
-            borderColor: theme.border,
-            borderRadius: 10,
-            padding: spacing.p14,
-            color: theme.textPrimary,
-            fontSize: 15,
-            marginBottom: mode === 'signUp' ? 0 : 20,
-          }}
-        />
-
-        {/* Confirm password (sign up only) */}
-        {mode === 'signUp' && (
+        {mode === 'signIn' ? (
           <>
-            <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 6, marginTop: 14 }}>
-              Confirm Password
-            </Text>
+            {/* Account ID */}
+            <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>Account ID</Text>
             <TextInput
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              placeholder="Re-enter your password"
+              value={inputAccountId}
+              onChangeText={setInputAccountId}
+              placeholder="Your account ID"
               placeholderTextColor={theme.placeholder}
-              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              style={{
+                backgroundColor: theme.bgCard,
+                borderWidth: 1,
+                borderColor: theme.border,
+                borderRadius: 10,
+                padding: spacing.p14,
+                color: theme.textPrimary,
+                fontSize: 15,
+                marginBottom: 14,
+              }}
+            />
+
+            {/* Username */}
+            <Text style={{ color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>Username</Text>
+            <TextInput
+              value={inputUsername}
+              onChangeText={setInputUsername}
+              placeholder="Your username"
+              placeholderTextColor={theme.placeholder}
+              autoCapitalize="none"
+              autoCorrect={false}
               style={{
                 backgroundColor: theme.bgCard,
                 borderWidth: 1,
@@ -271,29 +222,64 @@ export default function AuthScreen() {
                 marginBottom: 20,
               }}
             />
+
+            {/* Submit */}
+            <Pressable
+              onPress={handleSignIn}
+              disabled={loading}
+              style={{
+                backgroundColor: loading ? theme.borderLight : theme.accent,
+                borderRadius: 10,
+                paddingVertical: 14,
+                alignItems: 'center',
+                opacity: loading ? 0.6 : 1,
+              }}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color={theme.textInverse} />
+              ) : (
+                <Text style={{ color: theme.textInverse, fontWeight: '700', fontSize: 15 }}>
+                  Sign In
+                </Text>
+              )}
+            </Pressable>
+          </>
+        ) : (
+          <>
+            {/* Register mode — navigate to CreateAccount */}
+            <View style={{
+              backgroundColor: theme.bgSecondary,
+              borderRadius: 12,
+              padding: spacing.p16,
+              marginBottom: 20,
+              borderWidth: 1,
+              borderColor: theme.border,
+              alignItems: 'center',
+            }}>
+              <Feather name="user-plus" size={32} color={theme.accent} style={{ marginBottom: 10 }} />
+              <Text style={{ color: theme.textPrimary, fontSize: 15, fontWeight: '700', marginBottom: 6, textAlign: 'center' }}>
+                Create a New Account
+              </Text>
+              <Text style={{ color: theme.textMuted, fontSize: 13, textAlign: 'center', marginBottom: 16 }}>
+                Set up a new account with a username and password to start tracking your manga library.
+              </Text>
+              <Pressable
+                onPress={handleSignUp}
+                style={{
+                  backgroundColor: theme.accent,
+                  borderRadius: 10,
+                  paddingVertical: 12,
+                  paddingHorizontal: 24,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: theme.textInverse, fontWeight: '700', fontSize: 14 }}>
+                  Go to Registration
+                </Text>
+              </Pressable>
+            </View>
           </>
         )}
-
-        {/* Submit */}
-        <Pressable
-          onPress={handleSubmit}
-          disabled={loading || !configured}
-          style={{
-            backgroundColor: loading || !configured ? theme.borderLight : theme.accent,
-            borderRadius: 10,
-            paddingVertical: 14,
-            alignItems: 'center',
-            opacity: loading || !configured ? 0.6 : 1,
-          }}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color={theme.textInverse} />
-          ) : (
-            <Text style={{ color: theme.textInverse, fontWeight: '700', fontSize: 15 }}>
-              {mode === 'signIn' ? 'Sign In' : 'Create Account'}
-            </Text>
-          )}
-        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
     </SafeAreaView>
