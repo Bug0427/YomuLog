@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ActivityIndicator, Modal, Image, ScrollView, StatusBar } from 'react-native';
+import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ActivityIndicator, Modal, Image, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, StackActions } from '@react-navigation/native';
 import { FeedbackStyles, GeneralStyles } from '../../styles/global';
@@ -34,7 +34,7 @@ function maskEmail(email: string): string {
 }
 
 export default function UserAccount() {
-  const { colors: theme, mode } = useTheme();
+  const { colors: theme } = useTheme();
     const navigation = useNavigation<any>();
 
     useEffect(() => {
@@ -290,7 +290,6 @@ export default function UserAccount() {
         <KeyboardAvoidingView style={[FeedbackStyles.screen, { backgroundColor: theme.bg }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <ScrollView style={{ flex: 1, backgroundColor: theme.bg }} contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled">
-            <StatusBar barStyle={mode === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={theme.bg} />
             {/* Back */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16 }}>
                 <Pressable
