@@ -26,7 +26,6 @@ import { ReaderThemeProvider, useReaderTheme } from '../../context/ReaderThemeCo
 import ThemePicker from '../../components/reader/ThemePicker';
 import {
   loadAllPreferences,
-  setLanguage as saveLanguage,
   setAlertsOn as saveAlertsOn,
   setAISearchOn as saveAISearchOn,
   setDirectionMode as saveDirectionMode,
@@ -38,28 +37,22 @@ type VerifyRow = { SECURITYLVL: SecurityLevel } | null;
 const isAdminLevel = (lvl: any) => lvl === SecurityLevel?.Admin || lvl === 1 || lvl === '1' || lvl === 'Admin';
 const isFeedbackAllowed = (lvl: any) => lvl === 2 || lvl === 3 || lvl === '2' || lvl === '3' || lvl === (SecurityLevel as any)?.Level2 || lvl === (SecurityLevel as any)?.Level3;
 
-/** Language cycle order */
-const LANGUAGES: Language[] = ['en', 'ja', 'ko'];
-const LANGUAGE_FLAGS: Record<Language, string> = { en: '🇺🇸', ja: '🇯🇵', ko: '🇰🇷' };
-
 /** Direction cycle order */
 const DIRECTIONS: DirectionMode[] = ['ltr', 'rtl', 'vertical'];
 
 const GridItem = ({ label, children, onPress }: { label: string; children?: React.ReactNode; onPress?: () => void }) => {
   const { colors: theme } = useTheme();
   return (
-    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
     <View style={SettingButtonStyles.cell}>
-        <Pressable
-          style={[SettingButtonStyles.button, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
-          onPress={onPress}
-          hitSlop={10}
-        >
-          {children}
-        </Pressable>
-        <Text style={[SettingButtonStyles.cellLabel, { color: theme.textSecondary }]}>{label}</Text>
-      </View>
-    </SafeAreaView>
+      <Pressable
+        style={[SettingButtonStyles.button, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
+        onPress={onPress}
+        hitSlop={10}
+      >
+        {children}
+      </Pressable>
+      <Text style={[SettingButtonStyles.cellLabel, { color: theme.textSecondary }]}>{label}</Text>
+    </View>
   );
 };
 
@@ -208,11 +201,13 @@ export default function SettingsScreen() {
   // ─── Preference handlers (with persistence) ─────────────────────
 
   const cycleLanguage = useCallback(async () => {
-    const idx = LANGUAGES.indexOf(language);
-    const next = LANGUAGES[(idx + 1) % LANGUAGES.length];
-    setLanguage(next);
-    await saveLanguage(next);
-  }, [language]);
+    Alert.alert(
+      'Language',
+      'English is currently the only supported language.\nJapanese and Korean translations are coming soon.',
+      [{ text: 'OK' }],
+    );
+    // Keep preference for future use; don't cycle to empty translation
+  }, []);
 
   const toggleAlerts = useCallback(async () => {
     const next = !alertsOn;
@@ -439,7 +434,7 @@ export default function SettingsScreen() {
             >
               <Feather name="cloud" size={16} color={theme.accent} />
               <Text style={{ fontSize: 13, fontWeight: '600', color: theme.accent }}>
-                Sign in with Supabase Account
+                Manage Cloud Account
               </Text>
             </Pressable>
 
@@ -577,7 +572,7 @@ export default function SettingsScreen() {
 
           {/* ─── Settings Grid ────────────────────────────────────── */}
           <View style={[SettingButtonStyles.grid, { backgroundColor: theme.bgSecondary }]}>
-            <GridItem label={`Theme: ${themeMode}`} onPress={cycleTheme}>
+            <GridItem label={`App Theme: ${themeMode}`} onPress={cycleTheme}>
               {themeMode === 'light' && <Feather name="sun" style={[SettingButtonStyles.icon, { color: theme.accent }]} />}
               {themeMode === 'dark' && <Feather name="moon" style={[SettingButtonStyles.icon, { color: theme.accent }]} />}
               {themeMode === 'sepia' && <Feather name="coffee" style={[SettingButtonStyles.icon, { color: theme.accent }]} />}
@@ -592,8 +587,8 @@ export default function SettingsScreen() {
                 </View>
               )}
             </GridItem>
-            <GridItem label="Language" onPress={cycleLanguage}>
-              <Text style={SettingButtonStyles.flag}>{LANGUAGE_FLAGS[language]}</Text>
+            <GridItem label="Language: English" onPress={cycleLanguage}>
+              <Text style={SettingButtonStyles.flag}>🇺🇸</Text>
             </GridItem>
             <GridItem label="Chapter alerts" onPress={toggleAlerts}>
               <Feather name={alertsOn ? "bell" : "bell-off"} style={[SettingButtonStyles.icon, { color: theme.accent }]} />
