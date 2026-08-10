@@ -1,6 +1,7 @@
 // data/SettingsButtonActions/Logout.ts
 // Uses React context for auth state — no more globalThis mutation or DeviceEventEmitter.
 import { useAuthContext } from '../../context/AuthContext';
+import { supabaseSignOut } from '../../services/supabaseAuth';
 
 export function useLogout() {
   const { logout } = useAuthContext();
@@ -8,7 +9,10 @@ export function useLogout() {
 }
 
 // Legacy-compatible export for non-hook callers (kept for gradual migration)
-export function logout(navigation: any) {
+export async function logout(navigation: any) {
+  // Clear the Supabase session first (entitlement/cloud sync are keyed by
+  // Supabase user id) — best-effort, never blocks the local sign-out.
+  await supabaseSignOut();
   // Clear globals (legacy)
   (globalThis as any).currentAccountId = undefined;
   (globalThis as any).currentUsername = undefined;

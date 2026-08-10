@@ -20,6 +20,7 @@ import {
   subscribeToSubscriptionChanges,
   type SubscriptionStatus,
 } from '../services/stripeService';
+import { useAuthContext } from './AuthContext';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -64,8 +65,14 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const realtimeUnsubRef = useRef<(() => void) | null>(null);
+  // Re-fetch entitlement whenever the (local) auth state changes — the
+  // Supabase session is established by the sign-in flow (supabaseAuth),
+  // so login/logout must trigger a fresh status fetch + Realtime channel.
+  const { isLoggedIn } = useAuthContext();
 
-  // On mount: fetch real subscription status from Stripe via Supabase
+  // Fetch real subscription status + subscribe to Realtime.
+  // Keyed on isLoggedIn so a login (session now exists) or logout (session
+  // cleared) refreshes entitlement immediately — no app restart required.
   useEffect(() => {
     let mounted = true;
 
@@ -75,7 +82,7 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
         const cached = await loadCachedPremium();
         if (mounted) setIsPremium(cached);
 
-        // Then fetch real status from Supabase
+        // Then fetch real status from Supabase (uses the current session)
         const status = await fetchSubscriptionStatus();
         if (mounted) {
           setSubscriptionStatus(status);
@@ -89,21 +96,22 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
       } finally {
         if (mounted) setLoading(false);
       }
+
+      // Subscribe to real-time subscription changes via Supabase Realtime
+      if (!mounted) return;
+      realtimeUnsubRef.current = subscribeToSubscriptionChanges((next) => {
+        setSubscriptionStatus(next);
+        setIsPremium(next.isActive);
+        saveCachedPremium(next.isActive);
+      });
     })();
 
-    return () => { mounted = false; };
-  }, []);
-
-  // Subscribe to real-time status changes via Supabase Realtime
-  useEffect(() => {
-    const unsub = subscribeToSubscriptionChanges((status) => {
-      setSubscriptionStatus(status);
-      setIsPremium(status.isActive);
-      saveCachedPremium(status.isActive);
-    });
-    realtimeUnsubRef.current = unsub;
-    return () => { unsub(); };
-  }, []);
+    return () => {
+      mounted = false;
+      realtimeUnsubRef.current?.();
+      realtimeUnsubRef.current = null;
+    };
+  }, [isLoggedIn]);
 
   const activatePremium = useCallback(async () => {
     setIsPremium(true);

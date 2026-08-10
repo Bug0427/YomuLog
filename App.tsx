@@ -81,15 +81,15 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <StatusBarTheme />
-        <PremiumProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <PremiumProvider>
             <SyncWrapper>
               <ResponsiveContainer>
                 <AppNavigator />
               </ResponsiveContainer>
             </SyncWrapper>
-          </AuthProvider>
-        </PremiumProvider>
+          </PremiumProvider>
+        </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
