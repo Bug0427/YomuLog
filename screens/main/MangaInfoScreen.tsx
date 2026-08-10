@@ -125,6 +125,9 @@ export default function MangaInfoScreen() {
   const [loading, setLoading] = useState(true);
   const [bookmarked, setBookmarked] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [chaptersError, setChaptersError] = useState<string | null>(null);
+  const [chaptersLoading, setChaptersLoading] = useState(false);
+  const [languageFallback, setLanguageFallback] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
   const [downloadingIds, setDownloadingIds] = useState<Set<string>>(new Set());
   const [similar, setSimilar] = useState<SimilarManga[]>([]);
@@ -141,11 +144,11 @@ export default function MangaInfoScreen() {
 
     setLoading(true);
     setError(null);
+    setChaptersError(null);
 
     try {
-      const [mangaData, feedResult, fav, similarData] = await Promise.all([
+      const [mangaData, fav, similarData] = await Promise.all([
         fetchMangaById(mangaId),
-        getMangaFeed(mangaId, 100, 0),
         isFavorite(mangaId),
         fetchSimilarManga(mangaId, 10),
       ]);
@@ -159,6 +162,36 @@ export default function MangaInfoScreen() {
       setManga(mangaData);
       setBookmarked(fav);
       setSimilar(similarData);
+      setLoading(false);
+
+      // Load chapters separately so manga details render immediately
+      await loadChapters();
+    } catch (e) {
+      setError('An unexpected error occurred.');
+      console.warn('MangaInfoScreen load error:', e);
+      setLoading(false);
+    }
+  }, [mangaId]);
+
+  const loadChapters = useCallback(async () => {
+    if (!mangaId) return;
+
+    setChaptersLoading(true);
+    setChaptersError(null);
+    setLanguageFallback(false);
+
+    try {
+      const feedResult = await getMangaFeed(mangaId, 100, 0);
+
+      if (feedResult.data.length === 0) {
+        setChapters([]);
+        setChaptersLoading(false);
+        return;
+      }
+
+      if (feedResult.languageFallback) {
+        setLanguageFallback(true);
+      }
 
       // Check download status for each chapter
       const chs: ChapterWithDownload[] = await Promise.all(
@@ -173,10 +206,10 @@ export default function MangaInfoScreen() {
 
       setChapters(chs);
     } catch (e) {
-      setError('An unexpected error occurred.');
-      console.warn('MangaInfoScreen load error:', e);
+      console.warn('MangaInfoScreen chapter load error:', e);
+      setChaptersError('Failed to load chapters. Check your connection and try again.');
     } finally {
-      setLoading(false);
+      setChaptersLoading(false);
     }
   }, [mangaId]);
 
@@ -565,7 +598,7 @@ export default function MangaInfoScreen() {
         <View style={styles.chaptersSection}>
           <View style={styles.chapterHeaderRow}>
             <Text style={styles.sectionTitle}>
-              Chapters ({chapterGroups.length})
+              Chapters{chapterGroups.length > 0 ? ` (${chapterGroups.length})` : ''}
             </Text>
             {duplicateCount > 0 && (
               <Text style={styles.dupeNote}>
@@ -574,9 +607,50 @@ export default function MangaInfoScreen() {
             )}
           </View>
 
-          {chapterGroups.length === 0 ? (
-            <Text style={styles.emptyText}>No chapters available.</Text>
-          ) : (
+          {/* Language fallback notice */}
+          {languageFallback && chapters.length > 0 && (
+            <View style={styles.languageFallbackBanner}>
+              <Feather name="globe" size={14} color={colors.cocoa} />
+              <Text style={styles.languageFallbackText}>
+                English chapters not available — showing all languages
+              </Text>
+            </View>
+          )}
+
+          {/* Chapters loading state */}
+          {chaptersLoading && (
+            <View style={styles.chapterStateContainer}>
+              <ActivityIndicator size="small" color={colors.plum} />
+              <Text style={styles.chapterStateText}>Loading chapters...</Text>
+            </View>
+          )}
+
+          {/* Chapters error state */}
+          {!chaptersLoading && chaptersError && (
+            <View style={styles.chapterStateContainer}>
+              <Feather name="wifi-off" size={20} color={colors.error} />
+              <Text style={[styles.chapterStateText, { color: colors.error }]}>
+                {chaptersError}
+              </Text>
+              <Pressable style={styles.chapterRetryBtn} onPress={loadChapters}>
+                <Text style={styles.chapterRetryText}>Retry</Text>
+              </Pressable>
+            </View>
+          )}
+
+          {/* Empty chapters (no error) */}
+          {!chaptersLoading && !chaptersError && chapterGroups.length === 0 && (
+            <View style={styles.chapterStateContainer}>
+              <Feather name="book-open" size={20} color={colors.mutedPlum} />
+              <Text style={styles.emptyText}>No chapters available.</Text>
+              <Pressable style={styles.chapterRetryBtn} onPress={loadChapters}>
+                <Text style={styles.chapterRetryText}>Refresh</Text>
+              </Pressable>
+            </View>
+          )}
+
+          {/* Chapter list */}
+          {!chaptersLoading && !chaptersError && chapterGroups.length > 0 && (
             chapterGroups.map((group) => {
               const ch = group.primary;
               const isDownloading = downloadingIds.has(ch.id);
@@ -612,6 +686,8 @@ export default function MangaInfoScreen() {
                                 year: 'numeric',
                               })}`
                             : ''}
+                          {/* Show language badge for non-English chapters */}
+                          {ch.language && ch.language !== 'en' ? ` · ${ch.language.toUpperCase()}` : ''}
                         </Text>
                       </View>
                     </Pressable>
@@ -966,6 +1042,49 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.mutedPlum,
     fontStyle: 'italic',
+  },
+  // Language fallback banner
+  languageFallbackBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.p6,
+    backgroundColor: colors.sand,
+    borderRadius: borders.br8,
+    borderWidth: 1,
+    borderColor: colors.plum,
+    paddingVertical: spacing.p8,
+    paddingHorizontal: spacing.p10,
+    marginBottom: spacing.p10,
+  },
+  languageFallbackText: {
+    fontSize: 12,
+    color: colors.cocoa,
+    fontWeight: '600',
+    flex: 1,
+  },
+  // Chapter loading / error / empty states
+  chapterStateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.p20,
+    gap: spacing.p8,
+  },
+  chapterStateText: {
+    fontSize: 13,
+    color: colors.mutedPlum,
+    fontWeight: '600',
+  },
+  chapterRetryBtn: {
+    marginTop: spacing.p4,
+    paddingVertical: spacing.p6,
+    paddingHorizontal: spacing.p16,
+    backgroundColor: colors.plum,
+    borderRadius: borders.br8,
+  },
+  chapterRetryText: {
+    color: colors.creamWhite,
+    fontWeight: '700',
+    fontSize: 13,
   },
   emptyText: {
     fontSize: 14,
