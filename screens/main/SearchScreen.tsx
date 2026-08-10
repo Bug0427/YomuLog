@@ -13,7 +13,7 @@ import { useScrollTracker } from '../../hooks/useScrollTracker';
 import Anchor from '../../components/layout/Anchor';
 import SortModal, { SortOption } from '../../components/general/SortModal';
 import { GeneralStyles, CardViewStyles } from '../../styles/global';
-import { colors } from '../../styles/tokens';
+import { spacing, colors } from '../../styles/tokens';
 import { getRecentFavoritesUpdates, MangaUpdate } from '../../services/favoritesService';
 import { fetchMangaList, MangaListParams, Manga } from '../../services/mangaAPI';
 import { enhanceSearch } from '../../services/aiSearchEnhancer';

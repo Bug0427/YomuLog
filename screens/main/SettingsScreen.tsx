@@ -420,7 +420,7 @@ export default function SettingsScreen() {
 
             {/* AuthScreen navigation */}
             <Pressable
-              onPress={() => navigation.navigate('AuthScreen')}
+              onPress={() => navigation.navigate('AuthScreen' as never)}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',

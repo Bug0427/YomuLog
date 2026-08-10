@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { useAuth } from '../../context/AuthContext';
+import { useAuthContext } from '../../context/AuthContext';
 import { usePremium } from '../../context/PremiumContext';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing } from '../../styles/tokens';
@@ -24,7 +24,11 @@ import { spacing } from '../../styles/tokens';
 type Mode = 'signIn' | 'signUp';
 
 export default function AuthScreen() {
-  const { signIn, signUp, signOut, user, configured } = useAuth();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const auth = useAuthContext() as any;
+  // FIXME: AuthScreen uses old Supabase API (signIn/signUp/signOut/user/configured).
+  // The current AuthContext has login/logout/isLoggedIn. Needs full refactor.
+  const { signIn, signUp, signOut, user, configured } = auth;
   const { isPremium } = usePremium();
   const { colors: theme } = useTheme();
 
