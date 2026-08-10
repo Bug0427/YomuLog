@@ -243,7 +243,7 @@ export default function AdminReports() {
           onPress={handleBulkDelete}
           style={{
             position: 'absolute', bottom: 20, right: 20, zIndex: 100,
-            backgroundColor: colors.error, paddingHorizontal: 18, paddingVertical: 12,
+            backgroundColor: theme.error, paddingHorizontal: 18, paddingVertical: 12,
             borderRadius: 8, elevation: 5,
           }}
         >

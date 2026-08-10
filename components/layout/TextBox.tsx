@@ -40,10 +40,10 @@ const handleSubmit = () => {
 
 return (
     <View style={{ gap: 8 }}>
-    <Text style={FeedbackStyles.itemText}>{label}</Text>
+    <Text style={[FeedbackStyles.itemText, { color: theme.textPrimary }]}>{label}</Text>
 
     <TextInput
-        style={[FeedbackStyles.item, { minHeight: 96, textAlignVertical: 'top' }]}
+        style={[FeedbackStyles.item, { minHeight: 96, textAlignVertical: 'top', backgroundColor: theme.bgCard, borderColor: theme.border, color: theme.textPrimary }]}
         multiline
         value={value}
         onChangeText={handleChange}
@@ -55,7 +55,7 @@ return (
     />
 
     {showCounter && (
-        <Text style={FeedbackStyles.helper}>{value.length}/{maxLength}</Text>
+        <Text style={[FeedbackStyles.helper, { color: theme.textMuted }]}>{value.length}/{maxLength}</Text>
     )}
     </View>
 );

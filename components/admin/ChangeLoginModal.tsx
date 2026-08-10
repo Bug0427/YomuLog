@@ -98,55 +98,55 @@ const ChangeLoginModal: React.FC<ChangeLoginModalProps> = ({ visible, onClose, a
       <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
         <KeyboardAvoidingView style={ChangeLoginStyles.kbdWrap} behavior={Platform.select({ ios: 'padding', android: undefined })}>
           <View style={ChangeLoginStyles.overlay}>
-            <View style={ChangeLoginStyles.card}>
-              <Text style={ChangeLoginStyles.title}>Change username / password</Text>
+            <View style={[ChangeLoginStyles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+              <Text style={[ChangeLoginStyles.title, { color: theme.textPrimary }]}>Change username / password</Text>
 
               {error ? <Text style={ChangeLoginStyles.errorText}>{error}</Text> : null}
               {success ? <Text style={ChangeLoginStyles.successText}>{success}</Text> : null}
 
-              <View style={ChangeLoginStyles.typeBox}>
+              <View style={[ChangeLoginStyles.typeBox, { backgroundColor: theme.bgSecondary, borderColor: theme.border }]}>
                 <TextInput
                   placeholder="Username"
                   placeholderTextColor={theme.placeholder}
                   value={newUsername}
                   onChangeText={setNewUsername}
                   autoCapitalize="none"
-                  style={ChangeLoginStyles.typed}
+                  style={[ChangeLoginStyles.typed, { color: theme.textPrimary }]}
                 />
               </View>
 
-              <View style={ChangeLoginStyles.typeBox}>
+              <View style={[ChangeLoginStyles.typeBox, { backgroundColor: theme.bgSecondary, borderColor: theme.border }]}>
                 <TextInput
                   placeholder="Password"
                   placeholderTextColor={theme.placeholder}
                   value={newPassword}
                   onChangeText={setNewPassword}
                   secureTextEntry
-                  style={ChangeLoginStyles.typed}
+                  style={[ChangeLoginStyles.typed, { color: theme.textPrimary }]}
                 />
               </View>
 
-              <View style={ChangeLoginStyles.typeBox}>
+              <View style={[ChangeLoginStyles.typeBox, { backgroundColor: theme.bgSecondary, borderColor: theme.border }]}>
                 <TextInput
                   placeholder="Confirm password"
                   placeholderTextColor={theme.placeholder}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry
-                  style={ChangeLoginStyles.typed}
+                  style={[ChangeLoginStyles.typed, { color: theme.textPrimary }]}
                 />
               </View>
 
-              <Text style={ChangeLoginStyles.helpText}>
+              <Text style={[ChangeLoginStyles.helpText, { color: theme.textMuted }]}>
                 Password must be 8+ chars and include 1 uppercase, 1 lowercase, 1 number, and 1 special character.
               </Text>
 
               <View style={ChangeLoginStyles.actionsRow}>
-                <Pressable onPress={handleClose} style={ChangeLoginStyles.button}>
-                  <Text style={ChangeLoginStyles.text}>Cancel</Text>
+                <Pressable onPress={handleClose} style={[ChangeLoginStyles.button, { backgroundColor: theme.bgSecondary, borderColor: theme.border }]}>
+                  <Text style={[ChangeLoginStyles.text, { color: theme.textPrimary }]}>Cancel</Text>
                 </Pressable>
-                <Pressable onPress={handleSubmit} disabled={submitting} style={ChangeLoginStyles.button}>
-                  {submitting ? <ActivityIndicator color={theme.textInverse} /> : <Text style={ChangeLoginStyles.text}>Submit</Text>}
+                <Pressable onPress={handleSubmit} disabled={submitting} style={[ChangeLoginStyles.button, { backgroundColor: theme.bgSecondary, borderColor: theme.border }]}>
+                  {submitting ? <ActivityIndicator color={theme.textInverse} /> : <Text style={[ChangeLoginStyles.text, { color: theme.textPrimary }]}>Submit</Text>}
                 </Pressable>
               </View>
             </View>

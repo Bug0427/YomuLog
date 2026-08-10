@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { usePremium } from '../../context/PremiumContext';
@@ -74,6 +75,7 @@ export default function AuthScreen() {
   // ── Authenticated state ──────────────────────────────────────────
   if (user) {
     return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: theme.bg, padding: spacing.p16 }}>
         <View style={{
           backgroundColor: theme.bgSecondary,
@@ -128,11 +130,13 @@ export default function AuthScreen() {
           </Pressable>
         </View>
       </ScrollView>
+      </SafeAreaView>
     );
   }
 
   // ── Unauthenticated state (login/signup form) ────────────────────
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1, backgroundColor: theme.bg }}
@@ -288,5 +292,6 @@ export default function AuthScreen() {
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

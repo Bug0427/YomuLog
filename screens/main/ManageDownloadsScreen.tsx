@@ -13,7 +13,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import Header from '../../components/layout/Header';
 import { colors, spacing, t } from '../../styles/tokens';
@@ -228,7 +228,7 @@ export default function ManageDownloadsScreen() {
   const storagePct = totalBytes > 0 ? Math.min((totalBytes / MAX_STORAGE_BUDGET) * 100, 100) : 0;
 
   return (
-    <View style={[styles.root, { backgroundColor: theme.bg }]}>
+    <SafeAreaView style={[styles.root, { backgroundColor: theme.bg }]}>
       {/* Fixed header bar with back button */}
       <View style={[styles.headerBar, { backgroundColor: theme.headerBg, paddingTop: insets.top }]}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={12}>
@@ -361,7 +361,7 @@ export default function ManageDownloadsScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
