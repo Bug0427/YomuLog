@@ -327,7 +327,7 @@ export default function ManageDownloadsScreen() {
 
         {/* Navigation link to Downloads screen */}
         <Pressable
-        onPress={() => navigation.navigate('DownLoadsScreen')}
+        onPress={() => navigation.navigate('DownLoadsScreen' as never)}
         style={{
           flexDirection: 'row',
           alignItems: 'center',

@@ -3,7 +3,7 @@ import { View, Pressable, Text, TextInput, Platform } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { GeneralStyles, SearchBarStyles } from '../../styles/global';
 import { colors } from '../../styles/tokens';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useBreakpoint } from '../../utils/findDimensions';
 
 

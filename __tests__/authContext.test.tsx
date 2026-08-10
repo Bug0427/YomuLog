@@ -1,62 +1,39 @@
 // __tests__/authContext.test.tsx
 // Smoke test: AuthContext exposes auth methods and defaults to unauthenticated.
 
-// Mock supabase before any imports that transitively pull it in
-process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
-
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => ({
-    auth: {
-      signInWithPassword: jest.fn(),
-      signUp: jest.fn(),
-      signOut: jest.fn(),
-      onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
-      getSession: jest.fn(() => Promise.resolve({ data: { session: null }, error: null })),
-    },
-  })),
-}));
-
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 import { Text } from 'react-native';
-import { AuthProvider, useAuth } from '../context/AuthContext';
+import { AuthProvider, useAuthContext } from '../context/AuthContext';
 
 function AuthConsumer() {
-  const { user, loading } = useAuth();
-  const isReady = !loading;
-  const isAuthenticated = !!user;
+  const { isLoggedIn, username } = useAuthContext();
+  const isAuthenticated = isLoggedIn;
   return (
     <>
-      <Text testID="auth-ready">{isReady ? 'ready' : 'loading'}</Text>
       <Text testID="auth-status">{isAuthenticated ? 'authenticated' : 'unauthenticated'}</Text>
-      <Text testID="auth-user">{user?.email ?? 'none'}</Text>
+      <Text testID="auth-user">{username ?? 'none'}</Text>
     </>
   );
 }
 
 describe('AuthContext', () => {
-  it('should default to unauthenticated with no user', async () => {
+  it('should default to unauthenticated with no user', () => {
     render(
       <AuthProvider>
         <AuthConsumer />
       </AuthProvider>
     );
 
-    await waitFor(() => {
-      expect(screen.getByTestId('auth-status')).toBeTruthy();
-    });
-
-    expect(screen.getByTestId('auth-ready').props.children).toBe('ready');
     expect(screen.getByTestId('auth-status').props.children).toBe('unauthenticated');
     expect(screen.getByTestId('auth-user').props.children).toBe('none');
   });
 
-  it('should expose signIn, signUp, and signOut methods', async () => {
+  it('should expose login and logout methods', () => {
     let contextValue: any = null;
 
     function ContextCapture() {
-      contextValue = useAuth();
+      contextValue = useAuthContext();
       return <Text testID="captured">captured</Text>;
     }
 
@@ -66,23 +43,18 @@ describe('AuthContext', () => {
       </AuthProvider>
     );
 
-    await waitFor(() => {
-      expect(screen.getByTestId('captured')).toBeTruthy();
-    });
-
     expect(contextValue).not.toBeNull();
-    expect(typeof contextValue.signIn).toBe('function');
-    expect(typeof contextValue.signUp).toBe('function');
-    expect(typeof contextValue.signOut).toBe('function');
-    expect(contextValue.user).toBeNull();
+    expect(typeof contextValue.login).toBe('function');
+    expect(typeof contextValue.logout).toBe('function');
+    expect(contextValue.isLoggedIn).toBe(false);
   });
 
-  it('should throw error when useAuth is used outside AuthProvider', () => {
+  it('should throw error when useAuthContext is used outside AuthProvider', () => {
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     expect(() => {
       render(<AuthConsumer />);
-    }).toThrow('useAuth must be used within an AuthProvider');
+    }).toThrow('useAuthContext must be used within AuthProvider');
 
     consoleError.mockRestore();
   });

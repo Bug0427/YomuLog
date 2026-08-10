@@ -15,11 +15,11 @@ const SORT_LABELS: Record<SortOrder, string> = {
   za: 'Z–A',
 };
 
-const SORT_ICONS: Record<SortOrder, string> = {
+const SORT_ICONS = {
   updated: 'clock-outline',
   az: 'sort-alphabetical-ascending',
   za: 'sort-alphabetical-descending',
-};
+} as const;
 
 export { SORT_LABELS, SORT_ICONS };
 

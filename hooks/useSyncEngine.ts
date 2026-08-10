@@ -17,7 +17,7 @@ import {
   isAuthenticated as isSupabaseAuthenticated,
 } from '../services/syncService';
 import { usePremium } from '../context/PremiumContext';
-import { useAuth } from '../context/AuthContext';
+import { useAuthContext } from '../context/AuthContext';
 
 const FOREGROUND_SYNC_DEBOUNCE_MS = 10_000; // 10s cooldown between foreground syncs
 const AUTO_SYNC_DEBOUNCE_MS = 5_000; // 5s cooldown for auto-sync after mutations
@@ -38,7 +38,7 @@ export type SyncEngineState = {
  */
 export function useSyncEngine() {
   const { isPremium } = usePremium();
-  const { user } = useAuth();
+  const { isLoggedIn } = useAuthContext();
   const [state, setState] = useState<SyncEngineState>({
     status: 'pending',
     lastSyncedAt: null,

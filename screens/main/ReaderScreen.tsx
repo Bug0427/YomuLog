@@ -523,6 +523,7 @@ function ReaderControls({
   onNextChapter: () => void;
 }) {
   const { activeConfig } = useReaderTheme();
+  const { colors: theme } = useTheme();
   const modeLabels: Record<ReaderMode, string> = {
     vertical: 'Scroll',
     ltr: 'L→R',
