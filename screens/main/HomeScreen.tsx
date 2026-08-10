@@ -208,7 +208,7 @@ export default function HomeScreen() {
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 24 }}
+          contentContainerStyle={{ paddingBottom: spacing.p24 }}
           onScrollBeginDrag={handleScrollStart}
           onScrollEndDrag={handleScrollEnd}
           onMomentumScrollEnd={handleScrollEnd}

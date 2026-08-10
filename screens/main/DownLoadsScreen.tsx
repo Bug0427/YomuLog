@@ -242,7 +242,7 @@ export default function DownLoadsScreen() {
         onScrollBeginDrag={handleScrollStart}
         onScrollEndDrag={handleScrollEnd}
         onMomentumScrollEnd={handleScrollEnd}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: spacing.p24 }}
         ListHeaderComponent={
           <>
             <Header />

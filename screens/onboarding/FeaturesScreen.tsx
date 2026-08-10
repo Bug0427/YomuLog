@@ -6,7 +6,7 @@ import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
-import { colors } from '../../styles/tokens';
+import { colors, spacing } from '../../styles/tokens';
 
 const { width } = Dimensions.get('window');
 
@@ -96,20 +96,20 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 28,
+    paddingHorizontal: spacing.p24 + spacing.p4,
   },
   heading: {
     fontSize: 28,
     fontWeight: '800',
-    marginBottom: 6,
+    marginBottom: spacing.p6,
   },
   subtitle: {
     fontSize: 15,
-    marginBottom: 32,
+    marginBottom: spacing.p24 + spacing.p8,
     lineHeight: 22,
   },
   cards: {
-    gap: 14,
+    gap: spacing.p14,
   },
   card: {
     flexDirection: 'row',
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     alignItems: 'center',
-    gap: 14,
+    gap: spacing.p14,
   },
   cardIcon: {
     width: 52,
@@ -132,23 +132,23 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: spacing.p4,
   },
   cardDesc: {
     fontSize: 13,
     lineHeight: 19,
   },
   bottom: {
-    paddingHorizontal: 28,
-    paddingBottom: 40,
+    paddingHorizontal: spacing.p24 + spacing.p4,
+    paddingBottom: spacing.p24 + spacing.p16,
   },
   cta: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: spacing.p16,
     borderRadius: 14,
-    gap: 8,
+    gap: spacing.p8,
   },
   ctaText: {
     color: colors.white,

@@ -200,7 +200,7 @@ export default function ManageSubscriptionScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { paddingBottom: spacing.p50 },
+  scroll: { paddingBottom: spacing.p24 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: {
     flexDirection: 'row',
