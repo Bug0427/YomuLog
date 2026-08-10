@@ -1,25 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuthContext } from '../../context/AuthContext';
 import { FeedbackStyles, SubmitButtonStyles } from '../../styles/global';
 import { verifyUser } from '../../services/feedbackRepo';
 
 
 export default function LoginScreen() {
 const { colors: theme } = useTheme();
+const { login: authLogin } = useAuthContext();
 const navigation = useNavigation<any>();
 const [username, setUsername] = useState('');
 const [password, setPassword] = useState('');
 const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-useEffect(() => {
-  if ((globalThis as any).currentAccountId) {
-    // @ts-ignore
-    navigation.replace?.('UserAccount');
-  }
-}, []);
 
 const onSubmit = async () => {
     const id = username.trim();
@@ -39,19 +34,18 @@ const onSubmit = async () => {
         return;
       }
       (globalThis as any).currentAccountId = row.ACCOUNTID;
+      (globalThis as any).currentUsername = row.USERNM;
       (globalThis as any).currentSecurityLevel = row.SECURITYLVL;
+      (globalThis as any).forceLoggedOut = false;
+      authLogin(row.ACCOUNTID, row.USERNM, row.SECURITYLVL ?? 0);
 
       console.log('🔐 Session set from Login:', {
         accountId: row.ACCOUNTID,
-        hasPassword: !!pwd,
+        username: row.USERNM,
         level: row.SECURITYLVL,
       });
 
-      if (typeof navigation.canGoBack === 'function' && navigation.canGoBack()) {
-        navigation.goBack();
-      } else {
-        navigation.navigate('Settings' as never);
-      }
+      navigation.replace('UserAccount');
     } catch (e) {
       console.error('Login failed', e);
       setErrorMsg('Login failed.');
