@@ -2,7 +2,7 @@
 // Custom downloads management dashboard with storage footprint visualization,
 // per-title breakdown, and manual cleanup controls (BUG-17).
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import Header from '../../components/layout/Header';
 import { colors, spacing, t } from '../../styles/tokens';
 import { useTheme } from '../../context/ThemeContext';
+import { useSortPreference, applySortOrder } from '../../hooks/useSortPreference';
 import {
   getStorageStats,
   deleteDownloadedChapter,
@@ -137,6 +138,9 @@ export default function ManageDownloadsScreen() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
 
+  // ── Sort state (persisted via AsyncStorage) ──────────────────────────
+  const { sortOrder, cycleSort, label: sortLabel, icon: sortIcon } = useSortPreference();
+
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
@@ -227,6 +231,15 @@ export default function ManageDownloadsScreen() {
   const totalBytes = storageStats?.totalBytes ?? 0;
   const storagePct = totalBytes > 0 ? Math.min((totalBytes / MAX_STORAGE_BUDGET) * 100, 100) : 0;
 
+  // ── Sort byManga entries ────────────────────────────────────────────
+  const sortedByManga = useMemo(
+    () =>
+      storageStats
+        ? applySortOrder(storageStats.byManga, sortOrder, (item) => item.mangaTitle)
+        : [],
+    [storageStats, sortOrder],
+  );
+
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
       {/* Fixed header bar with back button */}
@@ -235,11 +248,21 @@ export default function ManageDownloadsScreen() {
           <Feather name="arrow-left" size={24} color={colors.deepPlum} />
         </Pressable>
         <Text style={styles.headerTitle}>Manage Downloads</Text>
-        {downloadedChapters.length > 0 && (
-          <Pressable onPress={handleClearAll} disabled={deleting} hitSlop={12}>
-            <Feather name="trash-2" size={20} color={deleting ? colors.mutedPlum : colors.error} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Pressable
+            onPress={cycleSort}
+            accessibilityLabel={`Sort: ${sortLabel}`}
+            accessibilityRole="button"
+            hitSlop={12}
+          >
+            <MaterialCommunityIcons name={sortIcon} size={20} color={colors.deepPlum} />
           </Pressable>
-        )}
+          {downloadedChapters.length > 0 && (
+            <Pressable onPress={handleClearAll} disabled={deleting} hitSlop={12}>
+              <Feather name="trash-2" size={20} color={deleting ? colors.mutedPlum : colors.error} />
+            </Pressable>
+          )}
+        </View>
       </View>
 
       <ScrollView
@@ -311,10 +334,10 @@ export default function ManageDownloadsScreen() {
               <ActivityIndicator size="large" color={colors.deepPlum} />
               <Text style={styles.loadingText}>Calculating storage…</Text>
             </View>
-          ) : storageStats && storageStats.byManga.length > 0 ? (
+          ) : storageStats && sortedByManga.length > 0 ? (
             <>
               {/* Storage bars per title */}
-              {storageStats.byManga.map((stat) => (
+              {sortedByManga.map((stat) => (
                 <StorageBar
                   key={stat.mangaId}
                   label={stat.mangaTitle}
@@ -339,7 +362,7 @@ export default function ManageDownloadsScreen() {
                 Tap the trash icon to remove all chapters for a title and free up storage.
               </Text>
 
-              {storageStats.byManga.map((stat) => (
+              {sortedByManga.map((stat) => (
                 <MangaStorageCard
                   key={stat.mangaId}
                   stat={stat}

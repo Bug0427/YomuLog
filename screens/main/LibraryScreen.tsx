@@ -39,6 +39,9 @@ import { useTheme } from '../../context/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../../styles/tokens';
 
+// Sort
+import { useSortPreference, applySortOrder } from '../../hooks/useSortPreference';
+
 // Filters
 import { FilterState, DEFAULT_FILTER_STATE, hasActiveFilters } from '../../utils/filters';
 
@@ -60,6 +63,9 @@ export default function LibraryScreen() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
+
+  // ── Sort state (persisted via AsyncStorage) ──────────────────────────
+  const { sortOrder, cycleSort, label: sortLabel, icon: sortIcon } = useSortPreference();
 
   // ── Fetch on focus ────────────────────────────────────────────────
   useFocusEffect(
@@ -196,9 +202,14 @@ export default function LibraryScreen() {
 
   // ── Filter favorites by reading status ─────────────────────────────
   const filteredFavorites = useMemo(() => {
-    if (!filterState.readingStatus) return favorites;
-    return favorites.filter((item) => item.readingStatus === filterState.readingStatus);
-  }, [favorites, filterState.readingStatus]);
+    let result = favorites;
+    if (filterState.readingStatus) {
+      result = result.filter((item) => item.readingStatus === filterState.readingStatus);
+    }
+    // Apply sort order
+    result = applySortOrder(result, sortOrder, (item) => item.mangaTitle);
+    return result;
+  }, [favorites, filterState.readingStatus, sortOrder]);
 
   // ── Map to CardItem[] for CardView ────────────────────────────────
   const cardData: CardItem[] = useMemo(
@@ -258,6 +269,13 @@ export default function LibraryScreen() {
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
         <Text style={GeneralStyles.h1}>Library ({filteredFavorites.length})</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Pressable
+            onPress={cycleSort}
+            accessibilityLabel={`Sort: ${sortLabel}`}
+            accessibilityRole="button"
+          >
+            <MaterialCommunityIcons name={sortIcon} size={20} color="#463B54" />
+          </Pressable>
           <Pressable
             onPress={() => navigation.navigate('RecentlyReadScreen' as never)}
             accessibilityLabel="Recently read"
