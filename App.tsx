@@ -1,9 +1,9 @@
 import React, { useEffect, useCallback } from 'react';
-import { View, StyleSheet, useWindowDimensions, Platform } from 'react-native';
+import { View, StyleSheet, useWindowDimensions, Platform, StatusBar } from 'react-native';
 import AppNavigator from './navigation/AppNavigator';
 import { initDb } from './services/feedbackRepo';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { PremiumProvider } from './context/PremiumContext';
 import { AuthProvider } from './context/AuthContext';
 import { useSyncEngine } from './hooks/useSyncEngine';
@@ -11,6 +11,12 @@ import SyncStatusBanner from './components/layout/SyncStatusBanner';
 
 /** Maximum width for desktop browsers to prevent stretching on ultrawide screens */
 const WEB_MAX_WIDTH = 1200;
+
+function StatusBarTheme() {
+  const { mode, colors } = useTheme();
+  const barStyle = mode === 'dark' ? 'light-content' : 'dark-content';
+  return <StatusBar barStyle={barStyle} backgroundColor={colors.bg} translucent={false} />;
+}
 
 function ResponsiveContainer({ children }: { children: React.ReactNode }) {
   const { width } = useWindowDimensions();
@@ -73,6 +79,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
+        <StatusBarTheme />
         <PremiumProvider>
           <AuthProvider>
             <SyncWrapper>
