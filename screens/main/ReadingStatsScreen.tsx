@@ -14,6 +14,8 @@ import {
 import { colors, spacing } from '../../styles/tokens';
 import { useTheme } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
+import { openPremiumCheckout } from '../../services/stripeService';
+import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
 import BackButton from '../../components/general/BackButton';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -36,14 +38,50 @@ export default function ReadingStatsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('overview');
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   useEffect(() => {
+    if (!isPremium) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     computeReadingStats()
       .then((data) => { if (!cancelled) { setStats(data); setLoading(false); } })
       .catch((err: any) => { if (!cancelled) { setError(err?.message || 'Failed to load stats'); setLoading(false); } });
     return () => { cancelled = true; };
-  }, []);
+  }, [isPremium]);
+
+  // ── Premium gate (fail-closed) ─────────────────────────────────
+  // Free users see a locked state + checkout, never the analytics data.
+  if (!isPremium) {
+    return (
+      <View style={s.container}>
+        <Header onBack={() => navigation.goBack()} />
+        <View style={s.center}>
+          <View style={s.lockBadge}>
+            <Feather name="lock" size={30} color={colors.deepPlum} />
+          </View>
+          <Text style={s.error}>Reading Stats is a Premium feature</Text>
+          <Text style={s.muted}>
+            Unlock personalized analytics — reading streaks, genre charts,
+            calendar heatmap, and time distribution — with YomuLog Premium.
+          </Text>
+          <Pressable
+            style={s.upgradeBtn}
+            onPress={() => setShowPremiumModal(true)}
+          >
+            <Text style={s.upgradeBtnText}>Upgrade to Premium</Text>
+          </Pressable>
+        </View>
+        <PremiumUpgradeModal
+          visible={showPremiumModal}
+          onClose={() => setShowPremiumModal(false)}
+          onUpgrade={openPremiumCheckout}
+        />
+      </View>
+    );
+  }
 
   // ── Loading ──────────────────────────────────────────────────────
   if (loading) {
@@ -73,7 +111,6 @@ export default function ReadingStatsScreen() {
   }
 
   const maxWeekly = Math.max(1, ...stats.weeklyActivity.map((w) => w.count));
-  const isFreeUser = !isPremium;
 
   return (
     <View style={s.container}>
@@ -98,22 +135,6 @@ export default function ReadingStatsScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} style={s.scroll}>
-        {/* ── Premium gate ────────────────────────────────────────── */}
-        {isFreeUser && (
-          <View style={s.premiumGate}>
-            <Feather name="lock" size={18} color={colors.deepPlum} />
-            <Text style={s.premiumGateText}>
-              Full analytics unlocked with Premium
-            </Text>
-            <Pressable
-              style={s.upgradeBtn}
-              onPress={() => navigation.navigate('SettingsScreen' as never)}
-            >
-              <Text style={s.upgradeBtnText}>Upgrade</Text>
-            </Pressable>
-          </View>
-        )}
-
         {/* ── Overview Tab ────────────────────────────────────────── */}
         {tab === 'overview' && (
           <>
@@ -284,16 +305,6 @@ export default function ReadingStatsScreen() {
           </>
         )}
 
-        {/* Premium badge at bottom for free users */}
-        {isFreeUser && (
-          <View style={s.premiumFooter}>
-            <Text style={s.premiumFooterIcon}>👑</Text>
-            <Text style={s.premiumFooterText}>
-              Premium unlocks: genre charts, heatmap calendar, time distribution, and exportable stats
-            </Text>
-          </View>
-        )}
-
         <View style={{ height: spacing.p24 }} />
       </ScrollView>
     </View>
@@ -405,6 +416,12 @@ const s = StyleSheet.create({
   tabLabelActive: { color: colors.paleLavender },
 
   // Premium gate
+  lockBadge: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center',
+    marginBottom: spacing.p14, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1, shadowRadius: 4, elevation: 2,
+  },
   premiumGate: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: colors.lavender, borderRadius: 12, padding: spacing.p10,

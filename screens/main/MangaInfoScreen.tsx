@@ -40,12 +40,15 @@ import {
   isChapterDownloaded,
   getChapterDownloadStatus,
   processAllDownloads,
+  DownloadLimitError,
   type DownloadStatus,
 } from '../../services/downloadManager';
 import { colors, spacing, borders } from '../../styles/tokens';
 import { RootStackParamList } from '../../navigation/navigation';
 import { updateChapterProgress } from '../../services/readingProgress';
 import { useTheme } from '../../context/ThemeContext';
+import { openPremiumCheckout } from '../../services/stripeService';
+import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -119,6 +122,7 @@ export default function MangaInfoScreen() {
   const mangaId = route.params?.mangaId;
   const { colors: theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const [manga, setManga] = useState<Manga | null>(null);
   const [chapters, setChapters] = useState<ChapterWithDownload[]>([]);
@@ -301,7 +305,11 @@ export default function MangaInfoScreen() {
               );
               setChapters(refreshed);
             } catch (e) {
-              Alert.alert('Error', 'Failed to queue downloads.');
+              if (e instanceof DownloadLimitError) {
+                setShowPremiumModal(true);
+              } else {
+                Alert.alert('Error', 'Failed to queue downloads.');
+              }
             } finally {
               setDownloadingIds(new Set());
             }
@@ -336,7 +344,11 @@ export default function MangaInfoScreen() {
         ),
       );
     } catch (e) {
-      Alert.alert('Download Error', 'Failed to queue chapter for download.');
+      if (e instanceof DownloadLimitError) {
+        setShowPremiumModal(true);
+      } else {
+        Alert.alert('Download Error', 'Failed to queue chapter for download.');
+      }
     } finally {
       setDownloadingIds((prev) => {
         const next = new Set(prev);
@@ -804,6 +816,11 @@ export default function MangaInfoScreen() {
         {/* Bottom spacer for safe area */}
         <View style={{ height: 40 }} />
       </ScrollView>
+      <PremiumUpgradeModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        onUpgrade={openPremiumCheckout}
+      />
     </View>
   );
 }

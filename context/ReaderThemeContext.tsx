@@ -96,7 +96,8 @@ const PRESETS: Record<ReaderThemePreset, Omit<ReaderThemeConfig, 'preset' | 'isP
   },
 };
 
-const FREE_PRESETS: ReaderThemePreset[] = ['dark', 'light', 'sepia', 'night', 'mint'];
+// Free users get 3 base themes (dark/light/sepia); Premium unlocks Night and Mint.
+const FREE_PRESETS: ReaderThemePreset[] = ['dark', 'light', 'sepia'];
 
 // ─── Storage ──────────────────────────────────────────────────────────
 
@@ -180,13 +181,15 @@ export function ReaderThemeProvider({ children }: { children: ReactNode }) {
     [persist],
   );
 
-  // Build preset configs with premium flag
+  // Build preset configs with premium flag — Night/Mint require Premium.
+  // `isPremium` here is static metadata (this preset is premium-only); the UI
+  // gates it against the user's entitlement via `p.isPremium && !isPremium`.
   const presets = useMemo<ReaderThemeConfig[]>(
     () =>
       (Object.keys(PRESETS) as ReaderThemePreset[]).map((key) => ({
         preset: key,
         ...PRESETS[key],
-        isPremium: false,
+        isPremium: !FREE_PRESETS.includes(key),
       })),
     [],
   );
