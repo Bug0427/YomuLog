@@ -31,7 +31,6 @@ import { usePremium } from '../../context/PremiumContext';
 import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
 import GenreFilterModal, { genreLabel as genreDisplay } from '../../components/layout/GenreFilterModal';
 import ReverseImageSearchModal from '../../components/layout/ReverseImageSearchModal';
-import GenreSuggestions from '../../components/search/GenreSuggestions';
 import { pickImageFromLibrary, searchByImage, RisMatch } from '../../services/reverseImageSearch';
 
 const LIMIT = 20;
@@ -368,15 +367,6 @@ export default function SearchScreen() {
           </Text>
         </View>
       ) : null}
-      <GenreSuggestions
-        selectedGenres={filter.genres}
-        excludedGenres={excludedGenres}
-        onGenrePress={(tag) => {
-          if (!filter.genres.includes(tag)) {
-            setFilter((prev) => ({ ...prev, genres: [...prev.genres, tag] }));
-          }
-        }}
-      />
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
         <GenreSlider genres={genreSliderItems} onGenrePress={handleGenrePress} selectedGenres={filter.genres.map(genreLabel)} excludedGenres={Array.from(excludedGenres).map(genreLabel)} />
       </View>
