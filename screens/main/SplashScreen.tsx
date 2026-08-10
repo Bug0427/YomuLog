@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { useOnboarding } from '../../hooks/useOnboarding';
 
@@ -23,15 +24,17 @@ export default function SplashScreen({ navigation }: any) {
   }, [completed, navigation]);
 
   return (
+    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <Text style={[styles.title, { color: theme.textPrimary }]}>YomuLog</Text>
-      <Text style={[styles.subtitle, { color: theme.textMuted }]}>
-        Your Manga Companion 🧸📚
-      </Text>
-      {completed === null && (
-        <ActivityIndicator size="small" color={theme.accent} style={styles.spinner} />
-      )}
-    </View>
+        <Text style={[styles.title, { color: theme.textPrimary }]}>YomuLog</Text>
+        <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+          Your Manga Companion 🧸📚
+        </Text>
+        {completed === null && (
+          <ActivityIndicator size="small" color={theme.accent} style={styles.spinner} />
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 

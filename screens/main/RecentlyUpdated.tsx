@@ -148,29 +148,31 @@ export default function RecentlyUpdated() {
   );
 
   return (
+    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
     <View style={[GeneralStyles.container, { backgroundColor: theme.bg }]}>
-      {loading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg }}>
-          <ActivityIndicator size="large" color={colors.plum} />
-        </View>
-      ) : (
-        <CardView
-          listRef={listRef}
-          data={cardData}
-          viewMode={viewMode}
-          onPressItem={(item) =>
-            navigation.navigate('MangaInfoScreen', { mangaId: String(item.id) })
-          }
-          onLongPress={handleLongPress}
-          headerComponent={HeaderContent}
-          itemStyle={() => CardViewStyles.placeholder}
-          onScrollBeginDrag={handleScrollStart}
-          onScrollEndDrag={handleScrollEnd}
-          onMomentumScrollEnd={handleScrollEnd}
-          emptyMessage="No recently updated manga. Updates from your favorites will appear here."
-        />
-      )}
-      <Anchor scrollRef={listRef} isScrolling={isScrolling} />
-    </View>
+        {loading ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg }}>
+            <ActivityIndicator size="large" color={colors.plum} />
+          </View>
+        ) : (
+          <CardView
+            listRef={listRef}
+            data={cardData}
+            viewMode={viewMode}
+            onPressItem={(item) =>
+              navigation.navigate('MangaInfoScreen', { mangaId: String(item.id) })
+            }
+            onLongPress={handleLongPress}
+            headerComponent={HeaderContent}
+            itemStyle={() => CardViewStyles.placeholder}
+            onScrollBeginDrag={handleScrollStart}
+            onScrollEndDrag={handleScrollEnd}
+            onMomentumScrollEnd={handleScrollEnd}
+            emptyMessage="No recently updated manga. Updates from your favorites will appear here."
+          />
+        )}
+        <Anchor scrollRef={listRef} isScrolling={isScrolling} />
+      </View>
+    </SafeAreaView>
   );
 }

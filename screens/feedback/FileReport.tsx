@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Pressable, Text, KeyboardAvoidingView, ScrollView, TouchableWithoutFeedback, Keyboard, Platform, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import FBHeader from '../../components/layout/FBHeader';
 import { categories, issuesByCategory, type CategoryId } from '../../data/feedbackCategories';
@@ -101,142 +102,144 @@ export default function FileReport() {
   const currentIssues = selectedCat ? issuesByCategory[selectedCat.id] : [];
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: FeedbackStyles.screen.backgroundColor }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={FeedbackStyles.screen}>
-          <FBHeader title="Report a problem" onBack={() => navigation.goBack()} />
+    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
+      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: FeedbackStyles.screen.backgroundColor }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View style={FeedbackStyles.screen}>
+            <FBHeader title="Report a problem" onBack={() => navigation.goBack()} />
 
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingBottom: 40 }}
-          >
-            <View style={FeedbackStyles.body}>
-              {/* Category dropdown trigger */}
-              <Pressable
-                accessibilityRole="button"
-                style={[FeedbackStyles.item]}
-                onPress={() => setCatOpen((v) => !v)}
-              >
-                <Text style={FeedbackStyles.itemText}>
-                  {selectedCat ? selectedCat.title : 'Select a category'}
-                </Text>
-                <Text style={FeedbackStyles.caret}>{catOpen ? '▲' : '▼'}</Text>
-              </Pressable>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 40 }}
+            >
+              <View style={FeedbackStyles.body}>
+                {/* Category dropdown trigger */}
+                <Pressable
+                  accessibilityRole="button"
+                  style={[FeedbackStyles.item]}
+                  onPress={() => setCatOpen((v) => !v)}
+                >
+                  <Text style={FeedbackStyles.itemText}>
+                    {selectedCat ? selectedCat.title : 'Select a category'}
+                  </Text>
+                  <Text style={FeedbackStyles.caret}>{catOpen ? '▲' : '▼'}</Text>
+                </Pressable>
 
-              {/* Category dropdown list */}
-              {catOpen && (
-                <View style={FeedbackStyles.dropdown}>
-                  {categories.map((c, idx) => (
-                    <View key={`${c.id}_${idx}`}>
+                {/* Category dropdown list */}
+                {catOpen && (
+                  <View style={FeedbackStyles.dropdown}>
+                    {categories.map((c, idx) => (
+                      <View key={`${c.id}_${idx}`}>
+                        <Pressable
+                          accessibilityRole="button"
+                          style={({ pressed }) => [FeedbackStyles.option, pressed && FeedbackStyles.optionPressed]}
+                          onPress={() => onSelectCategory(c.id as CategoryId, c.title)}
+                        >
+                          <Text style={FeedbackStyles.itemText}>{c.title}</Text>
+                        </Pressable>
+                        {idx < categories.length - 1 && <View style={FeedbackStyles.divider} />}
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Issue(sub-option) dropdown trigger or text input for "Other"/"Unlisted" – shown AFTER a category is picked */}
+                {selectedCat && (
+                  isFreeTextSub ? (
+                    <TextInput
+                      style={[FeedbackStyles.item, { color: theme.textPrimary, minHeight: 40, paddingVertical: 10 }]}
+                      placeholder="Please specify"
+                      placeholderTextColor={theme.placeholder}
+                      value={selectedIssue ?? ''}
+                      onChangeText={setSelectedIssue}
+                      maxLength={SUB_CAT_MAX_CHARS}
+                    />
+                  ) : (
+                    <>
                       <Pressable
                         accessibilityRole="button"
-                        style={({ pressed }) => [FeedbackStyles.option, pressed && FeedbackStyles.optionPressed]}
-                        onPress={() => onSelectCategory(c.id as CategoryId, c.title)}
+                        style={[FeedbackStyles.item]}
+                        onPress={() => setIssueOpen((v) => !v)}
                       >
-                        <Text style={FeedbackStyles.itemText}>{c.title}</Text>
+                        <Text style={FeedbackStyles.itemText}>
+                          {selectedIssue ? selectedIssue : 'Select a sub option'}
+                        </Text>
+                        <Text style={FeedbackStyles.caret}>{issueOpen ? '▲' : '▼'}</Text>
                       </Pressable>
-                      {idx < categories.length - 1 && <View style={FeedbackStyles.divider} />}
-                    </View>
-                  ))}
-                </View>
-              )}
 
-              {/* Issue(sub-option) dropdown trigger or text input for "Other"/"Unlisted" – shown AFTER a category is picked */}
-              {selectedCat && (
-                isFreeTextSub ? (
-                  <TextInput
-                    style={[FeedbackStyles.item, { color: theme.textPrimary, minHeight: 40, paddingVertical: 10 }]}
-                    placeholder="Please specify"
-                    placeholderTextColor={theme.placeholder}
-                    value={selectedIssue ?? ''}
-                    onChangeText={setSelectedIssue}
-                    maxLength={SUB_CAT_MAX_CHARS}
-                  />
-                ) : (
-                  <>
-                    <Pressable
-                      accessibilityRole="button"
-                      style={[FeedbackStyles.item]}
-                      onPress={() => setIssueOpen((v) => !v)}
-                    >
-                      <Text style={FeedbackStyles.itemText}>
-                        {selectedIssue ? selectedIssue : 'Select a sub option'}
-                      </Text>
-                      <Text style={FeedbackStyles.caret}>{issueOpen ? '▲' : '▼'}</Text>
-                    </Pressable>
+                      {issueOpen && (
+                        <View style={FeedbackStyles.dropdown}>
+                          {currentIssues.map((issue, idx) => (
+                            <View key={`${issue}_${idx}`}>
+                              <Pressable
+                                accessibilityRole="button"
+                                style={({ pressed }) => [FeedbackStyles.option, pressed && FeedbackStyles.optionPressed]}
+                                onPress={() => onSelectIssue(issue)}
+                              >
+                                <Text style={FeedbackStyles.itemText}>{issue}</Text>
+                              </Pressable>
+                              {idx < currentIssues.length - 1 && <View style={FeedbackStyles.divider} />}
+                            </View>
+                          ))}
+                        </View>
+                      )}
+                    </>
+                  )
+                )}
 
-                    {issueOpen && (
-                      <View style={FeedbackStyles.dropdown}>
-                        {currentIssues.map((issue, idx) => (
-                          <View key={`${issue}_${idx}`}>
-                            <Pressable
-                              accessibilityRole="button"
-                              style={({ pressed }) => [FeedbackStyles.option, pressed && FeedbackStyles.optionPressed]}
-                              onPress={() => onSelectIssue(issue)}
-                            >
-                              <Text style={FeedbackStyles.itemText}>{issue}</Text>
-                            </Pressable>
-                            {idx < currentIssues.length - 1 && <View style={FeedbackStyles.divider} />}
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                  </>
-                )
-              )}
+                {/* Helper text */}
+                <Text style={FeedbackStyles.helper}>
+                  {selectedCat
+                    ? selectedIssue
+                      ? ''
+                      : 'Now pick a sub option.'
+                    : 'Pick a category to continue.'}
+                </Text>
 
-              {/* Helper text */}
-              <Text style={FeedbackStyles.helper}>
-                {selectedCat
-                  ? selectedIssue
-                    ? ''
-                    : 'Now pick a sub option.'
-                  : 'Pick a category to continue.'}
-              </Text>
-
-              {/* Text input + submit (only after both selections) */}
-              {(selectedCat && (isFreeTextSub || selectedIssue)) && (
-                <View style={{ marginTop: 12, gap: 12 }}>
-                  <View
-                    style={{
-                      borderWidth: 2,
-                      borderColor: theme.textPrimary,
-                      padding: 12,
-                      backgroundColor:theme.bgCard,
-                    }}
-                  >
-                    <TextInput
+                {/* Text input + submit (only after both selections) */}
+                {(selectedCat && (isFreeTextSub || selectedIssue)) && (
+                  <View style={{ marginTop: 12, gap: 12 }}>
+                    <View
                       style={{
-                        minHeight: 165,
-                        textAlignVertical: 'top',
-                        color: theme.textPrimary,
+                        borderWidth: 2,
+                        borderColor: theme.textPrimary,
+                        padding: 12,
+                        backgroundColor:theme.bgCard,
                       }}
-                      multiline
-                      placeholder="Describe the problem…"
-                      placeholderTextColor={theme.placeholder}
-                      value={commentText}
-                      onChangeText={setCommentText}
-                      maxLength={MAX_CHARS}
-                      onSubmitEditing={handleSubmit}
+                    >
+                      <TextInput
+                        style={{
+                          minHeight: 165,
+                          textAlignVertical: 'top',
+                          color: theme.textPrimary,
+                        }}
+                        multiline
+                        placeholder="Describe the problem…"
+                        placeholderTextColor={theme.placeholder}
+                        value={commentText}
+                        onChangeText={setCommentText}
+                        maxLength={MAX_CHARS}
+                        onSubmitEditing={handleSubmit}
+                      />
+                    </View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
+                      <Text style={{ color: theme.textPrimary, fontWeight: '600' }}>
+                        {remaining} characters left
+                      </Text>
+                    </View>
+
+                    <SubmitButton
+                      title="Submit"
+                      onPress={handleSubmit}
+                      disabled={commentText.trim().length < 5}
                     />
                   </View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
-                    <Text style={{ color: theme.textPrimary, fontWeight: '600' }}>
-                      {remaining} characters left
-                    </Text>
-                  </View>
-
-                  <SubmitButton
-                    title="Submit"
-                    onPress={handleSubmit}
-                    disabled={commentText.trim().length < 5}
-                  />
-                </View>
-              )}
-            </View>
-          </ScrollView>
-        </View>
-      </TouchableWithoutFeedback>
+                )}
+              </View>
+            </ScrollView>
+          </View>
+        </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

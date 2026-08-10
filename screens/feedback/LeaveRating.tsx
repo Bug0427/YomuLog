@@ -1,6 +1,7 @@
 // LeaveRating.tsx — 1–5 hearts rating screen
 import React from 'react';
 import { View, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { GeneralStyles } from '../../styles/global';
@@ -58,19 +59,21 @@ export default function LeaveRating() {
     const Heart = ({ index }: { index: number }) => {
         const active = index <= rating;
         return (
+        <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
         <Pressable
-            onPress={() => setRating(index)}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel={`Set rating to ${index}`}
-            style={{ paddingHorizontal: 8, paddingVertical: 6 }}
-        >
-            <Ionicons
-                name={active ? 'heart' : 'heart-outline'}
-                size={35}
-                color={active ? theme.accent : theme.textMuted}
-            />
-        </Pressable>
+              onPress={() => setRating(index)}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={`Set rating to ${index}`}
+              style={{ paddingHorizontal: 8, paddingVertical: 6 }}
+          >
+              <Ionicons
+                  name={active ? 'heart' : 'heart-outline'}
+                  size={35}
+                  color={active ? theme.accent : theme.textMuted}
+              />
+          </Pressable>
+        </SafeAreaView>
         );
     };
 

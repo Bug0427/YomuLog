@@ -11,6 +11,7 @@ import {
   NativeScrollEvent,
   StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import WelcomeScreen from './WelcomeScreen';
 import FeaturesScreen from './FeaturesScreen';
 import PremiumUpsellScreen from './PremiumUpsellScreen';
@@ -46,37 +47,39 @@ export default function OnboardingFlow({ navigation }: Props) {
   };
 
   return (
+    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
-      {/* Page indicator dots */}
-      <View style={styles.dots}>
-        {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.dot,
-              {
-                backgroundColor: i === currentStep ? theme.accent : theme.borderLight,
-                width: i === currentStep ? 24 : 8,
-              },
-            ]}
-          />
-        ))}
-      </View>
+        {/* Page indicator dots */}
+        <View style={styles.dots}>
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.dot,
+                {
+                  backgroundColor: i === currentStep ? theme.accent : theme.borderLight,
+                  width: i === currentStep ? 24 : 8,
+                },
+              ]}
+            />
+          ))}
+        </View>
 
-      {/* Horizontal paged scroll */}
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={handleScroll}
-        scrollEventThrottle={16}
-      >
-        <WelcomeScreen onNext={() => goToStep(1)} />
-        <FeaturesScreen onNext={() => goToStep(2)} />
-        <PremiumUpsellScreen onFinish={handleFinish} onSkip={handleFinish} />
-      </ScrollView>
-    </View>
+        {/* Horizontal paged scroll */}
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={handleScroll}
+          scrollEventThrottle={16}
+        >
+          <WelcomeScreen onNext={() => goToStep(1)} />
+          <FeaturesScreen onNext={() => goToStep(2)} />
+          <PremiumUpsellScreen onFinish={handleFinish} onSkip={handleFinish} />
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
 

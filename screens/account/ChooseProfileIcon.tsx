@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { GeneralStyles, SettingButtonStyles, FeedbackStyles } from '../../styles/global';
 import { profileIcons } from '../../data/profileIcons';
@@ -96,22 +97,24 @@ export default function ChooseProfileIcon() {
   );
 
   const HeaderContent = (
+    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
     <View>
-      <View style={[GeneralStyles.header, { marginTop: 30, marginBottom: 15, paddingBottom: 20, borderBottomWidth: 2, borderColor: theme.accent }]}>
-        <Pressable onPress={navigateToUserAccount} style={[FeedbackStyles.item, { width: 57, paddingVertical: 7 }]}>
-          <Text style={GeneralStyles.plainText}>Back</Text>
-        </Pressable>
-        <Text style={[SettingButtonStyles.icon, {}]}>Profile Icon</Text>
-        <Pressable
-          onPress={handleSave}
-          style={[FeedbackStyles.item, { width: 57, paddingVertical: 7, opacity: selectedId ? 1 : 0.4 }]}
-          disabled={!selectedId}
-          accessibilityState={{ disabled: !selectedId }}
-        >
-          <Text style={GeneralStyles.plainText}>Save</Text>
-        </Pressable>
+        <View style={[GeneralStyles.header, { marginTop: 30, marginBottom: 15, paddingBottom: 20, borderBottomWidth: 2, borderColor: theme.accent }]}>
+          <Pressable onPress={navigateToUserAccount} style={[FeedbackStyles.item, { width: 57, paddingVertical: 7 }]}>
+            <Text style={GeneralStyles.plainText}>Back</Text>
+          </Pressable>
+          <Text style={[SettingButtonStyles.icon, {}]}>Profile Icon</Text>
+          <Pressable
+            onPress={handleSave}
+            style={[FeedbackStyles.item, { width: 57, paddingVertical: 7, opacity: selectedId ? 1 : 0.4 }]}
+            disabled={!selectedId}
+            accessibilityState={{ disabled: !selectedId }}
+          >
+            <Text style={GeneralStyles.plainText}>Save</Text>
+          </Pressable>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 
   return (

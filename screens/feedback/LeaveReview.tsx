@@ -2,6 +2,7 @@
 // LeaveReview.tsx — long text review form with header submit
 import React from 'react';
 import { View, Text, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 
 import FBHeader from '../../components/layout/FBHeader';
@@ -60,52 +61,54 @@ export default function LeaveReview() {
   };
 
   return (
+    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
     <KeyboardAvoidingView
-      behavior={Platform.select({ ios: 'padding', android: undefined })}
-      style={GeneralStyles.section}
-    >
-      <View style={FeedbackStyles.screen}>
-        <FBHeader
-          title="Leave a review"
-          onBack={() => navigation.goBack()}
-          onSubmit={handleSubmit}
-          submitLabel="Submit"
-          disabled={isDisabled}
-        />
+        behavior={Platform.select({ ios: 'padding', android: undefined })}
+        style={GeneralStyles.section}
+      >
+        <View style={FeedbackStyles.screen}>
+          <FBHeader
+            title="Leave a review"
+            onBack={() => navigation.goBack()}
+            onSubmit={handleSubmit}
+            submitLabel="Submit"
+            disabled={isDisabled}
+          />
 
-        <ScrollView keyboardShouldPersistTaps="handled">
-          <View style={[GeneralStyles.container, { paddingHorizontal: 12, paddingBottom: 24 }]}> 
-            <View
-              style={{
-                marginTop: 24,
-                borderWidth: 2,
-                borderColor: theme.textPrimary,
-                padding: 12,
-              }}
-            >
-              <TextInput
+          <ScrollView keyboardShouldPersistTaps="handled">
+            <View style={[GeneralStyles.container, { paddingHorizontal: 12, paddingBottom: 24 }]}> 
+              <View
                 style={{
-                  minHeight: 165,
-                  textAlignVertical: 'top',
-                  color: theme.textPrimary,
+                  marginTop: 24,
+                  borderWidth: 2,
+                  borderColor: theme.textPrimary,
+                  padding: 12,
                 }}
-                multiline
-                placeholder="Please type here…"
-                placeholderTextColor={theme.placeholder}
-                value={text}
-                onChangeText={setText}
-                maxLength={MAX_CHARS}
-              />
-            </View>
+              >
+                <TextInput
+                  style={{
+                    minHeight: 165,
+                    textAlignVertical: 'top',
+                    color: theme.textPrimary,
+                  }}
+                  multiline
+                  placeholder="Please type here…"
+                  placeholderTextColor={theme.placeholder}
+                  value={text}
+                  onChangeText={setText}
+                  maxLength={MAX_CHARS}
+                />
+              </View>
 
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
-                <Text style={{ color: theme.textPrimary, fontWeight: '600' }}>
-                    {remaining} characters left
-                </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
+                  <Text style={{ color: theme.textPrimary, fontWeight: '600' }}>
+                      {remaining} characters left
+                  </Text>
+              </View>
             </View>
-          </View>
-        </ScrollView>
-      </View>
-    </KeyboardAvoidingView>
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { colors } from '../../styles/tokens';
@@ -41,47 +42,49 @@ export default function FeaturesScreen({ onNext }: Props) {
   const { colors: theme } = useTheme();
 
   return (
+    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={styles.content}>
-        <Text style={[styles.heading, { color: theme.textPrimary }]}>
-          Everything you need
-        </Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-          A manga tracker built for readers, not advertisers.
-        </Text>
+        <View style={styles.content}>
+          <Text style={[styles.heading, { color: theme.textPrimary }]}>
+            Everything you need
+          </Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+            A manga tracker built for readers, not advertisers.
+          </Text>
 
-        <View style={styles.cards}>
-          {FEATURES.map((feature, i) => (
-            <View
-              key={i}
-              style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
-            >
-              <View style={[styles.cardIcon, { backgroundColor: theme.accent + '18' }]}>
-                <Feather name={feature.icon as any} size={28} color={theme.accent} />
+          <View style={styles.cards}>
+            {FEATURES.map((feature, i) => (
+              <View
+                key={i}
+                style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
+              >
+                <View style={[styles.cardIcon, { backgroundColor: theme.accent + '18' }]}>
+                  <Feather name={feature.icon as any} size={28} color={theme.accent} />
+                </View>
+                <View style={styles.cardText}>
+                  <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>
+                    {feature.title}
+                  </Text>
+                  <Text style={[styles.cardDesc, { color: theme.textMuted }]}>
+                    {feature.description}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.cardText}>
-                <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>
-                  {feature.title}
-                </Text>
-                <Text style={[styles.cardDesc, { color: theme.textMuted }]}>
-                  {feature.description}
-                </Text>
-              </View>
-            </View>
-          ))}
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.bottom}>
+          <Pressable
+            onPress={onNext}
+            style={[styles.cta, { backgroundColor: theme.accent }]}
+          >
+            <Text style={styles.ctaText}>Continue</Text>
+            <Feather name="arrow-right" size={18} color={colors.white} />
+          </Pressable>
         </View>
       </View>
-
-      <View style={styles.bottom}>
-        <Pressable
-          onPress={onNext}
-          style={[styles.cta, { backgroundColor: theme.accent }]}
-        >
-          <Text style={styles.ctaText}>Continue</Text>
-          <Feather name="arrow-right" size={18} color={colors.white} />
-        </Pressable>
-      </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
