@@ -32,25 +32,19 @@ async function secureSetItem(key: string, value: string): Promise<void> {
   await AsyncStorage.setItem(key, value);
 }
 
-/** Cross-platform random bytes: expo-crypto (native) or Web Crypto API (web). */
+/** Cross-platform random bytes: Web Crypto API (works on web and modern RN/Expo). */
 async function getRandomBytes(length: number): Promise<Uint8Array> {
-  // Try expo-crypto first (recommended replacement for deprecated expo-random)
-  try {
-    const cryptoMod = await import('expo-crypto');
-    const bytes = await cryptoMod.getRandomBytesAsync(length);
-    return new Uint8Array(bytes);
-  } catch {
-    // Fallback: Web Crypto API (works on web and modern RN)
-    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-      const buf = new Uint8Array(length);
-      crypto.getRandomValues(buf);
-      return buf;
-    }
-    // Ultimate fallback: Math.random (not cryptographically secure)
+  // Web Crypto API — available in browsers and React Native (via Expo polyfill)
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
     const buf = new Uint8Array(length);
-    for (let i = 0; i < length; i++) buf[i] = Math.floor(Math.random() * 256);
+    crypto.getRandomValues(buf);
     return buf;
   }
+  // Ultimate fallback: Math.random (not cryptographically secure)
+  console.warn('[keyManager] No secure RNG available, using Math.random fallback');
+  const buf = new Uint8Array(length);
+  for (let i = 0; i < length; i++) buf[i] = Math.floor(Math.random() * 256);
+  return buf;
 }
 
 /**
