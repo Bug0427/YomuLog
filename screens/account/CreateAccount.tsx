@@ -114,7 +114,7 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
     const formContent = (
         <View style={{ flex: 1, paddingHorizontal: 20 }}>
         {/* App title */}
-        <View style={{ alignItems: 'center', marginTop: 60, marginBottom: 12 }}>
+        <View style={{ alignItems: 'center', marginTop: 16, marginBottom: 12 }}>
             <Text style={[FeedbackStyles.itemText, { fontSize: 36, color: theme.textPrimary }]}>YomuLog</Text>
         </View>
 
@@ -202,7 +202,7 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
 
         {/* Exit button at bottom */}
         <View style={{ alignItems: 'center', marginVertical: 16 }}>
-            <Pressable accessibilityRole="button" onPress={exit} style={[SubmitButtonStyles.item, { width: 120, marginBottom:250 }]}>
+            <Pressable accessibilityRole="button" onPress={exit} style={[SubmitButtonStyles.item, { width: 120, marginBottom: 40 }]}>
             <Text style={[FeedbackStyles.itemText, { color: theme.textPrimary }]}>Exit</Text>
             </Pressable>
         </View>

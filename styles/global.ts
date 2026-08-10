@@ -126,7 +126,7 @@ const FeedbackStyles = StyleSheet.create({
     grid: {
         flexDirection: 'column', alignItems: 'center',
         justifyContent: 'center', alignSelf: 'center',
-        borderColor: colors.plum, marginTop: 90,
+        borderColor: colors.plum, marginTop: spacing.p24,
         backgroundColor: colors.lavender, gap: 12,
     },
     button: {...u.rowCenter, marginBottom: 20,},
@@ -135,7 +135,7 @@ const FeedbackStyles = StyleSheet.create({
         paddingHorizontal: spacing.p12, paddingTop: spacing.p10,
         paddingBottom: spacing.p8, backgroundColor: colors.lavender,
         borderColor: colors.plum, borderBottomWidth: 0,
-        marginTop: 70,
+        marginTop: spacing.p16,
     },
     actionBtnPlaceholder: {width: 72, height: 32,},
     divider: {marginTop: spacing.p6, height: 2, backgroundColor: colors.plum,},
