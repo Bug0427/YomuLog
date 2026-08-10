@@ -294,7 +294,7 @@ export default function ReadingStatsScreen() {
           </View>
         )}
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: spacing.p24 }} />
       </ScrollView>
     </View>
   );
@@ -381,7 +381,7 @@ function DonutChart({ segments }: { segments: { label: string; count: number; co
 // ── Styles ─────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.creamWhite },
+  container: { flex: 1, backgroundColor: colors.lavender },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.p16,

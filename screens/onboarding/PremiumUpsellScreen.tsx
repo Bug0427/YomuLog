@@ -6,7 +6,7 @@ import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
-import { colors } from '../../styles/tokens';
+import { colors, spacing } from '../../styles/tokens';
 
 const { width } = Dimensions.get('window');
 
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: spacing.p24 + spacing.p8,
   },
   badge: {
     width: 90,
@@ -98,16 +98,16 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 30,
     fontWeight: '800',
-    marginBottom: 4,
+    marginBottom: spacing.p4,
   },
   price: {
     fontSize: 20,
     fontWeight: '700',
-    marginBottom: 32,
+    marginBottom: spacing.p24 + spacing.p8,
   },
   perks: {
     alignSelf: 'stretch',
-    gap: 14,
+    gap: spacing.p14,
     paddingHorizontal: 8,
   },
   perk: {
@@ -120,17 +120,17 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   bottom: {
-    paddingHorizontal: 32,
-    paddingBottom: 40,
+    paddingHorizontal: spacing.p24 + spacing.p8,
+    paddingBottom: spacing.p24 + spacing.p16,
     gap: 12,
   },
   cta: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: spacing.p16,
     borderRadius: 14,
-    gap: 8,
+    gap: spacing.p8,
   },
   ctaText: {
     color: colors.white,

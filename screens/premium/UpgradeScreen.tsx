@@ -201,7 +201,7 @@ export default function UpgradeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { paddingBottom: spacing.p50 },
+  scroll: { paddingBottom: spacing.p24 },
   header: { alignItems: 'center', paddingTop: spacing.p24, paddingHorizontal: spacing.p16 },
   closeBtn: { position: 'absolute', top: spacing.p16, right: spacing.p16, zIndex: 1 },
   headline: { fontSize: 26, fontWeight: '700', marginTop: spacing.p12 },
