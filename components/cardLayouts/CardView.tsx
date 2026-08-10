@@ -272,12 +272,12 @@ const CardView: React.FC<Props> = ({
     );
   };
 
-  // Define list content container style — flexGrow when empty so pull-down works
-  const listContentStyle: ViewStyle = {
+  // Stable content container style — flexGrow when empty so pull-down works
+  const listContentStyle = useMemo<ViewStyle>(() => ({
     paddingHorizontal: sidePad,
     paddingBottom: contentPadding,
     ...(safeData.length === 0 ? { flexGrow: 1 } : {}),
-  };
+  }), [sidePad, contentPadding, safeData.length]);
 
   return (
     <View onLayout={onLayout} style={{ flex: 1 }}>
@@ -289,6 +289,14 @@ const CardView: React.FC<Props> = ({
         columnWrapperStyle={columns > 1 ? { justifyContent: 'flex-start' } : undefined}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
+        getItemLayout={(_, index) => {
+          const rowHeight = cardHeight + itemSpacing;
+          return {
+            length: cardHeight,
+            offset: Math.floor(index / columns) * rowHeight,
+            index,
+          };
+        }}
         onEndReached={() => { if (!isLoading && hasMore) onLoadMore?.(); }}
         onEndReachedThreshold={0.5}
         ListFooterComponent={Footer}
