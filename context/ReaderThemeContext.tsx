@@ -13,7 +13,6 @@ import React, {
   type ReactNode,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { usePremium } from './PremiumContext';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -97,8 +96,7 @@ const PRESETS: Record<ReaderThemePreset, Omit<ReaderThemeConfig, 'preset' | 'isP
   },
 };
 
-const PREMIUM_PRESETS: ReaderThemePreset[] = ['night', 'mint'];
-const FREE_PRESETS: ReaderThemePreset[] = ['dark', 'light', 'sepia'];
+const FREE_PRESETS: ReaderThemePreset[] = ['dark', 'light', 'sepia', 'night', 'mint'];
 
 // ─── Storage ──────────────────────────────────────────────────────────
 
@@ -143,20 +141,15 @@ function clamp(val: number, min: number, max: number): number {
 const ReaderThemeContext = createContext<ReaderThemeContextValue | null>(null);
 
 export function ReaderThemeProvider({ children }: { children: ReactNode }) {
-  const { isPremium } = usePremium();
   const [state, setState] = useState<ReaderThemeState>(DEFAULT_STATE);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     loadState().then((s) => {
-      // If user downgraded from Premium, fall back to a free preset
-      if (!isPremium && PREMIUM_PRESETS.includes(s.preset)) {
-        s.preset = 'dark';
-      }
       setState(s);
       setReady(true);
     });
-  }, [isPremium]);
+  }, []);
 
   const persist = useCallback(async (patch: Partial<ReaderThemeState>) => {
     setState((prev) => {
@@ -168,10 +161,9 @@ export function ReaderThemeProvider({ children }: { children: ReactNode }) {
 
   const setPreset = useCallback(
     async (preset: ReaderThemePreset) => {
-      if (PREMIUM_PRESETS.includes(preset) && !isPremium) return; // silently reject
       await persist({ preset });
     },
-    [isPremium, persist],
+    [persist],
   );
 
   const setBrightness = useCallback(
@@ -194,7 +186,7 @@ export function ReaderThemeProvider({ children }: { children: ReactNode }) {
       (Object.keys(PRESETS) as ReaderThemePreset[]).map((key) => ({
         preset: key,
         ...PRESETS[key],
-        isPremium: PREMIUM_PRESETS.includes(key),
+        isPremium: false,
       })),
     [],
   );
