@@ -17,6 +17,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { CardViewStyles } from '../../styles/global';
 import { colors } from '../../styles/tokens';
+import { useTheme } from '../../context/ThemeContext';
 import { useWindowWidth } from '../../utils/findDimensions';
 import FallbackImage from '../general/FallbackImage';
 import MarqueeTitle from '../general/MarqueeTitle';
@@ -106,6 +107,7 @@ const CardView: React.FC<Props> = ({
   refreshing = false,
   onRefresh,
 }) => {
+  const { colors: theme } = useTheme();
   const safeData = data ?? [];
   const windowWidth = useWindowWidth();
   const [containerWidth, setContainerWidth] = React.useState<number | null>(null);
@@ -167,7 +169,7 @@ const CardView: React.FC<Props> = ({
           <MaterialCommunityIcons
             name="check-circle"
             size={28}
-            color={colors.success}
+            color={theme.success}
             style={CardViewStyles.selectionCheck}
           />
         )}
@@ -215,7 +217,7 @@ const CardView: React.FC<Props> = ({
         accessibilityHint="Tap to view manga details"
         style={[
           CardViewStyles.rowCard,
-          { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight, alignItems: 'center' },
+          { width: cardWidth, height: cardHeight, marginBottom: itemSpacing, marginRight, alignItems: 'center', backgroundColor: theme.bgCard },
           itemStyle ? itemStyle(item) : undefined,
           isSelected && CardViewStyles.selectedCard,
         ]}
@@ -228,7 +230,7 @@ const CardView: React.FC<Props> = ({
           {selectionOverlay}
         </View>
         <View style={[CardViewStyles.rowTextWrap, CardViewStyles.rowTextCenter]}> 
-          <MarqueeTitle title={item.title} style={CardViewStyles.rowTitle} />
+          <MarqueeTitle title={item.title} style={[CardViewStyles.rowTitle, { color: theme.textPrimary }]} />
         </View>
       </Pressable>
     );

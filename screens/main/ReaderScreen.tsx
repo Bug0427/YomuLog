@@ -298,7 +298,7 @@ function ReaderScreen() {
     return (
       <View style={[styles.container, { backgroundColor: activeConfig.bg }]}>
         <StatusBar hidden />
-        <Text style={styles.errorText}>{error || 'No pages found'}</Text>
+        <Text style={[styles.errorText, { color: theme.error }]}>{error || 'No pages found'}</Text>
         <BackButton onPress={() => navigation.goBack()} />
       </View>
     );
@@ -484,7 +484,7 @@ const ReaderPage = React.memo(function ReaderPage({ uri, index, isActive, bg, on
       )}
       {failed ? (
         <View style={[styles.pagePlaceholder, { backgroundColor: bg }]}>
-          <Text style={styles.errorText}>Failed to load</Text>
+          <Text style={[styles.errorText, { color: theme.error }]}>Failed to load</Text>
         </View>
       ) : (
         <Image
@@ -559,27 +559,27 @@ function ReaderControls({
       <View style={[styles.bottomBar, { backgroundColor: overlayBg }]}>
         {/* Progress bar */}
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${Math.min(100, scrollPercent)}%` }]} />
+          <View style={[styles.progressFill, { width: `${Math.min(100, scrollPercent)}%`, backgroundColor: theme.accent }]} />
         </View>
 
         <View style={styles.bottomRow}>
           <Text style={[styles.pageIndicator, { color: textColor }]}>
             {currentPage + 1} / {totalPages} ({scrollPercent}%)
           </Text>
-          {isRead && <Text style={styles.readBadge}>✓ Read</Text>}
+          {isRead && <Text style={[styles.readBadge, { color: theme.success }]}>✓ Read</Text>}
         </View>
 
         <View style={styles.chapterNavRow}>
           <Pressable
             onPress={onPrevChapter}
-            style={[styles.chapterNavBtnSmall, !hasPrevChapter && styles.chapterNavBtnDisabled]}
+            style={[styles.chapterNavBtnSmall, { backgroundColor: theme.bgSecondary }, !hasPrevChapter && styles.chapterNavBtnDisabled]}
             disabled={!hasPrevChapter}
           >
             <Text style={styles.chapterNavBtnText}>◀ Prev Ch.</Text>
           </Pressable>
           <Pressable
             onPress={onNextChapter}
-            style={[styles.chapterNavBtnSmall, !hasNextChapter && styles.chapterNavBtnDisabled]}
+            style={[styles.chapterNavBtnSmall, { backgroundColor: theme.bgSecondary }, !hasNextChapter && styles.chapterNavBtnDisabled]}
             disabled={!hasNextChapter}
           >
             <Text style={styles.chapterNavBtnText}>Next Ch. ▶</Text>
