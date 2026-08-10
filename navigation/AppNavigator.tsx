@@ -57,6 +57,40 @@ function withScreenBoundary(
   };
 }
 
+// ── Module-scope wrapped screen components ────────────────────────────
+// Hoisted to module scope so component identities are stable across
+// AppNavigator re-renders. If `component` receives a new reference on
+// every render, React Navigation remounts the screen (losing scroll
+// position, form state, etc.).
+
+const SplashView = withScreenBoundary('Splash', SplashScreen);
+const HomeView = withScreenBoundary('HomeScreen', HomeScreen);
+const SearchView = withScreenBoundary('SearchScreen', SearchScreen);
+const LibraryView = withScreenBoundary('LibraryScreen', LibraryScreen);
+const RecentlyUpdatedView = withScreenBoundary('RecentlyUpdated', RecentlyUpdated);
+const RecentlyReadView = withScreenBoundary('RecentlyReadScreen', RecentlyReadScreen);
+const DownloadsView = withScreenBoundary('DownLoadsScreen', DownLoadsScreen);
+const ManageDownloadsView = withScreenBoundary('ManageDownloadsScreen', ManageDownloadsScreen);
+const SettingsView = withScreenBoundary('SettingsScreen', SettingsScreen);
+const ReadingStatsView = withScreenBoundary('ReadingStatsScreen', ReadingStatsScreen);
+const FeedbackHomeView = withScreenBoundary('FeedBackHome', FeedBackHome);
+const FileReportView = withScreenBoundary('FileReport', FileReport);
+const AdminView = withScreenBoundary('AdminScreen', AdminScreen);
+const LoginView = withScreenBoundary('LoginScreen', LoginScreen);
+const UserAccountView = withScreenBoundary('UserAccount', UserAccount);
+const CreateAccountView = withScreenBoundary('CreateAccount', CreateAccount);
+const ForgotCredentialsView = withScreenBoundary('ForgotCredentials', ForgotCredentials);
+const ChooseProfileIconView = withScreenBoundary('ChooseProfileIcon', ChooseProfileIcon);
+const ReaderView = withScreenBoundary('ReaderScreen', ReaderScreen);
+const MangaInfoView = withScreenBoundary('MangaInfoScreen', MangaInfoScreen);
+const LeaveRatingView = withScreenBoundary('LeaveRating', LeaveRating);
+const LeaveReviewView = withScreenBoundary('LeaveReview', LeaveReview);
+const AuthView = withScreenBoundary('AuthScreen', AuthScreen);
+const OnboardingView = withScreenBoundary('OnboardingFlow', OnboardingFlow);
+const ReaderThemeSettingsView = withScreenBoundary('ReaderThemeSettingsScreen', ReaderThemeSettingsScreen);
+const UpgradeView = withScreenBoundary('UpgradeScreen', UpgradeScreen);
+const ManageSubscriptionView = withScreenBoundary('ManageSubscriptionScreen', ManageSubscriptionScreen);
+
 export default function AppNavigator() {
     return (
         <ErrorBoundary>
@@ -69,33 +103,33 @@ export default function AppNavigator() {
             animationDuration: 300,
           }}
         >
-            <Stack.Screen name="Splash" component={withScreenBoundary('Splash', SplashScreen)} />
-            <Stack.Screen name="HomeScreen" component={withScreenBoundary('HomeScreen', HomeScreen)} />
-            <Stack.Screen name="SearchScreen" component={withScreenBoundary('SearchScreen', SearchScreen)} />
-            <Stack.Screen name="LibraryScreen" component={withScreenBoundary('LibraryScreen', LibraryScreen)} />
-            <Stack.Screen name="RecentlyUpdated" component={withScreenBoundary('RecentlyUpdated', RecentlyUpdated)} />
-            <Stack.Screen name="RecentlyReadScreen" component={withScreenBoundary('RecentlyReadScreen', RecentlyReadScreen)} />
-            <Stack.Screen name="DownLoadsScreen" component={withScreenBoundary('DownLoadsScreen', DownLoadsScreen)} />
-            <Stack.Screen name="ManageDownloadsScreen" component={withScreenBoundary('ManageDownloadsScreen', ManageDownloadsScreen)} />
-            <Stack.Screen name="SettingsScreen" component={withScreenBoundary('SettingsScreen', SettingsScreen)} />
-            <Stack.Screen name="ReadingStatsScreen" component={withScreenBoundary('ReadingStatsScreen', ReadingStatsScreen)} />
-            <Stack.Screen name="FeedBackHome" component={withScreenBoundary('FeedBackHome', FeedBackHome)} />
-            <Stack.Screen name="FileReport" component={withScreenBoundary('FileReport', FileReport)} />
-            <Stack.Screen name="AdminScreen" component={withScreenBoundary('AdminScreen', AdminScreen)} />
-            <Stack.Screen name="LoginScreen" component={withScreenBoundary('LoginScreen', LoginScreen)} />
-            <Stack.Screen name="UserAccount" component={withScreenBoundary('UserAccount', UserAccount)} />
-            <Stack.Screen name="CreateAccount" component={withScreenBoundary('CreateAccount', CreateAccount)} />
-            <Stack.Screen name="ForgotCredentials" component={withScreenBoundary('ForgotCredentials', ForgotCredentials)} />
-            <Stack.Screen name="ChooseProfileIcon" component={withScreenBoundary('ChooseProfileIcon', ChooseProfileIcon)} />
-            <Stack.Screen name="ReaderScreen" component={withScreenBoundary('ReaderScreen', ReaderScreen)} />
-            <Stack.Screen name="MangaInfoScreen" component={withScreenBoundary('MangaInfoScreen', MangaInfoScreen)} />
-            <Stack.Screen name="LeaveRating" component={withScreenBoundary('LeaveRating', LeaveRating)} />
-            <Stack.Screen name="LeaveReview" component={withScreenBoundary('LeaveReview', LeaveReview)} />
-            <Stack.Screen name="AuthScreen" component={withScreenBoundary('AuthScreen', AuthScreen)} />
-            <Stack.Screen name="OnboardingFlow" component={withScreenBoundary('OnboardingFlow', OnboardingFlow)} />
-            <Stack.Screen name="ReaderThemeSettingsScreen" component={withScreenBoundary('ReaderThemeSettingsScreen', ReaderThemeSettingsScreen)} />
-            <Stack.Screen name="UpgradeScreen" component={withScreenBoundary('UpgradeScreen', UpgradeScreen)} />
-            <Stack.Screen name="ManageSubscriptionScreen" component={withScreenBoundary('ManageSubscriptionScreen', ManageSubscriptionScreen)} />
+            <Stack.Screen name="Splash" component={SplashView} />
+            <Stack.Screen name="HomeScreen" component={HomeView} />
+            <Stack.Screen name="SearchScreen" component={SearchView} />
+            <Stack.Screen name="LibraryScreen" component={LibraryView} />
+            <Stack.Screen name="RecentlyUpdated" component={RecentlyUpdatedView} />
+            <Stack.Screen name="RecentlyReadScreen" component={RecentlyReadView} />
+            <Stack.Screen name="DownLoadsScreen" component={DownloadsView} />
+            <Stack.Screen name="ManageDownloadsScreen" component={ManageDownloadsView} />
+            <Stack.Screen name="SettingsScreen" component={SettingsView} />
+            <Stack.Screen name="ReadingStatsScreen" component={ReadingStatsView} />
+            <Stack.Screen name="FeedBackHome" component={FeedbackHomeView} />
+            <Stack.Screen name="FileReport" component={FileReportView} />
+            <Stack.Screen name="AdminScreen" component={AdminView} />
+            <Stack.Screen name="LoginScreen" component={LoginView} />
+            <Stack.Screen name="UserAccount" component={UserAccountView} />
+            <Stack.Screen name="CreateAccount" component={CreateAccountView} />
+            <Stack.Screen name="ForgotCredentials" component={ForgotCredentialsView} />
+            <Stack.Screen name="ChooseProfileIcon" component={ChooseProfileIconView} />
+            <Stack.Screen name="ReaderScreen" component={ReaderView} />
+            <Stack.Screen name="MangaInfoScreen" component={MangaInfoView} />
+            <Stack.Screen name="LeaveRating" component={LeaveRatingView} />
+            <Stack.Screen name="LeaveReview" component={LeaveReviewView} />
+            <Stack.Screen name="AuthScreen" component={AuthView} />
+            <Stack.Screen name="OnboardingFlow" component={OnboardingView} />
+            <Stack.Screen name="ReaderThemeSettingsScreen" component={ReaderThemeSettingsView} />
+            <Stack.Screen name="UpgradeScreen" component={UpgradeView} />
+            <Stack.Screen name="ManageSubscriptionScreen" component={ManageSubscriptionView} />
         </Stack.Navigator>
         </NavigationContainer>
       </ErrorBoundary>
