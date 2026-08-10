@@ -1,5 +1,6 @@
 // services/deleteAccount.ts
 import { runAsync } from './feedbackRepo';
+import { supabaseSignOut } from './supabaseAuth';
 
 export async function deleteAccount(
 accountId: string,
@@ -25,6 +26,10 @@ try {
 setShowDeleteConfirm(false);
 (globalThis as any).currentAccountId = undefined;
 (globalThis as any).currentUsername = undefined;
+
+// Clear the Supabase session so entitlement/cloud sync data for this
+// user is no longer resolvable in-app (best-effort, after local delete).
+await supabaseSignOut();
 
 // Kick back to login
 // @ts-ignore

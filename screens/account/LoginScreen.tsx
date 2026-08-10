@@ -6,6 +6,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuthContext } from '../../context/AuthContext';
 import { FeedbackStyles, SubmitButtonStyles } from '../../styles/global';
 import { verifyUser } from '../../services/feedbackRepo';
+import { supabaseSignIn } from '../../services/supabaseAuth';
 
 
 export default function LoginScreen() {
@@ -32,6 +33,16 @@ const onSubmit = async () => {
       if (!row) {
         setErrorMsg('Invalid username or password.');
         return;
+      }
+      // Establish the matching Supabase Auth session (same email + password)
+      // so Premium entitlement / Cloud Sync can resolve a real user id.
+      // Non-blocking on failure — the local session still works.
+      const email: string | undefined = row.EMAIL;
+      if (email) {
+        const sb = await supabaseSignIn(email, pwd);
+        if (!sb.ok && !sb.needsEmailConfirmation) {
+          console.warn('Supabase sign-in failed (local login still works):', sb.error);
+        }
       }
       (globalThis as any).currentAccountId = row.ACCOUNTID;
       (globalThis as any).currentUsername = row.USERNM;

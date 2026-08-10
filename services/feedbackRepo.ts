@@ -346,8 +346,10 @@ export async function setUserSecurityLevel(accountId: string, level: SecurityLev
 }
 
 export async function verifyUser(userNm: string, pswd: string) {
+  // EMAIL is included so sign-in screens can establish the matching
+  // Supabase Auth session (entitlement/cloud sync are keyed by Supabase id).
   return await queryFirst(
-    `SELECT ACCOUNTID, USERNM, SECURITYLVL FROM users WHERE USERNM = ? AND PSWD = ? LIMIT 1`,
+    `SELECT ACCOUNTID, USERNM, EMAIL, SECURITYLVL FROM users WHERE USERNM = ? AND PSWD = ? LIMIT 1`,
     [userNm, pswd]
   );
 }

@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
 import { FeedbackStyles, SubmitButtonStyles } from '../../styles/global';
 import { CreateNewUser, runAsync, SecurityLevel } from '../../services/feedbackRepo';
+import { supabaseSignUp } from '../../services/supabaseAuth';
 
 // Ensure default security level mapping even if enum values shift
 // Expected mapping: 1 = Admin, 2 = Purchase, 3 = Regular
@@ -97,6 +98,16 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
         }
         setIsSubmitting(false);
         return;
+        }
+
+        // Provision the matching Supabase Auth user (same email + password)
+        // so sign-in can establish a real session — Premium entitlement and
+        // Cloud Sync are keyed by the Supabase user id. Non-blocking: if the
+        // email is already registered or Supabase is unreachable, the local
+        // account still works (premium/cloud stay off until a session exists).
+        const sb = await supabaseSignUp(em, pw);
+        if (!sb.ok && !sb.userAlreadyRegistered) {
+        console.warn('Supabase account provision skipped (local account created):', sb.error);
         }
 
         setUsername('');

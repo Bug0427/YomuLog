@@ -23,6 +23,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { spacing } from '../../styles/tokens';
 import { RootStackParamList } from '../../navigation/navigation';
 import { verifyUser } from '../../services/feedbackRepo';
+import { supabaseSignIn, supabaseSignOut } from '../../services/supabaseAuth';
 
 type Mode = 'signIn' | 'signUp';
 
@@ -54,6 +55,16 @@ export default function AuthScreen() {
         setLoading(false);
         return;
       }
+      // Establish the matching Supabase Auth session (same email + password)
+      // so Premium entitlement / Cloud Sync can resolve a real user id.
+      // Non-blocking on failure — the local session still works.
+      const email: string | undefined = row.EMAIL;
+      if (email) {
+        const sb = await supabaseSignIn(email, pwd);
+        if (!sb.ok && !sb.needsEmailConfirmation) {
+          console.warn('Supabase sign-in failed (local login still works):', sb.error);
+        }
+      }
       login(row.ACCOUNTID, row.USERNM, row.SECURITYLVL ?? 1);
       // isLoggedIn becomes true through React state; the component re-renders to show authenticated view
     } catch (e) {
@@ -64,7 +75,8 @@ export default function AuthScreen() {
     }
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    await supabaseSignOut();
     logout();
   };
 
