@@ -42,6 +42,17 @@ Set in the **Expo web build environment** (the value is inlined at build time):
 EXPO_PUBLIC_MANGADEX_PROXY_URL=https://<your-host>/api/mangadex
 ```
 
+Turn-key rebuild once the proxy is deployed — use the repo script:
+
+```bash
+# env var form (or put the line above into a local .env.web.proxy file)
+EXPO_PUBLIC_MANGADEX_PROXY_URL=https://<your-host>/api/mangadex ./scripts/build-web.sh <outdir>
+```
+
+`scripts/build-web.sh` runs `expo export --platform web`, prints the
+AppEntry-*.js bundle SHA-256, and verifies the proxy origin was inlined.
+With no proxy URL it behaves exactly like a plain web export.
+
 - Add it to the env where the web export/build runs (CI, `expo export`,
   the deploy pipeline for `https://yomulog.ctonew.app`).
 - Add it to `.env` for local web dev (`npx expo start --web`).
