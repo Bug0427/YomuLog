@@ -1,6 +1,6 @@
 // screens/main/HomeScreen.tsx
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, ScrollView, Text, Pressable, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
+import { View, ScrollView, Text, Pressable, ActivityIndicator, RefreshControl, StyleSheet, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/navigation';
@@ -17,7 +17,7 @@ import { getPersonalisedRecommendations } from '../../services/metadataClassific
 import { useTheme, type ThemeColors } from '../../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MascotLoader from '../../components/general/MascotLoader';
-import { fetchHomeSlidersWithFallback } from '../../services/offlineFallback';
+import { fetchHomeSlidersWithFallback, readCachedData } from '../../services/offlineFallback';
 
 // ── Slider configuration ───────────────────────────────────────────
 type SliderConfig =
@@ -52,6 +52,14 @@ const SLIDER_CONFIGS: SliderConfig[] = [
   { title: 'Historical',      type: 'genre', genre: 'historical' },
 ];
 
+// ── P-3 vertical windowing ───────────────────────────────────────────
+// Estimated rail height (cover + title + padding) used to compute which
+// rails are near the viewport. MangaSlider heights vary slightly; the
+// 2-rail overscan absorbs the variance. Placeholders keep the outer
+// ScrollView's content height approximately stable.
+const RAIL_ESTIMATED_HEIGHT = 260;
+const RAIL_OVERSCAN = 2;
+
 // ── Helpers ─────────────────────────────────────────────────────────
 function toSliderItem(manga: Manga, nav: NavigationProp<RootStackParamList>) {
   return {
@@ -77,6 +85,25 @@ export default function HomeScreen() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
+  // ── P-3: vertical windowing of the 24 rails ─────────────────────────
+  // Only rails near the viewport are mounted (real content); the rest are
+  // fixed-height placeholders so the outer ScrollView keeps a stable
+  // content height. Window = viewport ± 2 rails, recomputed on scroll.
+  const [visibleRange, setVisibleRange] = useState<{ start: number; end: number }>({
+    start: 0,
+    end: Math.min(SLIDER_CONFIGS.length - 1, 7),
+  });
+  const handleRailWindowScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetY = e.nativeEvent.contentOffset.y;
+    const viewportH = e.nativeEvent.layoutMeasurement.height || 800;
+    const start = Math.max(0, Math.floor(offsetY / RAIL_ESTIMATED_HEIGHT) - RAIL_OVERSCAN);
+    const end = Math.min(
+      SLIDER_CONFIGS.length - 1,
+      Math.floor((offsetY + viewportH) / RAIL_ESTIMATED_HEIGHT) + RAIL_OVERSCAN,
+    );
+    setVisibleRange((prev) => (prev.start === start && prev.end === end ? prev : { start, end }));
+  }, []);
+
   // ── Batch helper: process array in chunks with delay ──────────────
   async function batchProcess<T, R>(
     items: T[],
@@ -97,12 +124,22 @@ export default function HomeScreen() {
   }
 
   // ── Load all data ──────────────────────────────────────────────────
-  const loadAll = useCallback(async () => {
-    setLoading(true);
-    setFailedSliders(new Set());
+  // P-2: `{ background: true }` skips the loading spinner / failed-slider
+  // reset so a stale-while-revalidate refresh on tab focus is invisible
+  // (rails already render instantly from cache).
+  const loadAll = useCallback(async (opts?: { background?: boolean }) => {
+    const isBackground = opts?.background === true;
+    if (!isBackground) {
+      setLoading(true);
+      setFailedSliders(new Set());
+    }
     try {
       // Fetch sliders in batches of 3 with 350ms delay — MangaDex allows ~5 req/s
       const map: SliderDataMap = {};
+      // P-2: raw Manga[] per rail for the cache — SliderItem[] can't be
+      // cached losslessly (JSON strips the onPress closures), and both the
+      // SWR path and the offline fallback rehydrate through toSliderItem.
+      const rawMap: Record<string, Manga[]> = {};
       const failed = new Set<string>();
 
       await batchProcess(SLIDER_CONFIGS, 3, 350, async (config) => {
@@ -119,6 +156,7 @@ export default function HomeScreen() {
             result = await getPersonalisedRecommendations(10);
           }
           if (result.length) {
+            rawMap[config.title] = result;
             map[config.title] = result.map((m) => toSliderItem(m, navigation));
           }
         } catch (e) {
@@ -130,9 +168,9 @@ export default function HomeScreen() {
       setSliderDataMap(map);
       setFailedSliders(failed);
       setUsingCachedData(false);
-      // Cache for offline fallback
+      // Cache raw Manga[] for offline/SWR fallback (see rawMap note above)
       AsyncStorage.setItem('@YomuLog:cache:homeSliders', JSON.stringify({
-        data: map, timestamp: Date.now(),
+        data: rawMap, timestamp: Date.now(),
       })).catch(() => {});
     } catch (e) {
       console.error('Failed to load home data:', e);
@@ -153,14 +191,45 @@ export default function HomeScreen() {
         }
       } catch { /* no cache available */ }
     } finally {
-      setLoading(false);
+      if (!isBackground) {
+        setLoading(false);
+      }
     }
   }, [navigation]);
 
+  // P-2: stale-while-revalidate on tab focus. Render cached rails instantly
+  // (≤5 min old, rehydrated through toSliderItem for fresh closures + covers),
+  // then refresh in the background — returning to Home no longer blocks on a
+  // full 24-rail refetch. No usable cache → full loading path (spinner) as
+  // before. The offline banner is intentionally NOT set here (we're online;
+  // it only appears if the background refresh fails).
   useFocusEffect(
     useCallback(() => {
-      loadAll();
-    }, [loadAll])
+      let cancelled = false;
+      (async () => {
+        const cached = await readCachedData<Record<string, Manga[]>>(
+          '@YomuLog:cache:homeSliders',
+          5 * 60_000,
+        );
+        if (cancelled) return;
+        if (cached) {
+          const cachedMap: SliderDataMap = {};
+          for (const config of SLIDER_CONFIGS) {
+            const mangas = cached.data[config.title];
+            if (mangas && mangas.length) {
+              cachedMap[config.title] = mangas.map((m) => toSliderItem(m, navigation));
+            }
+          }
+          if (Object.keys(cachedMap).length) {
+            setSliderDataMap(cachedMap);
+            loadAll({ background: true });
+            return;
+          }
+        }
+        loadAll();
+      })();
+      return () => { cancelled = true; };
+    }, [loadAll, navigation])
   );
 
   // ── Retry a single failed slider ────────────────────────────────────
@@ -211,6 +280,8 @@ export default function HomeScreen() {
           onScrollBeginDrag={handleScrollStart}
           onScrollEndDrag={handleScrollEnd}
           onMomentumScrollEnd={handleScrollEnd}
+          onScroll={handleRailWindowScroll}
+          scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
           showsHorizontalScrollIndicator={false}
           removeClippedSubviews={false}
@@ -252,6 +323,16 @@ export default function HomeScreen() {
           {!loading && (
             <View key={`sliders-${refreshKey}`}>
               {SLIDER_CONFIGS.map((config, idx) => {
+                // P-3: windowing — mount only rails near the viewport;
+                // fixed-height placeholder preserves scroll height.
+                if (idx < visibleRange.start || idx > visibleRange.end) {
+                  return (
+                    <View
+                      key={`${config.title}-${refreshKey}`}
+                      style={{ height: RAIL_ESTIMATED_HEIGHT }}
+                    />
+                  );
+                }
                 const items = sliderDataMap[config.title];
                 const isFailed = failedSliders.has(config.title);
                 const isLast = idx === SLIDER_CONFIGS.length - 1;
