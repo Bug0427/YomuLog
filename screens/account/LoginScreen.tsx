@@ -110,7 +110,7 @@ const formContent = (
             ]}
             value={username}
             onChangeText={setUsername}
-            placeholder="username"
+            placeholder="Username"
             placeholderTextColor={theme.placeholder}
             autoCapitalize="none"
             autoCorrect={false}
@@ -132,7 +132,7 @@ const formContent = (
             ]}
             value={password}
             onChangeText={setPassword}
-            placeholder="password"
+            placeholder="Password"
             placeholderTextColor={theme.placeholder}
             secureTextEntry
             textContentType="newPassword"
