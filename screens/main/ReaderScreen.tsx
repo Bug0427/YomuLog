@@ -296,6 +296,11 @@ function ReaderScreen() {
     setCurrentPage(page);
     if (pageUrls.length > 0 && !progressSavedRef.current) {
       saveProgress(page, pageUrls.length);
+      // Throttle the scroll-frame save to once per chapter: the ref is reset
+      // in the chapter-load effect, so a NEW chapter can save again, while
+      // onMomentumScrollEnd / paged-mode page-turns keep the actual position
+      // fresh between saves (this guard only throttles handleScroll).
+      progressSavedRef.current = true;
     }
     // P-4: windowing — visible pages = viewport ± overscan.
     const start = Math.max(0, Math.floor(contentOffset.y / PAGE_ESTIMATED_HEIGHT) - PAGE_OVERSCAN);
