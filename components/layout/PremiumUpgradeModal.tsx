@@ -3,7 +3,8 @@
 // attempt to enable Cloud Sync & Backup. Displays Stripe monthly pricing
 // of $2.99/mo and annual pricing of $24.99/year.
 
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useTheme, type ThemeColors } from '../../context/ThemeContext';
 import {
   Modal,
   View,
@@ -26,6 +27,7 @@ export default function PremiumUpgradeModal({
   onUpgrade,
 }: PremiumUpgradeModalProps) {
   const { colors: theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <Modal
       visible={visible}
@@ -93,7 +95,7 @@ export default function PremiumUpgradeModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: colors.overlayScrim,
@@ -104,13 +106,13 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 380,
-    backgroundColor: theme.bgInput,
+    backgroundColor: c.bgInput,
     borderRadius: 16,
     paddingVertical: spacing.p24,
     paddingHorizontal: spacing.p20,
     alignItems: 'center',
     borderWidth: borders.bw2,
-    borderColor: theme.border,
+    borderColor: c.border,
   },
   closeBtn: {
     position: 'absolute',
@@ -124,19 +126,19 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: theme.accentLight,
+    backgroundColor: c.accentLight,
     ...u.center,
     marginBottom: spacing.p16,
   },
   title: {
     fontSize: 24,
     fontWeight: '800',
-    color: theme.textPrimary,
+    color: c.textPrimary,
     marginBottom: spacing.p8,
   },
   subtitle: {
     fontSize: 14,
-    color: theme.textPrimary,
+    color: c.textPrimary,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: spacing.p20,
@@ -158,18 +160,18 @@ const styles = StyleSheet.create({
   priceAmount: {
     fontSize: 32,
     fontWeight: '800',
-    color: theme.textPrimary,
+    color: c.textPrimary,
   },
   pricePeriod: {
     fontSize: 13,
-    color: theme.textMuted,
+    color: c.textMuted,
     fontWeight: '600',
     marginTop: 2,
   },
   divider: {
     width: 2,
     height: 50,
-    backgroundColor: theme.accentLight,
+    backgroundColor: c.accentLight,
     borderRadius: 1,
   },
   savingsBadge: {
@@ -187,7 +189,7 @@ const styles = StyleSheet.create({
   upgradeBtn: {
     width: '100%',
     flexDirection: 'row',
-    backgroundColor: theme.accentDark,
+    backgroundColor: c.accentDark,
     paddingVertical: spacing.p14,
     borderRadius: 12,
     alignItems: 'center',
@@ -204,7 +206,7 @@ const styles = StyleSheet.create({
   },
   dismissText: {
     fontSize: 14,
-    color: theme.textMuted,
+    color: c.textMuted,
     fontWeight: '600',
   },
 });
