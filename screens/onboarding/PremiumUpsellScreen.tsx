@@ -36,11 +36,12 @@ export default function PremiumUpsellScreen({ onFinish, onSkip }: Props) {
   // LEAD-DECIDED (G-6/G-7, KPI 4): the "Get Premium" CTA must actually open
   // the Stripe checkout — a paywall that converts is the point of the funnel.
   // Non-blocking by design: checkout open is best-effort (records
-  // checkout_started on success via openPremiumCheckout); onboarding ALWAYS
-  // finishes so the user can never get stuck on this step.
+  // checkout_started with source 'onboarding' on success via
+  // openPremiumCheckout); onboarding ALWAYS finishes so the user can never
+  // get stuck on this step.
   const handleGetPremium = async () => {
     try {
-      await openPremiumCheckout();
+      await openPremiumCheckout('onboarding');
     } catch {
       // best-effort — never block onboarding on the checkout tab failing
     }

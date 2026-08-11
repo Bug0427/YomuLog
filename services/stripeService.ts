@@ -106,15 +106,24 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
  * Native: Linking.openURL. Web: window.open (new tab).
  * No Stripe SDK calls — entitlement is granted server-side after payment
  * is confirmed (Supabase Realtime updates the app automatically).
+ *
+ * @param source Optional funnel attribution tag for the checkout_started
+ *   event (G-6, KPI 4) — e.g. 'onboarding'. Defaults to no tag so the 7+ call
+ *   sites that pass no argument (and direct `onUpgrade={openPremiumCheckout}`
+ *   references) are behaviorally unchanged.
  */
-export async function openPremiumCheckout(): Promise<CheckoutResult> {
+export async function openPremiumCheckout(source?: string): Promise<CheckoutResult> {
   try {
     if (Platform.OS === 'web') {
       if (typeof window !== 'undefined' && typeof window.open === 'function') {
         window.open(PREMIUM_CHECKOUT_URL, '_blank', 'noopener,noreferrer');
         // G-6: checkout_started — only when the checkout actually opened
         // (success path). Fire-and-forget.
-        void recordFunnelEvent('checkout_started', { plan: 'monthly', platform: 'web' });
+        void recordFunnelEvent('checkout_started', {
+          plan: 'monthly',
+          platform: 'web',
+          ...(source ? { source } : {}),
+        });
         return { success: true };
       }
       return { success: false, error: 'Unable to open checkout in this browser' };
@@ -126,7 +135,11 @@ export async function openPremiumCheckout(): Promise<CheckoutResult> {
     }
     await Linking.openURL(PREMIUM_CHECKOUT_URL);
     // G-6: checkout_started — only when the checkout actually opened.
-    void recordFunnelEvent('checkout_started', { plan: 'monthly', platform: 'native' });
+    void recordFunnelEvent('checkout_started', {
+      plan: 'monthly',
+      platform: 'native',
+      ...(source ? { source } : {}),
+    });
     return { success: true };
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Failed to open checkout';
