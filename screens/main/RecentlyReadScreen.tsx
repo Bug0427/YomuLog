@@ -66,7 +66,7 @@ export default function RecentlyReadScreen() {
             <Text style={CardViewStyles.rowTitle} numberOfLines={1}>
               {item.mangaTitle}
             </Text>
-            <Text style={{ fontSize: 12, color: colors.mutedPlum, marginTop: 2 }}>
+            <Text style={{ fontSize: 12, color: colors.deepPlum, marginTop: 2 }}>
               {item.readChapters}/{item.totalChapters} chapters
             </Text>
 

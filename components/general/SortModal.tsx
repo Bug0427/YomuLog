@@ -2,7 +2,7 @@
 // Reusable sort/order modal — used by SearchScreen, LibraryScreen, and DownloadsScreen.
 // Renders a list of sort options in a centered modal overlay with active-state highlighting.
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Pressable, Modal, TouchableWithoutFeedback, StyleSheet } from 'react-native';
 import { colors } from '../../styles/tokens';
 import { useTheme, type ThemeColors } from '../../context/ThemeContext';

@@ -166,8 +166,8 @@ export default function ManageSubscriptionScreen() {
 
           {status?.cancelAtPeriodEnd && (
             <View style={[styles.cancelNotice, { backgroundColor: theme.bgSecondary }]}>
-              <Feather name="info" size={14} color={colors.mutedPlum} />
-              <Text style={[styles.cancelNoticeText, { color: colors.mutedPlum }]}>
+              <Feather name="info" size={14} color={theme.textMuted} />
+              <Text style={[styles.cancelNoticeText, { color: theme.textMuted }]}>
                 Your subscription will end on {periodEnd}. You won't be charged again.
               </Text>
             </View>
