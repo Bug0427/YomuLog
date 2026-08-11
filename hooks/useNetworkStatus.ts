@@ -1,4 +1,19 @@
 // hooks/useNetworkStatus.ts
+// Network *reachability* hook — powers the Header "You're offline" banner.
+//
+// IMPORTANT (SW-03): this must reflect device connectivity, not API
+// availability. A content API (MangaDex) can fail while the user is fully
+// online (CORS, API outage, rate limit) — in that case the calling screens
+// surface their own graceful error UI ("Tap to retry") and the offline
+// banner must NOT appear. The banner is scoped to real network reachability:
+//
+// - Web: navigator.onLine + window online/offline events are the
+//   authoritative reachability signal. No periodic API probe is run here —
+//   a probe against a content API would conflate API/CORS failures with
+//   connectivity and show a false "offline" banner.
+// - Native: there are no window online/offline events, so we poll a
+//   reachability endpoint every 30s as a best-effort proxy. NetInfo would
+//   be ideal but adds a dependency.
 import { useState, useEffect } from 'react';
 import { resolveMangaDexUrl } from '../services/mangaDexProxy';
 
@@ -7,9 +22,11 @@ type NetworkState = {
   type: string | null; // 'wifi', 'cellular', 'unknown', null
 };
 
-// Basic implementation using navigator.onLine for web and a periodic
-// fetch health check for native. NetInfo would be ideal but adds a dependency.
-let globalOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+const isWeb = typeof window !== 'undefined';
+// Web: navigator.onLine is the source of truth. Native: start optimistic
+// (true) — the periodic probe corrects the state within 30s; starting
+// pessimistic would flash the offline banner at every native boot.
+let globalOnline = isWeb ? navigator.onLine : true;
 
 export function getIsOnline(): boolean {
   return globalOnline;
@@ -31,12 +48,17 @@ export function useNetworkStatus(): NetworkState {
       setState((prev) => ({ ...prev, isOnline: false }));
     };
 
-    if (typeof window !== 'undefined') {
+    // ── Web: navigator.onLine + events only (authoritative) ──────────
+    if (isWeb) {
       window.addEventListener('online', handleOnline);
       window.addEventListener('offline', handleOffline);
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
     }
 
-    // Periodic health check for environments where events may not fire
+    // ── Native: periodic reachability probe (no window events) ───────
     const interval = setInterval(async () => {
       try {
         const controller = new AbortController();
@@ -57,14 +79,7 @@ export function useNetworkStatus(): NetworkState {
         }
       }
     }, 30000); // Check every 30s
-
-    return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('online', handleOnline);
-        window.removeEventListener('offline', handleOffline);
-      }
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   return state;

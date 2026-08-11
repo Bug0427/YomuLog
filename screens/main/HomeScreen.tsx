@@ -40,7 +40,7 @@ const SLIDER_CONFIGS: SliderConfig[] = [
   { title: 'Thriller',        type: 'genre', genre: 'thriller' },
   { title: 'Reincarnation',   type: 'genre', genre: 'isekai' },
   { title: 'Romance',         type: 'genre', genre: 'romance' },
-  { title: 'Si-Fi',           type: 'genre', genre: 'sci-fi' },
+  { title: 'Sci-Fi',          type: 'genre', genre: 'sci-fi' },
   { title: 'Slice of Life',   type: 'genre', genre: 'slice-of-life' },
   { title: 'Shounen',         type: 'genre', genre: 'shounen' },
   { title: 'Shoujo',          type: 'genre', genre: 'shoujo' },

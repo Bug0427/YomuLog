@@ -211,7 +211,9 @@ export default function SearchScreen() {
         setHasMore(data.length >= LIMIT);
         if (reset && data.length === 0) setError(null);
       } catch (e) {
-        console.error('Search failed:', e);
+        // SW-02: align with Home slider failures — expected network/CORS
+        // failures are WARN, not ERR, so the console audit stays clean.
+        console.warn('Search failed:', e);
         if (reset) setError('Failed to load results. Please try again.');
       } finally {
         setLoading(false);
