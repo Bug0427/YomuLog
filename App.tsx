@@ -44,6 +44,32 @@ function RetentionHeartbeat() {
   return null;
 }
 
+/**
+ * A-5 a11y: global keyboard focus-visible indicator for web.
+ * Injects a runtime CSS rule at the app root — there is no CSS pipeline in
+ * this repo, so a <style> element is appended to <head> on web only.
+ * Uses `currentColor` so the outline inherits the focused element's own text
+ * color, which the theme token system already keeps ≥4.5:1 against its
+ * backdrop → outline ≥3:1 on both themes with zero theme wiring. Mouse clicks
+ * stay ring-free (focus-visible only).
+ */
+function WebFocusRing() {
+  if (Platform.OS !== 'web') return null;
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const style = document.createElement('style');
+    style.textContent = [
+      '*:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 4px; }',
+      '*:focus:not(:focus-visible) { outline: none; }',
+    ].join('\n');
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+  return null;
+}
+
 function SyncWrapper({ children }: { children: React.ReactNode }) {
   const {
     status,
@@ -91,6 +117,7 @@ export default function App() {
         <AuthProvider>
           <PremiumProvider>
             <RetentionHeartbeat />
+            <WebFocusRing />
             <SyncWrapper>
               <ResponsiveContainer>
                 <AppNavigator />

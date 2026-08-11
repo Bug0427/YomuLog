@@ -38,6 +38,15 @@ const AnchorStyles = StyleSheet.create({
         color: colors.plum, 
         fontSize: 18 
     },
+
+    // A-6 a11y: guaranteed ≥44×44 hit target independent of glyph metrics
+    // (hitSlop bump in Anchor.tsx is belt-and-braces on top of this).
+    pressable: {
+        minWidth: 44,
+        minHeight: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
 });
 
 export{AnchorStyles}
