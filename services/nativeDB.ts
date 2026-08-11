@@ -11,7 +11,8 @@ import { isWeb } from '../utils/platformUtils';
 export type QueryResult<T = unknown> = T[];
 
 export interface IDatabase {
-  runAsync(sql: string, params?: any[]): Promise<{ rowsAffected?: number }>;
+  /** expo-sqlite-style result: rowsAffected for writes; rows._array for SELECTs. */
+  runAsync(sql: string, params?: any[]): Promise<{ rowsAffected?: number; rows?: { _array: unknown[]; length: number } }>;
   getAllAsync<T = unknown>(sql: string, params?: any[]): Promise<T[]>;
   getFirstAsync<T = unknown>(sql: string, params?: any[]): Promise<T | null>;
   execAsync(sql: string): Promise<void>;
@@ -260,13 +261,21 @@ export class WebMockDB implements IDatabase {
 
   // ── IDatabase implementation ───────────────────────────────────────
 
-  async runAsync(sql: string, params: any[] = []): Promise<{ rowsAffected?: number }> {
+  async runAsync(sql: string, params: any[] = []): Promise<{ rowsAffected?: number; rows?: { _array: unknown[]; length: number } }> {
     const trimmed = sql.trim().replace(/;+\s*$/i, '');
     const upperSql = trimmed.toUpperCase();
 
     // Transactions / pragmas / indexes — no-op on web
     if (/^(BEGIN|COMMIT|ROLLBACK|VACUUM|PRAGMA|CREATE\s+(UNIQUE\s+)?INDEX)/i.test(trimmed)) {
       return { rowsAffected: 0 };
+    }
+
+    // SELECT via runAsync → expo-sqlite-shaped { rows: { _array, length } } so
+    // callers reading rows._array (CreateAccount / ForgotCredentials checks)
+    // behave on web exactly as on native. Reuses getAllAsync's row mapping.
+    if (/^SELECT/i.test(upperSql)) {
+      const all = await this.getAllAsync(trimmed, params);
+      return { rows: { _array: all, length: all.length }, rowsAffected: 0 };
     }
 
     const table = this._getTableName(trimmed);
