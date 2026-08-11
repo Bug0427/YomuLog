@@ -5,6 +5,11 @@
  */
 import { getAllChapterProgress, ChapterProgress, RecentlyReadEntry } from './readingProgress';
 import { getFavorites, BookmarkedManga } from './favoritesService';
+import {
+  getReadingSecondsTotal,
+  getReadingSecondsForLastDays,
+  getReadingSecondsToday,
+} from './readingSessionService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -16,7 +21,19 @@ export type ReadingStats = {
   totalSeriesRead: number;
   totalSeriesCompleted: number;
   completionRate: number;
+  /**
+   * Time spent reading, in minutes.
+   * G-4: measured reading time (reader session timer) when any session data
+   * exists; falls back to the chapters×3 heuristic ONLY when nothing has been
+   * measured yet (e.g. fresh install before the first reader session flush).
+   */
   estimatedReadingMinutes: number;
+  /** Measured reading minutes, all time (G-4). */
+  readingMinutesTotal: number;
+  /** Measured reading minutes over the trailing 7 days (KPI 2 hours/week). */
+  readingMinutesThisWeek: number;
+  /** Measured reading minutes today. */
+  readingMinutesToday: number;
   readingStreakDays: number;
   averageScrollDepth: number;
   favoriteReadingDay: number;
@@ -68,9 +85,12 @@ async function saveLongestStreak(streak: number): Promise<void> {
 // ─── Compute ─────────────────────────────────────────────────────────
 
 export async function computeReadingStats(): Promise<ReadingStats> {
-  const [all, favorites] = await Promise.all([
+  const [all, favorites, secondsTotal, secondsWeek, secondsToday] = await Promise.all([
     getAllChapterProgress(),
     getFavorites(),
+    getReadingSecondsTotal(),
+    getReadingSecondsForLastDays(7),
+    getReadingSecondsToday(),
   ]);
 
   const read = all.filter((c) => c.isRead);
@@ -92,7 +112,14 @@ export async function computeReadingStats(): Promise<ReadingStats> {
 
   const completionRate = totalChaptersStarted > 0
     ? Math.round((totalChaptersRead / totalChaptersStarted) * 100) : 0;
-  const estimatedReadingMinutes = totalChaptersRead * MIN_PER_CH;
+  // G-4: measured reading time (seconds → minutes) with heuristic fallback
+  // (chapters × 3) only when no session data exists yet.
+  const readingMinutesTotal = Math.round(secondsTotal / 60);
+  const readingMinutesThisWeek = Math.round(secondsWeek / 60);
+  const readingMinutesToday = Math.round(secondsToday / 60);
+  const estimatedReadingMinutes = readingMinutesTotal > 0
+    ? readingMinutesTotal
+    : totalChaptersRead * MIN_PER_CH;
   const avgDepth = all.length > 0
     ? Math.round(all.reduce((s, c) => s + c.scrollPercentage, 0) / all.length) : 0;
 
@@ -209,6 +236,9 @@ export async function computeReadingStats(): Promise<ReadingStats> {
     totalSeriesCompleted,
     completionRate,
     estimatedReadingMinutes,
+    readingMinutesTotal,
+    readingMinutesThisWeek,
+    readingMinutesToday,
     readingStreakDays: currentStreak,
     averageScrollDepth: avgDepth,
     favoriteReadingDay,

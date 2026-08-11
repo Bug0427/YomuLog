@@ -49,10 +49,11 @@ and `services/stripeService.ts` read/write. Supabase Auth provides `auth.users`
 | `user_subscriptions` | **Premium entitlement** (stripeService fetch + realtime) | `is_active`, `plan`, `current_period_end` (drive PremiumContext); `cancel_at_period_end`, `stripe_customer_id`, `stripe_subscription_id` |
 | `sync_state` | cloud sync status (1 row per user) | `status`, `last_synced_at`, `last_error`, `sync_enabled`, `scope_timestamps` (jsonb) |
 | `user_library` | favorites/bookmarks (upsert on `user_id,manga_id`) | `manga_id`, `manga_title`, `manga_image`, `genres`, `bookmarked_at`, `reading_status` |
-| `reading_progress` | reading history (upsert on `user_id,chapter_id`) | `chapter_id`, `manga_id`, `manga_title`, `manga_image`, `chapter_title`, `chapter_number`, `scroll_percentage`, `is_read`, `last_read_at` |
+| `reading_progress` | reading history (upsert on `user_id,chapter_id`) | `chapter_id`, `manga_id`, `manga_title`, `manga_image`, `chapter_title`, `chapter_number`, `scroll_percentage`, `is_read`, `last_read_at`, `seconds_read` (measured reading time per chapter, G-4) |
 | `download_queue` | offline downloads (upsert on `user_id,job_id`) | `job_id`, `chapter_id`, `manga_id`, `manga_title`, `chapter_number`, `chapter_title`, `status`, `progress`, `total_pages`, `downloaded_pages`, `error_message`, `local_dir`, `retry_count`, `created_at` |
 | `user_preferences` | settings (1 row per user) | `language`, `alerts_on`, `ai_search_on`, `direction_mode` |
 | `user_activity` | retention heartbeat (KPI 1, G-3) — links anonymous install to account | `install_id`, `first_launch_at`, `last_active_at` |
+| `reading_stats` | measured reading time daily rollup (KPI 2, G-5) — the `'stats'` sync scope | `day`, `seconds_read` (hours/week = SUM over last 7 days) |
 
 ### Copy-paste DDL (SQL Editor)
 
@@ -106,6 +107,7 @@ create table if not exists public.reading_progress (
   scroll_percentage  numeric,
   is_read            boolean not null default false,
   last_read_at       timestamptz,
+  seconds_read       integer not null default 0,
   primary key (user_id, chapter_id)
 );
 
@@ -150,6 +152,16 @@ create table if not exists public.user_activity (
   last_active_at    timestamptz,
   updated_at        timestamptz not null default now()
 );
+
+-- Measured reading time daily rollup (KPI 2 — hours/week, G-5 'stats' scope).
+-- Hours/week = SUM(seconds_read) over the last 7 days, per user.
+create table if not exists public.reading_stats (
+  user_id        uuid not null references auth.users (id) on delete cascade,
+  day            date not null,
+  seconds_read   integer not null default 0,
+  updated_at     timestamptz not null default now(),
+  primary key (user_id, day)
+);
 ```
 
 The app reads/writes these tables with the **anon key**, so row-level security
@@ -164,6 +176,7 @@ create policy "own rows" on public.reading_progress   for all using (auth.uid() 
 create policy "own rows" on public.download_queue     for all using (auth.uid() = user_id);
 create policy "own rows" on public.user_preferences   for all using (auth.uid() = user_id);
 create policy "own rows" on public.user_activity      for all using (auth.uid() = user_id);
+create policy "own rows" on public.reading_stats      for all using (auth.uid() = user_id);
 ```
 
 ## 4. Env vars at web build time

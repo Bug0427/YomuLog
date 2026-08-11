@@ -21,7 +21,10 @@ import {
   getOrCreateInstallId,
   recordHeartbeat,
 } from '../services/retentionService';
-import { pushRetentionToCloud } from '../services/supabaseSyncService';
+import {
+  pushRetentionToCloud,
+  pushStatsToCloud,
+} from '../services/supabaseSyncService';
 
 /** Push the cloud heartbeat at most once every 5 minutes per session. */
 const CLOUD_PUSH_MIN_INTERVAL_MS = 5 * 60_000;
@@ -37,12 +40,15 @@ export function useRetentionHeartbeat() {
       await getOrCreateInstallId();
       await recordHeartbeat();
 
-      // Cloud: only when a session exists; pushRetentionToCloud no-ops otherwise.
+      // Cloud: only when a session exists; both pushes no-op otherwise.
+      // Retention (G-3) + measured reading-time stats (G-5) ride the same
+      // foreground channel so free AND premium users stay visible cloud-side.
       const now = Date.now();
       if (now - lastCloudPushRef.current >= CLOUD_PUSH_MIN_INTERVAL_MS) {
         lastCloudPushRef.current = now;
         try {
           await pushRetentionToCloud();
+          await pushStatsToCloud();
         } catch {
           // Non-critical instrumentation — retry on next foreground.
         }
