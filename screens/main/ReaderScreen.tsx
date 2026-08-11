@@ -594,14 +594,14 @@ function ReaderControls({
             style={[styles.chapterNavBtnSmall, { backgroundColor: theme.bgSecondary }, !hasPrevChapter && styles.chapterNavBtnDisabled]}
             disabled={!hasPrevChapter}
           >
-            <Text style={styles.chapterNavBtnText}>◀ Prev Ch.</Text>
+            <Text style={[styles.chapterNavBtnText, { color: theme.textPrimary }]}>◀ Prev Ch.</Text>
           </Pressable>
           <Pressable
             onPress={onNextChapter}
             style={[styles.chapterNavBtnSmall, { backgroundColor: theme.bgSecondary }, !hasNextChapter && styles.chapterNavBtnDisabled]}
             disabled={!hasNextChapter}
           >
-            <Text style={styles.chapterNavBtnText}>Next Ch. ▶</Text>
+            <Text style={[styles.chapterNavBtnText, { color: theme.textPrimary }]}>Next Ch. ▶</Text>
           </Pressable>
         </View>
       </View>
@@ -621,22 +621,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   errorText: {
-    color: colors.error,
     textAlign: 'center',
     fontSize: 16,
     marginHorizontal: 20,
-  },
-  backBtn: {
-    alignSelf: 'center',
-    marginTop: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    backgroundColor: colors.lavender,
-    borderRadius: 8,
-  },
-  backBtnText: {
-    color: colors.deepPlum,
-    fontWeight: '600',
   },
   pageContainer: {
     flex: 1,
@@ -703,7 +690,6 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: colors.lavender,
     borderRadius: 2,
   },
   bottomRow: {
@@ -716,7 +702,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   readBadge: {
-    color: colors.success,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -729,7 +714,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: colors.lavender,
     borderRadius: 6,
     alignItems: 'center',
   },
@@ -737,7 +721,6 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   chapterNavBtnText: {
-    color: colors.deepPlum,
     fontWeight: '600',
     fontSize: 13,
   },

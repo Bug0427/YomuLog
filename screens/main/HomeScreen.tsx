@@ -1,5 +1,5 @@
 // screens/main/HomeScreen.tsx
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, Text, Pressable, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
@@ -14,7 +14,7 @@ import { colors, spacing } from '../../styles/tokens';
 import { fetchMangaList, Manga } from '../../services/mangaAPI';
 import { GENRE_TAG_IDS, GenreTag } from '../../utils/filters';
 import { getPersonalisedRecommendations } from '../../services/metadataClassification';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme, type ThemeColors } from '../../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MascotLoader from '../../components/general/MascotLoader';
 import { fetchHomeSlidersWithFallback } from '../../services/offlineFallback';
@@ -68,6 +68,7 @@ export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { scrollRef, isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
   const { colors: theme } = useTheme();
+  const retryCardStyles = useMemo(() => makeRetryCardStyles(theme), [theme]);
 
   const [sliderDataMap, setSliderDataMap] = useState<SliderDataMap>({});
   const [failedSliders, setFailedSliders] = useState<Set<string>>(new Set());
@@ -243,7 +244,7 @@ export default function HomeScreen() {
           {/* Loading */}
           {loading && (
             <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-              <ActivityIndicator size="large" color={colors.plum} />
+              <ActivityIndicator size="large" color={theme.textSecondary} />
             </View>
           )}
 
@@ -276,14 +277,14 @@ export default function HomeScreen() {
                       /* Retry card for failed slider */
                       <View style={retryCardStyles.wrapper}>
                         <View style={retryCardStyles.header}>
-                          <Text style={retryCardStyles.title}>{config.title}</Text>
+                          <Text style={[retryCardStyles.title, { color: theme.textSecondary }]}>{config.title}</Text>
                         </View>
                         <Pressable
                           style={retryCardStyles.retryBtn}
                           onPress={() => retrySlider(config)}
                         >
-                          <MaterialCommunityIcons name="refresh" size={18} color={colors.plum} />
-                          <Text style={retryCardStyles.retryText}>Tap to retry</Text>
+                          <MaterialCommunityIcons name="refresh" size={18} color={theme.textSecondary} />
+                          <Text style={[retryCardStyles.retryText, { color: theme.textSecondary }]}>Tap to retry</Text>
                         </Pressable>
                       </View>
                     ) : items ? (
@@ -313,7 +314,7 @@ export default function HomeScreen() {
   );
 }
 
-const retryCardStyles = StyleSheet.create({
+const makeRetryCardStyles = (c: ThemeColors) => StyleSheet.create({
   wrapper: {
     marginBottom: spacing.p20,
     paddingHorizontal: spacing.p12,
@@ -324,7 +325,6 @@ const retryCardStyles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.plum,
   },
   retryBtn: {
     flexDirection: 'row',
@@ -332,15 +332,14 @@ const retryCardStyles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: spacing.p16,
-    backgroundColor: colors.sand,
+    backgroundColor: c.bgCard,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.cocoa,
+    borderColor: c.border,
     borderStyle: 'dashed',
   },
   retryText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.plum,
   },
 });

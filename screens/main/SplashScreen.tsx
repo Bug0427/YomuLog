@@ -27,7 +27,7 @@ export default function SplashScreen({ navigation }: any) {
     <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
         <Text style={[styles.title, { color: theme.textPrimary }]}>YomuLog</Text>
-        <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
           Your Manga Companion 🧸📚
         </Text>
         {completed === null && (

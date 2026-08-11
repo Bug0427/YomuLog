@@ -118,7 +118,7 @@ const MangaSlider: React.FC<MangaSliderProps> = ({ data, title, onTitlePress, fo
       <View style={{ width: containerWidth }}>
         {title ? (
           <Pressable disabled={!onTitlePress} onPress={onTitlePress}>
-            <Text style={GeneralStyles.h1}>{title}</Text>
+            <Text style={[GeneralStyles.h1, { color: theme.textSecondary }]}>{title}</Text>
           </Pressable>
         ) : null}
         <View style={[MangaSliderStyles.sliderWrapper, { width: containerWidth }]}> 

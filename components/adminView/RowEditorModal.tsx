@@ -1,4 +1,5 @@
 // components/adminView/RowEditorModal.tsx
+import { useTheme } from '../../context/ThemeContext';
 // Editable modal for admin Accounts grid — Edit, Save, Delete controls.
 
 import React, { useState } from 'react';
@@ -32,6 +33,7 @@ export default function RowEditorModal({
   onDelete,
   readOnly = false,
 }: Props) {
+  const { colors: theme } = useTheme();
   const [fields, setFields] = useState<RowEditorField[]>(initialFields);
   const [editing, setEditing] = useState(false);
 
@@ -51,15 +53,15 @@ export default function RowEditorModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={[u.absFill, { justifyContent: 'center', alignItems: 'center' }]}>
         <Pressable onPress={onClose} style={[u.absFill, { backgroundColor: colors.overlayScrim }]} />
-        <View style={{ width: '84%', maxHeight: '76%', backgroundColor: colors.paleLavender, borderWidth: 2, borderColor: colors.deepPlum, borderRadius: 4, padding: 16 }}>
-          <Text style={{ color: colors.deepPlum, fontWeight: '900', fontSize: 16, marginBottom: 12, textAlign: 'center' }}>
+        <View style={{ width: '84%', maxHeight: '76%', backgroundColor: theme.bgSecondary, borderWidth: 2, borderColor: theme.border, borderRadius: 4, padding: 16 }}>
+          <Text style={{ color: theme.textPrimary, fontWeight: '900', fontSize: 16, marginBottom: 12, textAlign: 'center' }}>
             {title}
           </Text>
 
           <ScrollView style={{ maxHeight: 360 }}>
             {fields.map((f) => (
               <View key={f.key} style={{ marginBottom: 10 }}>
-                <Text style={{ color: colors.deepPlum, fontWeight: '700', fontSize: 12, marginBottom: 2 }}>
+                <Text style={{ color: theme.textPrimary, fontWeight: '700', fontSize: 12, marginBottom: 2 }}>
                   {f.label}
                 </Text>
                 <TextInput
@@ -70,9 +72,9 @@ export default function RowEditorModal({
                   editable={!readOnly && (editing || f.editable !== false)}
                   style={{
                     borderWidth: 1,
-                    borderColor: colors.deepPlum,
-                    backgroundColor: readOnly ? colors.lavender : colors.white,
-                    color: colors.deepPlum,
+                    borderColor: theme.textPrimary,
+                    backgroundColor: readOnly ? theme.accentLight : theme.bgInput,
+                    color: theme.textPrimary,
                     padding: 8,
                     fontSize: 14,
                     borderRadius: 2,
@@ -96,12 +98,12 @@ export default function RowEditorModal({
                       onSave?.(fields);
                       setEditing(false);
                     }}
-                    style={[AdminTabStyles.panel, { flex: 1, backgroundColor: colors.success }]}
+                    style={[AdminTabStyles.panel, { flex: 1, backgroundColor: '#2e7d32' }]}
                   >
                     <Text style={[AdminTabStyles.text, { color: colors.white }]}>Save</Text>
                   </Pressable>
                 )}
-                <Pressable onPress={handleDelete} style={[AdminTabStyles.panel, { flex: 1, backgroundColor: colors.error }]}>
+                <Pressable onPress={handleDelete} style={[AdminTabStyles.panel, { flex: 1, backgroundColor: '#c62828' }]}>
                   <Text style={[AdminTabStyles.text, { color: colors.white }]}>Delete</Text>
                 </Pressable>
               </>

@@ -73,12 +73,12 @@ export default function SortModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'theme.overlay',
+    backgroundColor: theme.overlay,
     justifyContent: 'center',
     alignItems: 'center',
   },
   container: {
-    backgroundColor: colors.lavender,
+    backgroundColor: theme.bgCard,
     borderRadius: 12,
     padding: 16,
     width: '80%',
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '800',
-    color: colors.plum,
+    color: theme.textSecondary,
     marginBottom: 12,
   },
   option: {
@@ -95,21 +95,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 4,
     borderRadius: 8,
-    backgroundColor: colors.sand,
+    backgroundColor: theme.bgCard,
     borderWidth: 1,
-    borderColor: colors.cocoa,
+    borderColor: theme.border,
   },
   optionSelected: {
-    backgroundColor: colors.plum,
-    borderColor: colors.plum,
+    backgroundColor: theme.accentDark,
+    borderColor: theme.accentDark,
   },
   optionText: {
-    color: colors.plum,
+    color: theme.textPrimary,
     fontWeight: '500',
     fontSize: 14,
   },
   optionTextSelected: {
-    color: colors.creamWhite,
+    color: colors.white,
     fontWeight: '700',
   },
 });

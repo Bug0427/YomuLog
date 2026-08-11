@@ -132,7 +132,7 @@ export default function RecentlyUpdated() {
       </View>
 
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 4 }]}>
-        <Text style={GeneralStyles.h1}>Recently Updated</Text>
+        <Text style={[GeneralStyles.h1, { color: theme.textSecondary }]}>Recently Updated</Text>
         <Pressable
           onPress={() => setViewMode(viewMode === 'grid' ? 'row' : 'grid')}
           accessibilityLabel="Toggle view"
@@ -140,7 +140,7 @@ export default function RecentlyUpdated() {
           <MaterialCommunityIcons
             name={viewMode === 'grid' ? 'view-grid' : 'view-agenda'}
             size={24}
-            color={colors.plum}
+            color={theme.textSecondary}
           />
         </Pressable>
       </View>
@@ -152,7 +152,7 @@ export default function RecentlyUpdated() {
     <View style={[GeneralStyles.container, { backgroundColor: theme.bg }]}>
         {loading ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg }}>
-            <ActivityIndicator size="large" color={colors.plum} />
+            <ActivityIndicator size="large" color={theme.textSecondary} />
           </View>
         ) : (
           <CardView

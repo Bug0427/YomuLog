@@ -1,4 +1,5 @@
 // components/layout/CollapsibleSection.tsx
+import { useTheme } from '../../context/ThemeContext';
 // Reusable collapsible/expandable section wrapper with animated transitions.
 
 import React, { useState, useCallback } from 'react';
@@ -23,6 +24,7 @@ export default function CollapsibleSection({
   defaultExpanded = true,
   badgeCount,
 }: Props) {
+  const { colors: theme } = useTheme();
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   const toggle = useCallback(() => {
@@ -33,10 +35,10 @@ export default function CollapsibleSection({
   return (
     <View style={{
       marginBottom: spacing.p8,
-      backgroundColor: colors.sand,
+      backgroundColor: theme.bgCard,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: colors.plum,
+      borderColor: theme.border,
       overflow: 'hidden',
     }}>
       <Pressable
@@ -53,13 +55,13 @@ export default function CollapsibleSection({
         accessibilityLabel={expanded ? `Collapse ${title}` : `Expand ${title}`}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: colors.plum }}>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: theme.textSecondary }}>
             {title}
           </Text>
           {badgeCount != null && badgeCount > 0 && (
             <View
               style={{
-                backgroundColor: colors.deepPlum,
+                backgroundColor: theme.accentDark,
                 borderRadius: 10,
                 minWidth: 20,
                 height: 20,
@@ -67,7 +69,7 @@ export default function CollapsibleSection({
                 paddingHorizontal: 6,
               }}
             >
-              <Text style={{ color: colors.paleLavender, fontSize: 11, fontWeight: '700' }}>
+              <Text style={{ color: colors.white, fontSize: 11, fontWeight: '700' }}>
                 {badgeCount}
               </Text>
             </View>
@@ -76,7 +78,7 @@ export default function CollapsibleSection({
         <MaterialCommunityIcons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={22}
-          color={colors.plum}
+          color={theme.textSecondary}
         />
       </Pressable>
 

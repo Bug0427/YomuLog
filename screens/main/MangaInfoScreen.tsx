@@ -46,7 +46,7 @@ import {
 import { colors, spacing, borders } from '../../styles/tokens';
 import { RootStackParamList } from '../../navigation/navigation';
 import { updateChapterProgress } from '../../services/readingProgress';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme, type ThemeColors } from '../../context/ThemeContext';
 import { openPremiumCheckout } from '../../services/stripeService';
 import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
 
@@ -121,6 +121,7 @@ export default function MangaInfoScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const mangaId = route.params?.mangaId;
   const { colors: theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
@@ -392,11 +393,11 @@ export default function MangaInfoScreen() {
 
   const statusColor = (status?: string): string => {
     switch (status) {
-      case 'ongoing': return colors.success;
-      case 'completed': return colors.deepPlum;
-      case 'hiatus': return colors.splashText;
-      case 'cancelled': return colors.error;
-      default: return colors.mutedPlum;
+      case 'ongoing': return '#2e7d32';
+      case 'completed': return '#412d5c';
+      case 'hiatus': return '#6d4c41';
+      case 'cancelled': return '#c62828';
+      default: return '#546e7a';
     }
   };
 
@@ -405,7 +406,7 @@ export default function MangaInfoScreen() {
     isDownloading: boolean,
   ): { name: keyof typeof Feather.glyphMap; color: string } => {
     if (isDownloading || ch.downloadStatus === 'downloading') {
-      return { name: 'loader', color: colors.mutedPlum };
+      return { name: 'loader', color: theme.textMuted };
     }
     if (ch.isDownloaded || ch.downloadStatus === 'completed') {
       return { name: 'check-circle', color: colors.success };
@@ -413,7 +414,7 @@ export default function MangaInfoScreen() {
     if (ch.downloadStatus === 'failed') {
       return { name: 'alert-circle', color: colors.error };
     }
-    return { name: 'download', color: colors.plum };
+    return { name: 'download', color: theme.textSecondary };
   };
 
   // ─── Loading state ───────────────────────────────────────────────
@@ -421,7 +422,7 @@ export default function MangaInfoScreen() {
   if (loading) {
     return (
       <View style={[styles.centered, { backgroundColor: theme.bg }]}>
-        <ActivityIndicator size="large" color={colors.deepPlum} />
+        <ActivityIndicator size="large" color={theme.accent} />
         <Text style={styles.loadingText}>Loading manga details...</Text>
       </View>
     );
@@ -510,7 +511,7 @@ export default function MangaInfoScreen() {
               />
             ) : (
               <View style={[styles.cover, styles.coverPlaceholder]}>
-                <Feather name="image" size={32} color={colors.mutedPlum} />
+                <Feather name="image" size={32} color={theme.textMuted} />
               </View>
             )}
           </View>
@@ -618,7 +619,7 @@ export default function MangaInfoScreen() {
           {/* Language fallback notice */}
           {languageFallback && chapters.length > 0 && (
             <View style={styles.languageFallbackBanner}>
-              <Feather name="globe" size={14} color={colors.cocoa} />
+              <Feather name="globe" size={14} color={theme.textSecondary} />
               <Text style={styles.languageFallbackText}>
                 English chapters not available — showing all languages
               </Text>
@@ -628,7 +629,7 @@ export default function MangaInfoScreen() {
           {/* Chapters loading state */}
           {chaptersLoading && (
             <View style={styles.chapterStateContainer}>
-              <ActivityIndicator size="small" color={colors.plum} />
+              <ActivityIndicator size="small" color={theme.accent} />
               <Text style={styles.chapterStateText}>Loading chapters...</Text>
             </View>
           )}
@@ -636,7 +637,7 @@ export default function MangaInfoScreen() {
           {/* Chapters error state */}
           {!chaptersLoading && chaptersError && (
             <View style={styles.chapterStateContainer}>
-              <Feather name="wifi-off" size={20} color={colors.error} />
+              <Feather name="wifi-off" size={20} color={theme.error} />
               <Text style={[styles.chapterStateText, { color: colors.error }]}>
                 {chaptersError}
               </Text>
@@ -649,7 +650,7 @@ export default function MangaInfoScreen() {
           {/* Empty chapters (no error) */}
           {!chaptersLoading && !chaptersError && chapterGroups.length === 0 && (
             <View style={styles.chapterStateContainer}>
-              <Feather name="book-open" size={20} color={colors.mutedPlum} />
+              <Feather name="book-open" size={20} color={theme.textMuted} />
               <Text style={styles.emptyText}>No chapters available.</Text>
               <Pressable style={styles.chapterRetryBtn} onPress={loadChapters}>
                 <Text style={styles.chapterRetryText}>Refresh</Text>
@@ -716,7 +717,7 @@ export default function MangaInfoScreen() {
                         <MaterialCommunityIcons
                           name={expandedGroups.has(group.chapterNum) ? 'chevron-up' : 'chevron-down'}
                           size={14}
-                          color={colors.mutedPlum}
+                          color={theme.textMuted}
                         />
                         <Text style={styles.sourceToggleBadge}>
                           +{group.alternates.length}
@@ -731,7 +732,7 @@ export default function MangaInfoScreen() {
                       disabled={isDownloading || ch.downloadStatus === 'downloading'}
                     >
                       {isDownloading || ch.downloadStatus === 'downloading' ? (
-                        <ActivityIndicator size="small" color={colors.mutedPlum} />
+                        <ActivityIndicator size="small" color={theme.textMuted} />
                       ) : (
                         <Feather name={dlIcon.name} size={18} color={dlIcon.color} />
                       )}
@@ -801,7 +802,7 @@ export default function MangaInfoScreen() {
                     />
                   ) : (
                     <View style={[styles.similarCover, styles.similarCoverPlaceholder]}>
-                      <Feather name="image" size={20} color={colors.mutedPlum} />
+                      <Feather name="image" size={20} color={theme.textMuted} />
                     </View>
                   )}
                   <Text style={styles.similarTitle} numberOfLines={2}>
@@ -827,10 +828,10 @@ export default function MangaInfoScreen() {
 
 // ─── Styles ──────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.lavender,
+    backgroundColor: c.bg,
   },
 
   // ── Header bar ──────────────────────────────────────────────────
@@ -852,7 +853,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.p10,
     borderBottomWidth: 1,
     zIndex: 100,
-    backgroundColor: colors.lavender,
+    backgroundColor: c.bg,
   },
   headerBtn: {
     width: 40,
@@ -887,7 +888,7 @@ const styles = StyleSheet.create({
   // ── Centered states ───────────────────────────────────────────
   centered: {
     flex: 1,
-    backgroundColor: colors.lavender,
+    backgroundColor: c.bg,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.p24,
@@ -895,25 +896,25 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 15,
-    color: colors.mutedPlum,
+    color: c.textMuted,
     fontWeight: '600',
     marginTop: spacing.p8,
   },
   errorText: {
     fontSize: 16,
-    color: colors.error,
+    color: c.error,
     fontWeight: '700',
     textAlign: 'center',
   },
   retryBtn: {
     paddingVertical: spacing.p10,
     paddingHorizontal: spacing.p24,
-    backgroundColor: colors.plum,
+    backgroundColor: c.accentDark,
     borderRadius: borders.br8,
     marginTop: spacing.p8,
   },
   retryText: {
-    color: colors.creamWhite,
+    color: colors.white,
     fontWeight: '700',
     fontSize: 15,
   },
@@ -928,14 +929,14 @@ const styles = StyleSheet.create({
     borderRadius: borders.br8,
     overflow: 'hidden',
     borderWidth: borders.bw2,
-    borderColor: colors.plum,
+    borderColor: c.border,
   },
   cover: {
     width: COVER_SIZE,
     height: COVER_SIZE * 1.45,
   },
   coverPlaceholder: {
-    backgroundColor: colors.sand,
+    backgroundColor: c.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -947,17 +948,17 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '800',
-    color: colors.deepPlum,
+    color: c.textPrimary,
     marginBottom: spacing.p4,
   },
   metaText: {
     fontSize: 13,
-    color: colors.cocoa,
+    color: c.textPrimary,
     lineHeight: 18,
   },
   metaLabel: {
     fontWeight: '700',
-    color: colors.plum,
+    color: c.textSecondary,
   },
   statusBadge: {
     alignSelf: 'flex-start',
@@ -969,11 +970,11 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.creamWhite,
+    color: colors.white,
   },
   ratingText: {
     fontSize: 11,
-    color: colors.mutedPlum,
+    color: c.textMuted,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -988,14 +989,14 @@ const styles = StyleSheet.create({
   genreChip: {
     paddingVertical: spacing.p4,
     paddingHorizontal: spacing.p10,
-    backgroundColor: colors.sand,
+    backgroundColor: c.bgCard,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: colors.plum,
+    borderColor: c.border,
   },
   genreText: {
     fontSize: 12,
-    color: colors.plum,
+    color: c.textSecondary,
     fontWeight: '600',
   },
 
@@ -1006,16 +1007,16 @@ const styles = StyleSheet.create({
   altTitleChip: {
     paddingVertical: spacing.p6,
     paddingHorizontal: spacing.p12,
-    backgroundColor: colors.creamWhite,
+    backgroundColor: c.bgInput,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.plum,
+    borderColor: c.border,
     marginRight: spacing.p8,
     maxWidth: 200,
   },
   altTitleText: {
     fontSize: 13,
-    color: colors.cocoa,
+    color: c.textPrimary,
     fontWeight: '600',
   },
 
@@ -1026,18 +1027,18 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: '800',
-    color: colors.deepPlum,
+    color: c.textPrimary,
     marginBottom: spacing.p8,
   },
   descText: {
     fontSize: 14,
-    color: colors.cocoa,
+    color: c.textPrimary,
     lineHeight: 20,
   },
   expandText: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.plum,
+    color: c.textSecondary,
     marginTop: spacing.p4,
   },
 
@@ -1053,7 +1054,7 @@ const styles = StyleSheet.create({
   },
   dupeNote: {
     fontSize: 12,
-    color: colors.mutedPlum,
+    color: c.textMuted,
     fontStyle: 'italic',
   },
   // Language fallback banner
@@ -1061,17 +1062,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.p6,
-    backgroundColor: colors.sand,
+    backgroundColor: c.bgCard,
     borderRadius: borders.br8,
     borderWidth: 1,
-    borderColor: colors.plum,
+    borderColor: c.border,
     paddingVertical: spacing.p8,
     paddingHorizontal: spacing.p10,
     marginBottom: spacing.p10,
   },
   languageFallbackText: {
     fontSize: 12,
-    color: colors.cocoa,
+    color: c.textPrimary,
     fontWeight: '600',
     flex: 1,
   },
@@ -1084,33 +1085,33 @@ const styles = StyleSheet.create({
   },
   chapterStateText: {
     fontSize: 13,
-    color: colors.mutedPlum,
+    color: c.textMuted,
     fontWeight: '600',
   },
   chapterRetryBtn: {
     marginTop: spacing.p4,
     paddingVertical: spacing.p6,
     paddingHorizontal: spacing.p16,
-    backgroundColor: colors.plum,
+    backgroundColor: c.accentDark,
     borderRadius: borders.br8,
   },
   chapterRetryText: {
-    color: colors.creamWhite,
+    color: colors.white,
     fontWeight: '700',
     fontSize: 13,
   },
   emptyText: {
     fontSize: 14,
-    color: colors.mutedPlum,
+    color: c.textMuted,
     fontStyle: 'italic',
   },
   chapterRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.creamWhite,
+    backgroundColor: c.bgInput,
     borderRadius: borders.br8,
     borderWidth: 1,
-    borderColor: colors.plum,
+    borderColor: c.border,
     paddingVertical: spacing.p10,
     paddingHorizontal: spacing.p12,
     marginBottom: spacing.p8,
@@ -1122,17 +1123,17 @@ const styles = StyleSheet.create({
     gap: spacing.p10,
   },
   chapterNumBadge: {
-    backgroundColor: colors.lavender,
+    backgroundColor: c.bg,
     paddingVertical: spacing.p4,
     paddingHorizontal: spacing.p8,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: colors.plum,
+    borderColor: c.border,
   },
   chapterNumText: {
     fontSize: 13,
     fontWeight: '800',
-    color: colors.deepPlum,
+    color: c.textPrimary,
   },
   chapterTextCol: {
     flex: 1,
@@ -1140,16 +1141,16 @@ const styles = StyleSheet.create({
   chapterTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.plum,
+    color: c.textSecondary,
   },
   chapterVol: {
     fontSize: 11,
-    color: colors.mutedPlum,
+    color: c.textMuted,
     fontWeight: '600',
   },
   chapterMeta: {
     fontSize: 11,
-    color: colors.mutedPlum,
+    color: c.textMuted,
     marginTop: 1,
   },
   downloadBtn: {
@@ -1158,9 +1159,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.sand,
+    backgroundColor: c.bgCard,
     borderWidth: 1,
-    borderColor: colors.plum,
+    borderColor: c.border,
   },
 
   // ── Source switching ──────────────────────────────────────────
@@ -1171,36 +1172,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.p8,
     paddingVertical: spacing.p5,
     borderRadius: 8,
-    backgroundColor: colors.sand,
+    backgroundColor: c.bgCard,
     borderWidth: 1,
-    borderColor: colors.mutedPlum,
+    borderColor: c.border,
     marginRight: spacing.p6,
     maxWidth: 140,
   },
   sourceToggleActive: {
-    borderColor: colors.plum,
-    backgroundColor: colors.lavender,
+    borderColor: c.border,
+    backgroundColor: c.bg,
   },
   sourceToggleLabel: {
     fontSize: 10,
     fontWeight: '600',
-    color: colors.plum,
+    color: c.textSecondary,
     flexShrink: 1,
   },
   sourceToggleBadge: {
     fontSize: 10,
     fontWeight: '700',
-    color: colors.mutedPlum,
-    backgroundColor: colors.paleLavender,
+    color: c.textMuted,
+    backgroundColor: c.bgSecondary,
     paddingHorizontal: 4,
     borderRadius: 4,
     overflow: 'hidden',
   },
   altSources: {
-    backgroundColor: colors.creamWhite,
+    backgroundColor: c.bgInput,
     borderRadius: borders.br8,
     borderWidth: 1,
-    borderColor: colors.plum,
+    borderColor: c.border,
     marginTop: -spacing.p4,
     marginBottom: spacing.p8,
     padding: spacing.p10,
@@ -1209,7 +1210,7 @@ const styles = StyleSheet.create({
   altSourcesLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.mutedPlum,
+    color: c.textMuted,
     marginBottom: spacing.p6,
   },
   altRow: {
@@ -1217,7 +1218,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.p6,
     borderTopWidth: 1,
-    borderTopColor: colors.sand,
+    borderTopColor: c.borderLight,
   },
   altChapterInfo: {
     flex: 1,
@@ -1225,11 +1226,11 @@ const styles = StyleSheet.create({
   altSourceName: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.plum,
+    color: c.textSecondary,
   },
   altMeta: {
     fontSize: 11,
-    color: colors.mutedPlum,
+    color: c.textMuted,
     marginTop: 1,
   },
   altDownloadBtn: {
@@ -1238,7 +1239,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.sand,
+    backgroundColor: c.bgCard,
   },
 
   // ── Similar manga slider ──────────────────────────────────────
@@ -1257,17 +1258,17 @@ const styles = StyleSheet.create({
     height: SIMILAR_ITEM_W * 1.45,
     borderRadius: borders.br8,
     borderWidth: 1,
-    borderColor: colors.plum,
+    borderColor: c.border,
   },
   similarCoverPlaceholder: {
-    backgroundColor: colors.sand,
+    backgroundColor: c.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
   },
   similarTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.plum,
+    color: c.textSecondary,
     marginTop: spacing.p6,
     textAlign: 'center',
   },

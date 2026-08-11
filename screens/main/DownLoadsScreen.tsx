@@ -247,7 +247,7 @@ export default function DownLoadsScreen() {
             <SearchBar onFilterPress={() => setShowFilterModal(true)} />
             <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={GeneralStyles.h1}>Downloads</Text>
+                <Text style={[GeneralStyles.h1, { color: theme.textSecondary }]}>Downloads</Text>
                 {!isPremium && (
                   <Pressable
                     onPress={() => setShowPremiumModal(true)}
