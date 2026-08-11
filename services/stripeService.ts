@@ -297,19 +297,6 @@ export async function cancelSubscription(): Promise<CheckoutResult> {
 // ─── Feature gating helpers ─────────────────────────────────────────
 
 /**
- * Check if a specific premium feature is available.
- */
-export function isFeatureAvailable(
-  feature: 'cloud_sync' | 'unlimited_downloads' | 'ai_search' | 'custom_themes' | 'reading_stats',
-  isPremium: boolean,
-): boolean {
-  if (!isPremium) return false;
-
-  // All features are available with an active subscription
-  return true;
-}
-
-/**
  * Get the feature description for the paywall.
  */
 export function getPremiumFeatures(): Array<{ id: string; title: string; description: string; icon: string }> {

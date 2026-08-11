@@ -159,12 +159,18 @@ export default function ThemePicker({ visible, onClose, inline }: Props) {
 
         {/* Premium upsell for free users */}
         {!isPremium && (
-          <View style={[styles.upsellBox, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+          <Pressable
+            onPress={() => setShowPremiumModal(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Upgrade to unlock Night and Mint themes"
+            style={[styles.upsellBox, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
+          >
             <MaterialCommunityIcons name="crown" size={18} color={tokens.splashText} />
             <Text style={[styles.upsellText, { color: theme.textSecondary }]}>
               Upgrade to Premium to unlock Night and Mint themes
             </Text>
-          </View>
+            <MaterialCommunityIcons name="chevron-right" size={16} color={theme.textMuted} />
+          </Pressable>
         )}
       </ScrollView>
 
