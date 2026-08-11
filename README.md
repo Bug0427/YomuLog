@@ -58,6 +58,15 @@ npm install
 npx expo start
 ```
 
+### Running in Expo Go (dev-server flow)
+Scan the QR code printed by `npx expo start` with the **Expo Go** app (SDK 54).
+Full quick-start guide, tunnel mode for physical devices off-LAN
+(`npx expo start --tunnel`), and troubleshooting:
+**[docs/EXPO-GO.md](docs/EXPO-GO.md)**.
+
+> Without `EXPO_PUBLIC_SUPABASE_*` / `EXPO_PUBLIC_MANGADEX_PROXY_URL` the app
+> runs **local-only by design** — see `.env.example` and docs/EXPO-GO.md.
+
 **Project Status**: 🧪 In Development / MVP Phase
 
 ## 🎯 Vision
