@@ -26,4 +26,6 @@ export type RootStackParamList = {
     UpgradeScreen: undefined;
     ManageSubscriptionScreen: undefined;
     ReaderThemeSettingsScreen: undefined;
+    PrivacyPolicy: undefined;
+    TermsOfService: undefined;
 };
