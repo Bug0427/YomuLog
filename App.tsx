@@ -7,6 +7,7 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { PremiumProvider } from './context/PremiumContext';
 import { AuthProvider } from './context/AuthContext';
 import { useSyncEngine } from './hooks/useSyncEngine';
+import { useRetentionHeartbeat } from './hooks/useRetentionHeartbeat';
 import SyncStatusBanner from './components/layout/SyncStatusBanner';
 
 /** Maximum width for desktop browsers to prevent stretching on ultrawide screens */
@@ -35,6 +36,12 @@ function ResponsiveContainer({ children }: { children: React.ReactNode }) {
       </View>
     </View>
   );
+}
+
+/** Mounts the G-3 retention heartbeat (install id + last-active, local + cloud). */
+function RetentionHeartbeat() {
+  useRetentionHeartbeat();
+  return null;
 }
 
 function SyncWrapper({ children }: { children: React.ReactNode }) {
@@ -83,6 +90,7 @@ export default function App() {
         <StatusBarTheme />
         <AuthProvider>
           <PremiumProvider>
+            <RetentionHeartbeat />
             <SyncWrapper>
               <ResponsiveContainer>
                 <AppNavigator />

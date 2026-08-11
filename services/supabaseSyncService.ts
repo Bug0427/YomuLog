@@ -426,6 +426,49 @@ async function syncPreferencesReal(userId: string): Promise<void> {
   ]);
 }
 
+// ─── Retention scope (G-3, KPI 1 — D30 retention) ──────────────────────
+
+/**
+ * Push the device retention snapshot (install id, first launch, last active)
+ * to the user_activity table. This is what links an anonymous install to an
+ * account: once a Supabase session exists, user_activity.install_id ties the
+ * device to the Supabase user id, so the owner can compute install-based and
+ * account-based D30 cohorts.
+ */
+async function syncRetentionReal(userId: string): Promise<void> {
+  const { getRetentionSnapshot } = await import('./retentionService');
+  const snap = await getRetentionSnapshot();
+  const { error } = await supabase
+    .from('user_activity')
+    .upsert({
+      user_id: userId,
+      install_id: snap.installId,
+      first_launch_at: snap.firstLaunchAt,
+      last_active_at: snap.lastActiveAt,
+      updated_at: isoNow(),
+    }, { onConflict: 'user_id' });
+  if (error) throw new Error(`Retention push: ${error.message}`);
+}
+
+/**
+ * Lightweight heartbeat push — deliberately NOT premium-gated. Retention
+ * (KPI 1) must cover every authenticated user, free or premium, so the
+ * last-active heartbeat + install id ride up whenever a session exists.
+ * Only device-identity/activity metadata is written (no user content), so the
+ * "Cloud Sync is a Premium feature" product line is untouched.
+ */
+export async function pushRetentionToCloud(): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const userId = await getUserId();
+  if (!userId) return;
+  try {
+    await syncRetentionReal(userId);
+  } catch (e) {
+    // Non-critical instrumentation — never fail the app/sync on this.
+    console.warn('Retention heartbeat push failed (non-critical)', e);
+  }
+}
+
 // ─── Fallback: AsyncStorage mirror sync (for unauthenticated users) ──
 
 async function syncFavoritesFallback(): Promise<void> {
@@ -536,6 +579,9 @@ export async function performFullSync(): Promise<SyncState> {
   try {
     if (isRealSync) {
       const userId = (await getUserId())!;
+      // G-3: retention metadata (install id / first launch / last active)
+      // rides the real sync path too. Non-fatal by design.
+      await pushRetentionToCloud();
       const results = await Promise.allSettled([
         syncFavoritesReal(userId).then(() => 'favorites' as SyncScope),
         syncProgressReal(userId).then(() => 'progress' as SyncScope),
@@ -678,6 +724,8 @@ export async function pushLocalToCloud(): Promise<SyncState> {
     const isRealSync = await useRealSupabase();
     if (isRealSync) {
       const userId = (await getUserId())!;
+      // G-3: retention metadata rides the push path too (non-fatal by design).
+      await pushRetentionToCloud();
       await Promise.all([
         syncFavoritesReal(userId),
         syncProgressReal(userId),
