@@ -73,7 +73,14 @@ echo "→ Bundle: ${BUNDLE}"
 echo "→ Size: ${SIZE} bytes"
 echo "→ SHA-256: ${HASH}"
 
-# ── 4. Verify the proxy origin was inlined (only when one was set) ────────
+# ── 4. Verify the service worker ships with the build (P-1) ──────────────
+if [[ -f "$OUT_DIR/sw.js" ]]; then
+  echo "✅ Service worker present (${OUT_DIR}/sw.js)"
+else
+  echo "!! sw.js not found under ${OUT_DIR} — the public/ dir was not copied; web bundle caching (P-1) would be broken" >&2
+  exit 1
+fi
+# ── 5. Verify the proxy origin was inlined (only when one was set) ────────
 if [[ -n "${EXPO_PUBLIC_MANGADEX_PROXY_URL:-}" ]]; then
   if grep -qF "$EXPO_PUBLIC_MANGADEX_PROXY_URL" "$BUNDLE"; then
     echo "✅ Proxy origin confirmed inlined in the bundle"
