@@ -12,7 +12,7 @@ import {
   fmtLastRead as formatLastRead,
 } from '../../services/readingStatsService';
 import { colors, spacing } from '../../styles/tokens';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme, type ThemeColors } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
 import { openPremiumCheckout } from '../../services/stripeService';
 import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
@@ -32,6 +32,7 @@ const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Se
 
 export default function ReadingStatsScreen() {
   const { colors: theme } = useTheme();
+  const s = useMemo(() => makeStyles(theme), [theme]);
   const navigation = useNavigation();
   const { isPremium } = usePremium();
   const [stats, setStats] = useState<ReadingStats | null>(null);
@@ -60,7 +61,7 @@ export default function ReadingStatsScreen() {
         <Header onBack={() => navigation.goBack()} />
         <View style={s.center}>
           <View style={s.lockBadge}>
-            <Feather name="lock" size={30} color={colors.deepPlum} />
+            <Feather name="lock" size={30} color={theme.textPrimary} />
           </View>
           <Text style={s.error}>Reading Stats is a Premium feature</Text>
           <Text style={s.muted}>
@@ -89,7 +90,7 @@ export default function ReadingStatsScreen() {
       <View style={s.container}>
         <Header onBack={() => navigation.goBack()} />
         <View style={s.center}>
-          <ActivityIndicator size="large" color={colors.lavender} />
+          <ActivityIndicator size="large" color={theme.accentLight} />
           <Text style={s.muted}>Crunching your numbers…</Text>
         </View>
       </View>
@@ -102,7 +103,7 @@ export default function ReadingStatsScreen() {
       <View style={s.container}>
         <Header onBack={() => navigation.goBack()} />
         <View style={s.center}>
-          <Feather name="book-open" size={48} color={colors.mutedPlum} />
+          <Feather name="book-open" size={48} color={theme.textMuted} />
           <Text style={s.error}>{error || 'No reading data yet'}</Text>
           <Text style={s.muted}>Start reading manga to see your stats!</Text>
         </View>
@@ -140,18 +141,18 @@ export default function ReadingStatsScreen() {
           <>
             <SectionTitle title="Reading Summary" />
             <View style={s.grid}>
-              <StatCard label="Chapters Read" value={String(stats.totalChaptersRead)} icon="📖" color={colors.lavender} />
+              <StatCard label="Chapters Read" value={String(stats.totalChaptersRead)} icon="📖" color={theme.accentLight} />
               <StatCard label="Series" value={String(stats.totalSeriesRead)} icon="📚" color={colors.modalPurple} />
               <StatCard label="Completed" value={String(stats.totalSeriesCompleted)} icon="✅" color={colors.success} />
-              <StatCard label="Completion" value={`${stats.completionRate}%`} icon="🎯" color={colors.cocoa} />
+              <StatCard label="Completion" value={`${stats.completionRate}%`} icon="🎯" color={theme.accentDark} />
             </View>
 
             <SectionTitle title="Streaks" />
             <View style={s.grid}>
               <StatCard label="Current Streak" value={`${stats.currentStreak}d`} icon="🔥" color="#f97316" />
               <StatCard label="Longest Streak" value={`${stats.longestStreak}d`} icon="🏆" color="#eab308" />
-              <StatCard label="Time Spent" value={formatReadingTime(stats.estimatedReadingMinutes)} icon="⏱️" color={colors.lavender} />
-              <StatCard label="Favorite Day" value={DAY_NAMES[stats.favoriteReadingDay] || '—'} icon="⭐" color={DAY_COLORS[stats.favoriteReadingDay] || colors.modalPurple} />
+              <StatCard label="Time Spent" value={formatReadingTime(stats.estimatedReadingMinutes)} icon="⏱️" color={theme.accentLight} />
+              <StatCard label="Favorite Day" value={DAY_NAMES[stats.favoriteReadingDay] || '—'} icon="⭐" color={DAY_COLORS[stats.favoriteReadingDay] || theme.accent} />
             </View>
 
             <SectionTitle title="This Week" />
@@ -166,7 +167,7 @@ export default function ReadingStatsScreen() {
             </View>
             <View style={[s.timeRow, { marginTop: 8 }]}>
               <Text style={s.timeLabel}>Reading time this week</Text>
-              <Text style={[s.timeCount, { color: colors.lavender }]}>
+              <Text style={s.timeCount}>
                 {formatReadingTime(stats.readingMinutesThisWeek)}
               </Text>
             </View>
@@ -320,6 +321,8 @@ export default function ReadingStatsScreen() {
 // ── Sub-components ──────────────────────────────────────────────────
 
 function Header({ onBack }: { onBack: () => void }) {
+  const { colors: theme } = useTheme();
+  const s = useMemo(() => makeStyles(theme), [theme]);
   return (
     <SafeAreaView style={s.header}>
       <BackButton onPress={onBack} />
@@ -330,14 +333,18 @@ function Header({ onBack }: { onBack: () => void }) {
 }
 
 function SectionTitle({ title }: { title: string }) {
+  const { colors: theme } = useTheme();
+  const s = useMemo(() => makeStyles(theme), [theme]);
   return <Text style={s.sectionTitle}>{title}</Text>;
 }
 
 function StatCard({ label, value, icon, color }: { label: string; value: string; icon: string; color: string }) {
+  const { colors: theme } = useTheme();
+  const s = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={[s.statCard, { borderLeftColor: color }]}>
       <Text style={s.statIcon}>{icon}</Text>
-      <Text style={[s.statValue, { color }]}>{value}</Text>
+      <Text style={[s.statValue, { color: theme.textPrimary }]}>{value}</Text>
       <Text style={s.statLabel}>{label}</Text>
     </View>
   );
@@ -386,7 +393,7 @@ function DonutChart({ segments }: { segments: { label: string; count: number; co
         width: DONUT_SIZE - DONUT_STROKE * 2,
         height: DONUT_SIZE - DONUT_STROKE * 2,
         borderRadius: (DONUT_SIZE - DONUT_STROKE * 2) / 2,
-        backgroundColor: colors.creamWhite,
+        backgroundColor: theme.bgInput,
         position: 'absolute',
         top: DONUT_STROKE,
         left: DONUT_STROKE,
@@ -397,78 +404,78 @@ function DonutChart({ segments }: { segments: { label: string; count: number; co
 
 // ── Styles ─────────────────────────────────────────────────────────
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.lavender },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.p16,
-    paddingBottom: spacing.p12, backgroundColor: colors.sand,
-    borderBottomWidth: 1, borderBottomColor: colors.lavender,
+    paddingBottom: spacing.p12, backgroundColor: c.bgCard,
+    borderBottomWidth: 1, borderBottomColor: c.borderLight,
   },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: colors.deepPlum },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: c.textPrimary },
   scroll: { flex: 1, paddingHorizontal: spacing.p16 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.p20 },
-  muted: { color: colors.mutedPlum, fontSize: 14, marginTop: spacing.p8, textAlign: 'center' },
-  error: { color: colors.error, fontSize: 16, fontWeight: '600', marginTop: spacing.p12 },
+  muted: { color: c.textMuted, fontSize: 14, marginTop: spacing.p8, textAlign: 'center' },
+  error: { color: c.error, fontSize: 16, fontWeight: '600', marginTop: spacing.p12 },
 
   // Tabs
   tabBar: {
     flexDirection: 'row', marginHorizontal: spacing.p16, marginTop: spacing.p12,
-    backgroundColor: colors.sand, borderRadius: 12, padding: 4,
+    backgroundColor: c.bgCard, borderRadius: 12, padding: 4,
   },
   tab: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
-  tabActive: { backgroundColor: colors.deepPlum },
-  tabLabel: { fontSize: 12, fontWeight: '600', color: colors.mutedPlum },
-  tabLabelActive: { color: colors.paleLavender },
+  tabActive: { backgroundColor: c.accentDark },
+  tabLabel: { fontSize: 12, fontWeight: '600', color: c.textMuted },
+  tabLabelActive: { color: colors.white },
 
   // Premium gate
   lockBadge: {
     width: 64, height: 64, borderRadius: 32,
-    backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: c.bgCard, alignItems: 'center', justifyContent: 'center',
     marginBottom: spacing.p14, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1, shadowRadius: 4, elevation: 2,
   },
   premiumGate: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: colors.lavender, borderRadius: 12, padding: spacing.p10,
+    backgroundColor: c.accentLight, borderRadius: 12, padding: spacing.p10,
     marginTop: spacing.p12, gap: 8,
   },
-  premiumGateText: { fontSize: 12, fontWeight: '600', color: colors.deepPlum, flex: 1 },
-  upgradeBtn: { backgroundColor: colors.deepPlum, borderRadius: 8, paddingHorizontal: spacing.p14, paddingVertical: spacing.p6 },
+  premiumGateText: { fontSize: 12, fontWeight: '600', color: c.textSecondary, flex: 1 },
+  upgradeBtn: { backgroundColor: c.accentDark, borderRadius: 8, paddingHorizontal: spacing.p14, paddingVertical: spacing.p6 },
   upgradeBtnText: { color: colors.white, fontWeight: '700', fontSize: 12 },
 
   // Section
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.plum, marginTop: spacing.p20, marginBottom: spacing.p12 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.textSecondary, marginTop: spacing.p20, marginBottom: spacing.p12 },
 
   // Grid cards
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   statCard: {
-    width: '47%', backgroundColor: colors.white, borderRadius: 12, padding: spacing.p14,
+    width: '47%', backgroundColor: c.bgCard, borderRadius: 12, padding: spacing.p14,
     borderLeftWidth: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1, shadowRadius: 2, elevation: 1, marginBottom: spacing.p6,
   },
   statIcon: { fontSize: 24, marginBottom: spacing.p6 },
   statValue: { fontSize: 22, fontWeight: '800' },
-  statLabel: { fontSize: 12, color: colors.mutedPlum, marginTop: spacing.p4, fontWeight: '600' },
+  statLabel: { fontSize: 12, color: c.textMuted, marginTop: spacing.p4, fontWeight: '600' },
 
   // Bar chart
   barChart: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
-    height: 120, backgroundColor: colors.white, borderRadius: 12,
+    height: 120, backgroundColor: c.bgCard, borderRadius: 12,
     padding: spacing.p12, marginBottom: spacing.p8,
   },
   barCol: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', height: '100%' },
   bar: { width: 20, borderRadius: 4, minHeight: 4 },
-  barDay: { fontSize: 10, color: colors.mutedPlum, marginTop: spacing.p4, fontWeight: '600' },
-  barCount: { fontSize: 10, color: colors.plum, fontWeight: '700', marginTop: 2 },
+  barDay: { fontSize: 10, color: c.textMuted, marginTop: spacing.p4, fontWeight: '600' },
+  barCount: { fontSize: 10, color: c.textSecondary, fontWeight: '700', marginTop: 2 },
 
   // Time distribution
-  timeDist: { backgroundColor: colors.white, borderRadius: 12, padding: spacing.p14, marginBottom: spacing.p8 },
+  timeDist: { backgroundColor: c.bgCard, borderRadius: 12, padding: spacing.p14, marginBottom: spacing.p8 },
   timeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.p10 },
-  timeLabel: { width: 70, fontSize: 12, fontWeight: '600', color: colors.plum },
-  timeBarTrack: { flex: 1, height: 10, backgroundColor: colors.lavender, borderRadius: 5, marginHorizontal: spacing.p8 },
+  timeLabel: { width: 70, fontSize: 12, fontWeight: '600', color: c.textSecondary },
+  timeBarTrack: { flex: 1, height: 10, backgroundColor: c.bgSecondary, borderRadius: 5, marginHorizontal: spacing.p8 },
   timeBarFill: { height: 10, borderRadius: 5 },
-  timeCount: { width: 30, fontSize: 12, fontWeight: '700', color: colors.mutedPlum, textAlign: 'right' },
+  timeCount: { width: 30, fontSize: 12, fontWeight: '700', color: c.textMuted, textAlign: 'right' },
 
   // Donut
   donutWrap: {
@@ -476,48 +483,48 @@ const s = StyleSheet.create({
     marginVertical: spacing.p12, height: DONUT_SIZE + 20,
   },
   donutCenter: { position: 'absolute', alignItems: 'center' },
-  donutCenterValue: { fontSize: 28, fontWeight: '800', color: colors.deepPlum },
-  donutCenterLabel: { fontSize: 12, color: colors.mutedPlum },
+  donutCenterValue: { fontSize: 28, fontWeight: '800', color: c.textPrimary },
+  donutCenterLabel: { fontSize: 12, color: c.textMuted },
 
   // Legend
-  legendWrap: { backgroundColor: colors.white, borderRadius: 12, padding: spacing.p14, marginBottom: spacing.p8 },
+  legendWrap: { backgroundColor: c.bgCard, borderRadius: 12, padding: spacing.p14, marginBottom: spacing.p8 },
   legendRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.p8 },
   legendDot: { width: 10, height: 10, borderRadius: 5, marginRight: spacing.p8 },
-  legendLabel: { width: 80, fontSize: 11, color: colors.plum, fontWeight: '500', textTransform: 'capitalize' },
-  legendPct: { width: 35, fontSize: 11, fontWeight: '700', color: colors.mutedPlum, textAlign: 'right' },
-  legendBarTrack: { flex: 1, height: 6, backgroundColor: colors.lavender, borderRadius: 3, marginLeft: spacing.p8 },
+  legendLabel: { width: 80, fontSize: 11, color: c.textSecondary, fontWeight: '500', textTransform: 'capitalize' },
+  legendPct: { width: 35, fontSize: 11, fontWeight: '700', color: c.textMuted, textAlign: 'right' },
+  legendBarTrack: { flex: 1, height: 6, backgroundColor: c.bgSecondary, borderRadius: 3, marginLeft: spacing.p8 },
   legendBarFill: { height: 6, borderRadius: 3 },
 
   // Heatmap
-  heatmapSub: { fontSize: 11, color: colors.mutedPlum, marginBottom: spacing.p8, marginTop: -spacing.p8 },
-  heatmapWrap: { backgroundColor: colors.white, borderRadius: 12, padding: spacing.p12, marginBottom: spacing.p8 },
+  heatmapSub: { fontSize: 11, color: c.textMuted, marginBottom: spacing.p8, marginTop: -spacing.p8 },
+  heatmapWrap: { backgroundColor: c.bgCard, borderRadius: 12, padding: spacing.p12, marginBottom: spacing.p8 },
   heatmapMonths: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: spacing.p8 },
-  heatmapMonth: { fontSize: 10, color: colors.mutedPlum, fontWeight: '600' },
+  heatmapMonth: { fontSize: 10, color: c.textMuted, fontWeight: '600' },
   heatmapGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start' },
   heatmapCell: { width: 13, height: 13, borderRadius: 2 },
   heatmapLegend: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: spacing.p10, gap: 3 },
-  heatmapLegendLabel: { fontSize: 10, color: colors.mutedPlum },
+  heatmapLegendLabel: { fontSize: 10, color: c.textMuted },
 
   // Activity
-  emptyHint: { color: colors.mutedPlum, fontSize: 13, textAlign: 'center', paddingVertical: spacing.p20 },
+  emptyHint: { color: c.textMuted, fontSize: 13, textAlign: 'center', paddingVertical: spacing.p20 },
   actRow: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: c.bgCard,
     borderRadius: 10, padding: spacing.p12, marginBottom: spacing.p8,
   },
   actLeft: { flex: 1, marginRight: spacing.p10 },
-  actTitle: { fontSize: 14, fontWeight: '600', color: colors.deepPlum },
-  actSub: { fontSize: 11, color: colors.mutedPlum, marginTop: spacing.p4 },
+  actTitle: { fontSize: 14, fontWeight: '600', color: c.textPrimary },
+  actSub: { fontSize: 11, color: c.textMuted, marginTop: spacing.p4 },
   actRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  actBarBg: { width: 60, height: 4, backgroundColor: colors.lavender, borderRadius: 2 },
-  actBarFill: { height: 4, backgroundColor: colors.plum, borderRadius: 2 },
-  actPct: { fontSize: 11, fontWeight: '600', color: colors.mutedPlum, width: 30, textAlign: 'right' },
+  actBarBg: { width: 60, height: 4, backgroundColor: c.bgSecondary, borderRadius: 2 },
+  actBarFill: { height: 4, backgroundColor: c.accentDark, borderRadius: 2 },
+  actPct: { fontSize: 11, fontWeight: '600', color: c.textMuted, width: 30, textAlign: 'right' },
 
   // Premium footer
   premiumFooter: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: colors.lavender, borderRadius: 12, padding: spacing.p14,
+    backgroundColor: c.accentLight, borderRadius: 12, padding: spacing.p14,
     marginTop: spacing.p20, opacity: 0.9, gap: spacing.p8,
   },
   premiumFooterIcon: { fontSize: 18 },
-  premiumFooterText: { fontSize: 11, color: colors.deepPlum, fontWeight: '600', flex: 1 },
+  premiumFooterText: { fontSize: 11, color: c.textSecondary, fontWeight: '600', flex: 1 },
 });

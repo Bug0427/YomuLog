@@ -389,11 +389,11 @@ export default function SearchScreen() {
             marginTop: spacing.p6,
             paddingVertical: spacing.p8,
             paddingHorizontal: spacing.p12,
-            backgroundColor: colors.deepPlum,
+            backgroundColor: theme.accentDark,
             borderRadius: 8,
           }}
         >
-          <Text style={{ color: colors.paleLavender, fontSize: 11, fontWeight: '600' }}>
+          <Text style={{ color: colors.white, fontSize: 11, fontWeight: '600' }}>
             🤖 AI understood: {aiSummary}
           </Text>
         </View>
@@ -416,7 +416,7 @@ export default function SearchScreen() {
                 <Text style={CardViewStyles.rowTitle} numberOfLines={1}>
                   {u.mangaTitle}
                 </Text>
-                <Text style={{ fontSize: 11, color: colors.mutedPlum, marginTop: 2 }}>
+                <Text style={{ fontSize: 11, color: theme.textMuted, marginTop: 2 }}>
                   Ch. {u.chapterNumber}
                 </Text>
               </View>
@@ -496,7 +496,7 @@ export default function SearchScreen() {
         onSelectManga={handleRisSelectManga}
       />
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
-        <Text style={GeneralStyles.h1}>
+        <Text style={[GeneralStyles.h1, { color: theme.textSecondary }]}>
           {hasActiveFilters(filter) || searchText.trim() ? 'Filtered Results' : 'Results'}
         </Text>
         <Pressable
@@ -506,7 +506,7 @@ export default function SearchScreen() {
           <MaterialCommunityIcons
             name={viewMode === 'grid' ? 'view-grid' : 'view-agenda'}
             size={24}
-            color={colors.plum}
+            color={theme.textSecondary}
           />
         </Pressable>
       </View>

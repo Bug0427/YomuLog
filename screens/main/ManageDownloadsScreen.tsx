@@ -17,7 +17,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import Header from '../../components/layout/Header';
 import { colors, spacing, t } from '../../styles/tokens';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme, type ThemeColors } from '../../context/ThemeContext';
 import { useSortPreference, applySortOrder } from '../../hooks/useSortPreference';
 import {
   getStorageStats,
@@ -50,6 +50,8 @@ function StorageBar({
   totalBytes: number;
   color: string;
 }) {
+  const { colors: theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const pct = totalBytes > 0 ? Math.min((bytes / MAX_STORAGE_BUDGET) * 100, 100) : 0;
   return (
     <View style={styles.barRow}>
@@ -77,12 +79,13 @@ function MangaStorageCard({
   deleting: boolean;
 }) {
   const { colors: theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   return (
     <View style={[styles.mangaCard, { backgroundColor: theme.bgCard }]}>
       {/* Left: icon / placeholder */}
       <View style={styles.mangaIconWrap}>
-        <MaterialCommunityIcons name="book-open-page-variant" size={28} color={colors.deepPlum} />
+        <MaterialCommunityIcons name="book-open-page-variant" size={28} color={theme.textSecondary} />
       </View>
 
       {/* Center: info */}
@@ -126,6 +129,7 @@ function formatBytesCompact(bytes: number): string {
 export default function ManageDownloadsScreen() {
   const navigation = useNavigation();
   const { colors: theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
 
   const [storageStats, setStorageStats] = useState<{
@@ -245,7 +249,7 @@ export default function ManageDownloadsScreen() {
       {/* Fixed header bar with back button */}
       <View style={[styles.headerBar, { backgroundColor: theme.headerBg, paddingTop: insets.top }]}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={12}>
-          <Feather name="arrow-left" size={24} color={colors.deepPlum} />
+          <Feather name="arrow-left" size={24} color={theme.textSecondary} />
         </Pressable>
         <Text style={styles.headerTitle}>Manage Downloads</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -255,11 +259,11 @@ export default function ManageDownloadsScreen() {
             accessibilityRole="button"
             hitSlop={12}
           >
-            <MaterialCommunityIcons name={sortIcon} size={20} color={colors.deepPlum} />
+            <MaterialCommunityIcons name={sortIcon} size={20} color={theme.textSecondary} />
           </Pressable>
           {downloadedChapters.length > 0 && (
             <Pressable onPress={handleClearAll} disabled={deleting} hitSlop={12}>
-              <Feather name="trash-2" size={20} color={deleting ? colors.mutedPlum : colors.error} />
+              <Feather name="trash-2" size={20} color={deleting ? theme.textMuted : colors.error} />
             </Pressable>
           )}
         </View>
@@ -291,7 +295,7 @@ export default function ManageDownloadsScreen() {
                   {
                     width: `${storagePct}%`,
                     backgroundColor:
-                      storagePct > 80 ? colors.error : storagePct > 50 ? colors.modalPurple : colors.deepPlum,
+                      storagePct > 80 ? colors.error : storagePct > 50 ? colors.modalPurple : colors.modalPurple,
                   },
                 ]}
               />
@@ -354,7 +358,7 @@ export default function ManageDownloadsScreen() {
 
           {loading ? (
             <View style={styles.loadingWrap}>
-              <ActivityIndicator size="large" color={colors.deepPlum} />
+              <ActivityIndicator size="large" color={theme.accent} />
               <Text style={styles.loadingText}>Calculating storage…</Text>
             </View>
           ) : storageStats && sortedByManga.length > 0 ? (
@@ -371,7 +375,7 @@ export default function ManageDownloadsScreen() {
                       ? colors.error
                       : stat.storageBytes > 50 * 1024 * 1024
                         ? colors.modalPurple
-                        : colors.deepPlum
+                        : colors.modalPurple
                   }
                 />
               ))}
@@ -397,7 +401,7 @@ export default function ManageDownloadsScreen() {
             </>
           ) : (
             <View style={styles.emptyWrap}>
-              <MaterialCommunityIcons name="download-off" size={48} color={colors.mutedPlum} />
+              <MaterialCommunityIcons name="download-off" size={48} color={theme.textMuted} />
               <Text style={styles.emptyText}>
                 No downloads yet. Open a manga and save chapters for offline reading.
               </Text>
@@ -413,7 +417,7 @@ export default function ManageDownloadsScreen() {
 
 // ─── Styles ──────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
   },
@@ -423,7 +427,7 @@ const styles = StyleSheet.create({
     // paddingTop set dynamically via useSafeAreaInsets
     paddingBottom: spacing.p12,
     paddingHorizontal: spacing.p16,
-    backgroundColor: colors.paleLavender,
+    backgroundColor: c.bgSecondary,
   },
   backBtn: {
     padding: 4,
@@ -433,7 +437,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 20,
     fontWeight: '800',
-    color: colors.deepPlum,
+    color: c.textPrimary,
   },
   scroll: {
     flex: 1,
@@ -448,16 +452,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: '800',
-    color: colors.deepPlum,
+    color: c.textPrimary,
     marginBottom: 10,
   },
   // ── Footprint card ────────────────────────────────────────────────
   footprintCard: {
     borderRadius: 14,
     padding: 16,
-    backgroundColor: colors.creamWhite,
+    backgroundColor: c.bgInput,
     borderWidth: 2,
-    borderColor: colors.sand,
+    borderColor: c.borderLight,
   },
   totalRow: {
     flexDirection: 'row',
@@ -468,17 +472,17 @@ const styles = StyleSheet.create({
   totalLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.mutedPlum,
+    color: c.textMuted,
   },
   totalValue: {
     fontSize: 26,
     fontWeight: '800',
-    color: colors.deepPlum,
+    color: c.textPrimary,
   },
   mainBarTrack: {
     height: 16,
     borderRadius: 8,
-    backgroundColor: colors.paleLavender,
+    backgroundColor: c.bgSecondary,
     overflow: 'hidden',
     marginBottom: 6,
   },
@@ -494,13 +498,13 @@ const styles = StyleSheet.create({
   },
   scaleLabel: {
     fontSize: 10,
-    color: colors.mutedPlum,
+    color: c.textMuted,
   },
   quickStats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     borderTopWidth: 1,
-    borderTopColor: colors.sand,
+    borderTopColor: c.borderLight,
     paddingTop: spacing.p12,
   },
   quickStatBox: {
@@ -510,11 +514,11 @@ const styles = StyleSheet.create({
   quickStatValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.deepPlum,
+    color: c.textPrimary,
   },
   quickStatLabel: {
     fontSize: 10,
-    color: colors.mutedPlum,
+    color: c.textMuted,
     fontWeight: '500',
   },
   // ── Storage bars ──────────────────────────────────────────────────
@@ -528,13 +532,13 @@ const styles = StyleSheet.create({
     width: 90,
     fontSize: 11,
     fontWeight: '600',
-    color: colors.deepPlum,
+    color: c.textPrimary,
   },
   barTrack: {
     flex: 1,
     height: 10,
     borderRadius: 5,
-    backgroundColor: colors.paleLavender,
+    backgroundColor: c.bgSecondary,
     overflow: 'hidden',
   },
   barFill: {
@@ -546,20 +550,20 @@ const styles = StyleSheet.create({
     width: 48,
     fontSize: 10,
     fontWeight: '700',
-    color: colors.mutedPlum,
+    color: c.textMuted,
     textAlign: 'right',
   },
   // ── Divider ───────────────────────────────────────────────────────
   divider: {
     height: 2,
-    backgroundColor: colors.plum,
+    backgroundColor: c.accentDark,
     opacity: 0.2,
     marginVertical: 16,
   },
   // ── Cleanup section ───────────────────────────────────────────────
   cleanupHint: {
     fontSize: 12,
-    color: colors.mutedPlum,
+    color: c.textMuted,
     marginBottom: 12,
     fontStyle: 'italic',
   },
@@ -572,13 +576,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: colors.sand,
+    borderColor: c.borderLight,
   },
   mangaIconWrap: {
     width: 44,
     height: 44,
     borderRadius: 8,
-    backgroundColor: colors.sand,
+    backgroundColor: c.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -589,24 +593,24 @@ const styles = StyleSheet.create({
   mangaTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.deepPlum,
+    color: c.textPrimary,
     marginBottom: 2,
   },
   mangaMeta: {
     fontSize: 11,
-    color: colors.mutedPlum,
+    color: c.textMuted,
     marginBottom: 1,
   },
   mangaStorage: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.plum,
+    color: c.textSecondary,
   },
   deleteBtn: {
     width: 38,
     height: 38,
     borderRadius: 8,
-    backgroundColor: colors.paleLavender,
+    backgroundColor: c.bgSecondary,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
@@ -619,7 +623,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 13,
-    color: colors.mutedPlum,
+    color: c.textMuted,
   },
   emptyWrap: {
     alignItems: 'center',
@@ -629,7 +633,7 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 12,
     fontSize: 14,
-    color: colors.mutedPlum,
+    color: c.textMuted,
     textAlign: 'center',
     lineHeight: 20,
   },

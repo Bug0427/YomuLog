@@ -69,7 +69,7 @@ const THEMES: Record<ThemeMode, ThemeColors> = {
 
     textPrimary: '#543C27',  // cocoa
     textSecondary: '#463B54',// plum
-    textMuted: '#7a6e8f',   // mutedPlum
+    textMuted: '#423d58',   // a11y: ≥4.5:1 on sand (#E3D3BD) AND lavender (#AFA6DD) — was mutedPlum 3.21:1/2.09:1
     textInverse: '#ffffff',
 
     accent: '#463B54',       // plum
@@ -96,7 +96,7 @@ const THEMES: Record<ThemeMode, ThemeColors> = {
 
     textPrimary: '#e0e0e0',
     textSecondary: '#a0a0c0',
-    textMuted: '#6a6a8a',
+    textMuted: '#9999bb',   // a11y: ≥4.5:1 on bgCard (#0f3460) — was #6a6a8a 2.41:1
     textInverse: '#1a1a2e',
 
     accent: '#7b6ef6',
@@ -123,7 +123,7 @@ const THEMES: Record<ThemeMode, ThemeColors> = {
 
     textPrimary: '#3b2f1e',
     textSecondary: '#5c4a2e',
-    textMuted: '#8a7a5a',
+    textMuted: '#5c4f36',   // a11y: ≥4.5:1 on sepia bgCard (#d4c4a8) — was #8a7a5a 2.45:1
     textInverse: '#f4ecd8',
 
     accent: '#8b6914',

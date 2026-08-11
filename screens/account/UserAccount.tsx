@@ -299,7 +299,7 @@ export default function UserAccount() {
                     <Text style={[FeedbackStyles.itemText, {paddingLeft: 1}]}>back</Text>
                 </Pressable>
 
-                <Text style={GeneralStyles.title}> Account Profile</Text>
+                <Text style={[GeneralStyles.title, { color: theme.textSecondary }]}> Account Profile</Text>
             </View>
 
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>

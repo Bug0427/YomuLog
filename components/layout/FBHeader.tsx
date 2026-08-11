@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, ViewStyle, TextStyle } from 'react-native';
 import { GeneralStyles, FeedbackStyles } from '../../styles/global';
 import BackButton from '../general/BackButton';
+import { useTheme } from '../../context/ThemeContext';
 
 
 export type FBHeaderProps = {
@@ -27,6 +28,7 @@ export default function FBHeader({
     showDivider = true,
     disabled,
 }: FBHeaderProps) {
+    const { colors: theme } = useTheme();
 return (
     <View style={[FeedbackStyles.wrapper, containerStyle]}>      
     <View style={FeedbackStyles.headerRow}>
@@ -37,7 +39,7 @@ return (
         )}
 
         {/* Center: Title */}
-        <Text style={[GeneralStyles.h1, titleStyle]} numberOfLines={1}>
+        <Text style={[GeneralStyles.h1, titleStyle, { color: theme.textSecondary }]} numberOfLines={1}>
         {title}
         </Text>
 

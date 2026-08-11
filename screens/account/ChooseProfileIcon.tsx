@@ -101,7 +101,7 @@ export default function ChooseProfileIcon() {
     <View>
         <View style={[GeneralStyles.header, { marginTop: 30, marginBottom: 15, paddingBottom: 20, borderBottomWidth: 2, borderColor: theme.accent }]}>
           <Pressable onPress={navigateToUserAccount} style={[FeedbackStyles.item, { width: 57, paddingVertical: 7 }]}>
-            <Text style={GeneralStyles.plainText}>Back</Text>
+            <Text style={[GeneralStyles.plainText, { color: theme.textPrimary }]}>Back</Text>
           </Pressable>
           <Text style={[SettingButtonStyles.icon, {}]}>Profile Icon</Text>
           <Pressable
@@ -110,7 +110,7 @@ export default function ChooseProfileIcon() {
             disabled={!selectedId}
             accessibilityState={{ disabled: !selectedId }}
           >
-            <Text style={GeneralStyles.plainText}>Save</Text>
+            <Text style={[GeneralStyles.plainText, { color: theme.textPrimary }]}>Save</Text>
           </Pressable>
         </View>
       </View>

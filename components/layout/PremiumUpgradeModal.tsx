@@ -3,7 +3,8 @@
 // attempt to enable Cloud Sync & Backup. Displays Stripe monthly pricing
 // of $2.99/mo and annual pricing of $24.99/year.
 
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useTheme, type ThemeColors } from '../../context/ThemeContext';
 import {
   Modal,
   View,
@@ -25,6 +26,8 @@ export default function PremiumUpgradeModal({
   onClose,
   onUpgrade,
 }: PremiumUpgradeModalProps) {
+  const { colors: theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <Modal
       visible={visible}
@@ -36,12 +39,12 @@ export default function PremiumUpgradeModal({
         <View style={styles.card}>
           {/* Close button */}
           <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={12}>
-            <Feather name="x" size={22} color={colors.plum} />
+            <Feather name="x" size={22} color={theme.textSecondary} />
           </Pressable>
 
           {/* Icon */}
           <View style={styles.iconWrap}>
-            <Feather name="cloud-lightning" size={48} color={colors.deepPlum} />
+            <Feather name="cloud-lightning" size={48} color={theme.accentDark} />
           </View>
 
           {/* Title */}
@@ -92,7 +95,7 @@ export default function PremiumUpgradeModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: colors.overlayScrim,
@@ -103,13 +106,13 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 380,
-    backgroundColor: colors.creamWhite,
+    backgroundColor: c.bgInput,
     borderRadius: 16,
     paddingVertical: spacing.p24,
     paddingHorizontal: spacing.p20,
     alignItems: 'center',
     borderWidth: borders.bw2,
-    borderColor: colors.plum,
+    borderColor: c.border,
   },
   closeBtn: {
     position: 'absolute',
@@ -123,19 +126,19 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.lavender,
+    backgroundColor: c.accentLight,
     ...u.center,
     marginBottom: spacing.p16,
   },
   title: {
     fontSize: 24,
     fontWeight: '800',
-    color: colors.deepPlum,
+    color: c.textPrimary,
     marginBottom: spacing.p8,
   },
   subtitle: {
     fontSize: 14,
-    color: colors.cocoa,
+    color: c.textPrimary,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: spacing.p20,
@@ -157,23 +160,23 @@ const styles = StyleSheet.create({
   priceAmount: {
     fontSize: 32,
     fontWeight: '800',
-    color: colors.deepPlum,
+    color: c.textPrimary,
   },
   pricePeriod: {
     fontSize: 13,
-    color: colors.mutedPlum,
+    color: c.textMuted,
     fontWeight: '600',
     marginTop: 2,
   },
   divider: {
     width: 2,
     height: 50,
-    backgroundColor: colors.lavender,
+    backgroundColor: c.accentLight,
     borderRadius: 1,
   },
   savingsBadge: {
     marginTop: spacing.p6,
-    backgroundColor: colors.success,
+    backgroundColor: '#2e7d32',
     paddingHorizontal: spacing.p8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -181,12 +184,12 @@ const styles = StyleSheet.create({
   savingsText: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.creamWhite,
+    color: colors.white,
   },
   upgradeBtn: {
     width: '100%',
     flexDirection: 'row',
-    backgroundColor: colors.deepPlum,
+    backgroundColor: c.accentDark,
     paddingVertical: spacing.p14,
     borderRadius: 12,
     alignItems: 'center',
@@ -196,14 +199,14 @@ const styles = StyleSheet.create({
   upgradeBtnText: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.creamWhite,
+    color: colors.white,
   },
   dismissWrap: {
     paddingVertical: spacing.p8,
   },
   dismissText: {
     fontSize: 14,
-    color: colors.mutedPlum,
+    color: c.textMuted,
     fontWeight: '600',
   },
 });

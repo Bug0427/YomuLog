@@ -392,7 +392,7 @@ export default function LibraryScreen() {
       )}
 
       <View style={[GeneralStyles.alignment, { justifyContent: 'space-between', marginTop: 10 }]}>
-        <Text style={GeneralStyles.h1}>Library ({filteredFavorites.length})</Text>
+        <Text style={[GeneralStyles.h1, { color: theme.textSecondary }]}>Library ({filteredFavorites.length})</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Pressable
             onPress={cycleSort}

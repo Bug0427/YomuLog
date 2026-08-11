@@ -2,10 +2,10 @@
 // Reusable sort/order modal — used by SearchScreen, LibraryScreen, and DownloadsScreen.
 // Renders a list of sort options in a centered modal overlay with active-state highlighting.
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Pressable, Modal, TouchableWithoutFeedback, StyleSheet } from 'react-native';
 import { colors } from '../../styles/tokens';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme, type ThemeColors } from '../../context/ThemeContext';
 
 export type SortOption = {
   key: string;
@@ -30,6 +30,7 @@ export default function SortModal({
   onClose,
 }: SortModalProps) {
   const { colors: theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
@@ -70,15 +71,15 @@ export default function SortModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'theme.overlay',
+    backgroundColor: c.overlay,
     justifyContent: 'center',
     alignItems: 'center',
   },
   container: {
-    backgroundColor: colors.lavender,
+    backgroundColor: c.bgCard,
     borderRadius: 12,
     padding: 16,
     width: '80%',
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '800',
-    color: colors.plum,
+    color: c.textSecondary,
     marginBottom: 12,
   },
   option: {
@@ -95,21 +96,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 4,
     borderRadius: 8,
-    backgroundColor: colors.sand,
+    backgroundColor: c.bgCard,
     borderWidth: 1,
-    borderColor: colors.cocoa,
+    borderColor: c.border,
   },
   optionSelected: {
-    backgroundColor: colors.plum,
-    borderColor: colors.plum,
+    backgroundColor: c.accentDark,
+    borderColor: c.accentDark,
   },
   optionText: {
-    color: colors.plum,
+    color: c.textPrimary,
     fontWeight: '500',
     fontSize: 14,
   },
   optionTextSelected: {
-    color: colors.creamWhite,
+    color: colors.white,
     fontWeight: '700',
   },
 });
