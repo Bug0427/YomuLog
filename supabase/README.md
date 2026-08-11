@@ -52,6 +52,7 @@ and `services/stripeService.ts` read/write. Supabase Auth provides `auth.users`
 | `reading_progress` | reading history (upsert on `user_id,chapter_id`) | `chapter_id`, `manga_id`, `manga_title`, `manga_image`, `chapter_title`, `chapter_number`, `scroll_percentage`, `is_read`, `last_read_at` |
 | `download_queue` | offline downloads (upsert on `user_id,job_id`) | `job_id`, `chapter_id`, `manga_id`, `manga_title`, `chapter_number`, `chapter_title`, `status`, `progress`, `total_pages`, `downloaded_pages`, `error_message`, `local_dir`, `retry_count`, `created_at` |
 | `user_preferences` | settings (1 row per user) | `language`, `alerts_on`, `ai_search_on`, `direction_mode` |
+| `user_activity` | retention heartbeat (KPI 1, G-3) — links anonymous install to account | `install_id`, `first_launch_at`, `last_active_at` |
 
 ### Copy-paste DDL (SQL Editor)
 
@@ -138,6 +139,17 @@ create table if not exists public.user_preferences (
   direction_mode  text,
   updated_at      timestamptz not null default now()
 );
+
+-- Retention heartbeat (1 row per user; KPI 1 — D30 retention, G-3).
+-- install_id links the device (anonymous install) to the account; the owner
+-- can join this to auth.users.created_at for signup cohorts.
+create table if not exists public.user_activity (
+  user_id           uuid primary key references auth.users (id) on delete cascade,
+  install_id        text,
+  first_launch_at   timestamptz,
+  last_active_at    timestamptz,
+  updated_at        timestamptz not null default now()
+);
 ```
 
 The app reads/writes these tables with the **anon key**, so row-level security
@@ -151,6 +163,7 @@ create policy "own rows" on public.user_library       for all using (auth.uid() 
 create policy "own rows" on public.reading_progress   for all using (auth.uid() = user_id);
 create policy "own rows" on public.download_queue     for all using (auth.uid() = user_id);
 create policy "own rows" on public.user_preferences   for all using (auth.uid() = user_id);
+create policy "own rows" on public.user_activity      for all using (auth.uid() = user_id);
 ```
 
 ## 4. Env vars at web build time

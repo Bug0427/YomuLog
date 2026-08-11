@@ -18,6 +18,7 @@ import {
   getChapterProgress,
 } from '../../services/readingProgress';
 import { getLocalPageUris } from '../../services/downloadManager';
+import { recordHeartbeat } from '../../services/retentionService';
 import {
   ReaderThemeProvider,
   useReaderTheme,
@@ -74,6 +75,13 @@ function ReaderScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const lastTapRef = useRef(0);
   const progressSavedRef = useRef(false);
+
+  // ─── G-3 retention heartbeat — reading is a strong activity signal ──────
+  // Debounced in retentionService (at most one persist per minute), so this
+  // is safe to fire on every reader open.
+  useEffect(() => {
+    recordHeartbeat().catch(() => {});
+  }, []);
 
   // ─── Fetch chapter pages ──────────────────────────────────────────────
 

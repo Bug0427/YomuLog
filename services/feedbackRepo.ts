@@ -168,6 +168,23 @@ export async function initDb() {
     }
   }
 
+  // --- Migrations: CREATED_AT column (G-3 retention — signup timestamp) ----
+  try {
+    const cols3: any[] = await db.getAllAsync(`PRAGMA table_info(users)`);
+    const hasCreatedAt = Array.isArray(cols3) && cols3.some((c: any) => String(c?.name).toUpperCase() === 'CREATED_AT');
+    if (!hasCreatedAt) {
+      await db.execAsync(`ALTER TABLE users ADD COLUMN CREATED_AT TEXT`);
+      console.log('ℹ︎ Added users.CREATED_AT via migration');
+    }
+  } catch (e) {
+    const msg3 = String((e as any)?.message || e);
+    if (/duplicate column name: CREATED_AT/i.test(msg3)) {
+      // already exists — ignore
+    } else {
+      console.warn('CREATED_AT migration check failed', e);
+    }
+  }
+
   // --- Optional dev reset ---------------------------------------------------
   try {
     // also allow toggling via globalThis.RESET_DB_ON_START = true at runtime
@@ -196,19 +213,20 @@ export async function initDb() {
 
 // 4) Seeding (dev convenience) -----------------------------------------------
 export async function seedDefaultUsers() {
+  const seededAt = new Date().toISOString();
   await runAsync(
-    `INSERT OR IGNORE INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL) VALUES (?,?,?,?,?)`,
-    ['USR_admin', 'admin', 'admin@yomulog.test', 'AdminPass1!', 1]
+    `INSERT OR IGNORE INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL, CREATED_AT) VALUES (?,?,?,?,?,?)`,
+    ['USR_admin', 'admin', 'admin@yomulog.test', 'AdminPass1!', 1, seededAt]
   );
   await runAsync(
-    `INSERT OR IGNORE INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL) VALUES (?,?,?,?,?)`,
-    ['USR_paid', 'paiduser', 'paid@yomulog.test', 'PaidPass1!', 2]
+    `INSERT OR IGNORE INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL, CREATED_AT) VALUES (?,?,?,?,?,?)`,
+    ['USR_paid', 'paiduser', 'paid@yomulog.test', 'PaidPass1!', 2, seededAt]
   );
   await runAsync(
-    `INSERT OR IGNORE INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL) VALUES (?,?,?,?,?)`,
-    ['mainAccount', 'buggy', 'regular@yomulog.test', 'P@22w0rd', 3]
+    `INSERT OR IGNORE INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL, CREATED_AT) VALUES (?,?,?,?,?,?)`,
+    ['mainAccount', 'buggy', 'regular@yomulog.test', 'P@22w0rd', 3, seededAt]
   );
-  const users = await queryAll(`SELECT ACCOUNTID, USERNM, EMAIL, SECURITYLVL FROM users ORDER BY USERNM`);
+  const users = await queryAll(`SELECT ACCOUNTID, USERNM, EMAIL, SECURITYLVL, CREATED_AT FROM users ORDER BY USERNM`);
   console.log('🌱 After seed, users:', users);
 }
 // 5) Inserts (reports, comments, ratings) ------------------------------------
@@ -284,6 +302,7 @@ export type UserRow = {
   email: string;
   pswd: string; // NOTE: store hashed in production
   securityLvl: SecurityLevel; // 1=admin,2=paid,3=regular
+  createdAt?: string; // ISO signup timestamp (G-3 retention); backfilled on insert
 };
 
 export async function CreateNewUser(row: {
@@ -296,9 +315,9 @@ export async function CreateNewUser(row: {
   const accountId = await makeUserIdSafe(row.securityLvl, row.userNm);
 
   await runAsync(
-    `INSERT INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL)
-      VALUES (?, ?, ?, ?, ?)`,
-    [accountId, row.userNm, row.email, row.pswd, row.securityLvl]
+    `INSERT INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL, CREATED_AT)
+      VALUES (?, ?, ?, ?, ?, ?)`,
+    [accountId, row.userNm, row.email, row.pswd, row.securityLvl, new Date().toISOString()]
   );
 
   return accountId;
@@ -307,9 +326,9 @@ export async function CreateNewUser(row: {
 
 export async function createUser(row: UserRow) {
   await runAsync(
-    `INSERT INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL)
-    VALUES (?, ?, ?, ?, ?)`,
-    [row.accountId, row.userNm, row.email, row.pswd, row.securityLvl]
+    `INSERT INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL, CREATED_AT)
+    VALUES (?, ?, ?, ?, ?, ?)`,
+    [row.accountId, row.userNm, row.email, row.pswd, row.securityLvl, row.createdAt ?? new Date().toISOString()]
   );
   return row.accountId;
 }
@@ -324,8 +343,8 @@ export async function upsertUser(row: UserRow) {
   // @ts-ignore rowsAffected exists on result for runAsync
   if (!res?.rowsAffected) {
     await runAsync(
-      `INSERT INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL) VALUES (?,?,?,?,?)`,
-      [row.accountId, row.userNm, row.email, row.pswd, row.securityLvl]
+      `INSERT INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL, CREATED_AT) VALUES (?,?,?,?,?,?)`,
+      [row.accountId, row.userNm, row.email, row.pswd, row.securityLvl, row.createdAt ?? new Date().toISOString()]
     );
   }
   return row.accountId;
@@ -333,7 +352,7 @@ export async function upsertUser(row: UserRow) {
 
 export async function getUserByUsername(userNm: string) {
   return await queryFirst(
-    `SELECT ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL FROM users WHERE USERNM = ? LIMIT 1`,
+    `SELECT ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL, CREATED_AT FROM users WHERE USERNM = ? LIMIT 1`,
     [userNm]
   );
 }
@@ -349,7 +368,7 @@ export async function verifyUser(userNm: string, pswd: string) {
   // EMAIL is included so sign-in screens can establish the matching
   // Supabase Auth session (entitlement/cloud sync are keyed by Supabase id).
   return await queryFirst(
-    `SELECT ACCOUNTID, USERNM, EMAIL, SECURITYLVL FROM users WHERE USERNM = ? AND PSWD = ? LIMIT 1`,
+    `SELECT ACCOUNTID, USERNM, EMAIL, SECURITYLVL, CREATED_AT FROM users WHERE USERNM = ? AND PSWD = ? LIMIT 1`,
     [userNm, pswd]
   );
 }
