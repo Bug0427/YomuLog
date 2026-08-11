@@ -24,6 +24,7 @@ import { supabase, isSupabaseConfigured } from './supabaseClient';
 import type { BookmarkedManga } from './favoritesService';
 import type { ChapterProgress } from './readingProgress';
 import { resolveMangaDexUrl } from './mangaDexProxy';
+import { getCachedSubscriptionStatus } from './stripeService';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -518,6 +519,19 @@ export async function performFullSync(): Promise<SyncState> {
   await saveSyncState({ status: 'syncing', lastError: null });
 
   const isRealSync = await useRealSupabase();
+  // G-4: Real cloud sync is a Premium feature. UI layers gate first
+  // (useSyncEngine, SettingsScreen); this service-level check is defense in
+  // depth so a stale `syncEnabled` from a lapsed subscription can never push
+  // data to Supabase. Local AsyncStorage mirror sync stays available.
+  if (isRealSync) {
+    const cachedStatus = await getCachedSubscriptionStatus();
+    if (!cachedStatus.isActive) {
+      return await saveSyncState({
+        status: 'error',
+        lastError: 'Cloud Sync requires an active Premium subscription',
+      });
+    }
+  }
 
   try {
     if (isRealSync) {
