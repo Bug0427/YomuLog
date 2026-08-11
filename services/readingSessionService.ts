@@ -35,7 +35,7 @@ async function getJson<T>(key: string, fallback: T): Promise<T> {
   }
 }
 
-function toDayKey(d: Date): string {
+export function toDayKey(d: Date): string {
   // Local date key (YYYY-MM-DD). Local timezone, not UTC — a session at 11pm
   // counts toward the user's local day.
   const y = d.getFullYear();

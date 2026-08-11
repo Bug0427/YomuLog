@@ -23,7 +23,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import type { BookmarkedManga } from './favoritesService';
 import type { ChapterProgress } from './readingProgress';
-import { getReadingSecondsByChapter, getReadingSecondsByDay } from './readingSessionService';
+import { getReadingSecondsByChapter, getReadingSecondsByDay, toDayKey } from './readingSessionService';
 import { resolveMangaDexUrl } from './mangaDexProxy';
 import { getCachedSubscriptionStatus } from './stripeService';
 
@@ -490,7 +490,7 @@ async function syncStatsReal(userId: string): Promise<void> {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 6);
   cutoff.setHours(0, 0, 0, 0);
-  const cutoffKey = cutoff.toISOString().slice(0, 10);
+  const cutoffKey = toDayKey(cutoff);
 
   const rows: Array<{ user_id: string; day: string; seconds_read: number; updated_at: string }> = [];
   for (const [day, seconds] of Object.entries(byDay)) {
