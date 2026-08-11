@@ -11,17 +11,21 @@ CREATE TABLE IF NOT EXISTS user_activity (
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- RLS
+-- RLS: the app reads/writes this table with the anon key (JWT), so each user
+-- must have access to their own rows. CREATE POLICY has no IF NOT EXISTS
+-- clause, so policy creation is guarded by a pg_policies check (same pattern
+-- as seed-test-users.sql #189) to keep this migration re-run-safe. Policy set
+-- matches the README DDL ("own rows" FOR ALL, like every other table).
 ALTER TABLE user_activity ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can read own activity"
-  ON user_activity FOR SELECT
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert own activity"
-  ON user_activity FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own activity"
-  ON user_activity FOR UPDATE
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'user_activity'
+      AND policyname = 'own rows'
+  ) THEN
+    CREATE POLICY "own rows" ON user_activity
+      FOR ALL USING (auth.uid() = user_id);
+  END IF;
+END $$;
