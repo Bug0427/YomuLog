@@ -222,6 +222,11 @@ export default function HomeScreen() {
           }
           if (Object.keys(cachedMap).length) {
             setSliderDataMap(cachedMap);
+            // HOTFIX (regression p23): on cold start `loading` begins `true`, and
+            // the background loadAll below skips its `finally` setLoading(false) —
+            // without this the cached rails render but the spinner never drops.
+            // Cached content IS the first paint, so clear loading immediately.
+            setLoading(false);
             loadAll({ background: true });
             return;
           }
