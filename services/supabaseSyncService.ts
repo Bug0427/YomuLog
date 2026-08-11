@@ -523,6 +523,50 @@ export async function pushStatsToCloud(): Promise<void> {
   }
 }
 
+// ─── Funnel events scope (G-6, KPI 4 — premium conversion funnel) ──────
+
+/**
+ * Push the local funnel event log to the user_events table (migration 011).
+ * Rows upsert on (user_id, event_id) so re-pushes after a partial failure are
+ * idempotent; the local log is cleared only after a successful upsert.
+ */
+async function syncFunnelEventsReal(userId: string): Promise<void> {
+  const { getFunnelEventLog, clearFunnelEvents } = await import('./funnelService');
+  const events = await getFunnelEventLog();
+  if (events.length === 0) return;
+  const rows = events.map((e) => ({
+    user_id: userId,
+    event_id: e.event_id,
+    install_id: e.install_id,
+    event_name: e.name,
+    payload: e.payload,
+    occurred_at: e.occurred_at,
+  }));
+  const { error } = await supabase
+    .from('user_events')
+    .upsert(rows, { onConflict: 'user_id,event_id' });
+  if (error) throw new Error(`Funnel events push: ${error.message}`);
+  await clearFunnelEvents(events.map((e) => e.event_id));
+}
+
+/**
+ * Lightweight funnel-events push — deliberately NOT premium-gated, same
+ * rationale as pushRetentionToCloud: KPI 4's conversion funnel must include
+ * free users (they are the ones converting). Only instrumentation metadata
+ * (event name/timestamp/payload) is written — no user content, so the "Cloud
+ * Sync is a Premium feature" product line is untouched.
+ */
+export async function pushFunnelEventsToCloud(): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const userId = await getUserId();
+  if (!userId) return;
+  try {
+    await syncFunnelEventsReal(userId);
+  } catch (e) {
+    console.warn('Funnel events push failed (non-critical)', e);
+  }
+}
+
 // ─── Fallback: AsyncStorage mirror sync (for unauthenticated users) ──
 
 async function syncFavoritesFallback(): Promise<void> {
@@ -636,6 +680,9 @@ export async function performFullSync(): Promise<SyncState> {
       // G-3: retention metadata (install id / first launch / last active)
       // rides the real sync path too. Non-fatal by design.
       await pushRetentionToCloud();
+      // G-6: funnel events (paywall→checkout→conversion) ride the real sync
+      // path as a delivery-durability bonus (heartbeat is the primary channel).
+      await pushFunnelEventsToCloud();
       const results = await Promise.allSettled([
         syncFavoritesReal(userId).then(() => 'favorites' as SyncScope),
         syncProgressReal(userId).then(() => 'progress' as SyncScope),
@@ -783,6 +830,8 @@ export async function pushLocalToCloud(): Promise<SyncState> {
       await pushRetentionToCloud();
       // G-5: measured reading-time rollup rides the push path too.
       await pushStatsToCloud();
+      // G-6: funnel events ride the push path too (manual Push-now).
+      await pushFunnelEventsToCloud();
       await Promise.all([
         syncFavoritesReal(userId),
         syncProgressReal(userId),

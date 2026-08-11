@@ -6,6 +6,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { FeedbackStyles, SubmitButtonStyles } from '../../styles/global';
 import { CreateNewUser, runAsync, SecurityLevel } from '../../services/feedbackRepo';
 import { supabaseSignUp } from '../../services/supabaseAuth';
+import { recordFunnelEvent } from '../../services/funnelService';
 
 // Ensure default security level mapping even if enum values shift
 // Expected mapping: 1 = Admin, 2 = Purchase, 3 = Regular
@@ -113,6 +114,12 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
         setUsername('');
         setPassword('');
         setEmail('');
+        // G-6: signup_complete fires in BOTH modes (local-only and cloud) —
+        // the Supabase provision above is deliberately non-blocking, so the
+        // event must survive when it was skipped/unreachable. Fire-and-forget.
+        void recordFunnelEvent('signup_complete', {
+          provider: sb.ok ? 'supabase' : 'local',
+        });
         goLogin();
         } catch (e) {
         console.error('❌ Create account failed', e);

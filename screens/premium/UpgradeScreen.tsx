@@ -5,7 +5,7 @@
 // Entitlement is granted server-side after payment confirmation and the
 // app learns about it via Supabase Realtime (PremiumContext).
 
-import React, { useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
 import { colors, spacing } from '../../styles/tokens';
 import { getPremiumFeatures, openPremiumCheckout } from '../../services/stripeService';
+import { recordFunnelEvent } from '../../services/funnelService';
 
 function FeatureRow({ icon, title, description }: { icon: string; title: string; description: string }) {
   const { colors: theme } = useTheme();
@@ -43,6 +44,14 @@ export default function UpgradeScreen() {
   const { isPremium } = usePremium();
   const { colors: theme } = useTheme();
   const [loading, setLoading] = useState(false);
+
+  // G-6: paywall_viewed when the paywall actually renders (skips the
+  // already-premium "You're Premium!" view). Fire-and-forget.
+  useEffect(() => {
+    if (!isPremium) {
+      void recordFunnelEvent('paywall_viewed', { source: 'upgrade_screen' });
+    }
+  }, [isPremium]);
 
   const handleUpgrade = useCallback(async () => {
     setLoading(true);

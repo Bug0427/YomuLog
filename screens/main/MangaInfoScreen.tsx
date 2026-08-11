@@ -821,6 +821,7 @@ export default function MangaInfoScreen() {
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
         onUpgrade={openPremiumCheckout}
+        source="modal:manga_info"
       />
     </View>
   );

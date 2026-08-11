@@ -646,6 +646,7 @@ export default function SettingsScreen() {
       <PremiumUpgradeModal
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
+        source="modal:settings"
         onUpgrade={async () => {
           const result = await openPremiumCheckout();
           if (!result.success) {

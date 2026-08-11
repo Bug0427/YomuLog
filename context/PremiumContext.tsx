@@ -22,6 +22,7 @@ import {
   type SubscriptionStatus,
 } from '../services/stripeService';
 import { useAuthContext } from './AuthContext';
+import { recordFunnelEvent } from '../services/funnelService';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -73,6 +74,12 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const realtimeUnsubRef = useRef<(() => void) | null>(null);
+  // G-6 (E5): previous server-confirmed isActive, so checkout_completed is
+  // recorded only on a real false→true transition. Initial load is skipped
+  // (prev === null) — a subscription already active on boot is not a new
+  // conversion. Realtime + refreshStatus + foreground recovery all flow
+  // through setSubscriptionStatus, so this one watcher covers every path.
+  const prevActiveRef = useRef<boolean | null>(null);
   // Re-fetch entitlement whenever the (local) auth state changes — the
   // Supabase session is established by the sign-in flow (supabaseAuth),
   // so login/logout must trigger a fresh status fetch + Realtime channel.
@@ -120,6 +127,25 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
       realtimeUnsubRef.current = null;
     };
   }, [isLoggedIn]);
+
+  // G-6 (E5): checkout_completed — watch the server-confirmed status flip
+  // false→true (Realtime webhook callback, refreshStatus, foreground
+  // recovery — all funnel through setSubscriptionStatus). Dedupe is
+  // threefold: this prev-ref (one flip per session), funnelService's
+  // lastSubscriptionIdRef (same subscription id can't be recorded twice),
+  // and the server itself (upsert on user_id,event_id).
+  useEffect(() => {
+    const status = subscriptionStatus;
+    if (!status) return;
+    const prev = prevActiveRef.current;
+    prevActiveRef.current = status.isActive;
+    if (prev !== false || !status.isActive || !status.subscriptionId) return;
+    void recordFunnelEvent('checkout_completed', {
+      subscriptionId: status.subscriptionId,
+      plan: status.plan ?? 'monthly',
+      currentPeriodEnd: status.currentPeriodEnd ?? undefined,
+    });
+  }, [subscriptionStatus]);
 
   const activatePremium = useCallback(async () => {
     setIsPremium(true);
