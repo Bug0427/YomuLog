@@ -110,6 +110,17 @@ export default function App() {
   useEffect(() => {
     initDb().catch((e) => console.error('DB init failed', e));
   }, []);
+
+  // P-1: register the web service worker (bundle caching). The hosting edge
+  // forces no-store on every resource, so the SW is the only cache layer.
+  // Web-only, production-only (avoids dev-server/Metro SW interference);
+  // registration is best-effort — never blocks app startup.
+  useEffect(() => {
+    if (!__DEV__ && Platform.OS === 'web' && typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch((e) => console.warn('[SW] registration failed', e));
+    }
+  }, []);
+
   return (
     <SafeAreaProvider>
       <ThemeProvider>

@@ -36,6 +36,14 @@ type ReaderRoute = RouteProp<RootStackParamList, 'ReaderScreen'>;
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
+// ─── P-4 vertical-mode windowing ───────────────────────────────────────
+// Estimated page height: every page box is ~SCREEN_H tall (pageImage is
+// SCREEN_H with `contain` letterboxing; pageWrap minHeight 0.8×SCREEN_H).
+// Overscan absorbs the variance; out-of-window pages render as fixed-height
+// placeholders so the ScrollView keeps a stable content height.
+const PAGE_ESTIMATED_HEIGHT = SCREEN_H;
+const PAGE_OVERSCAN = 2;
+
 // ─── Main Component ─────────────────────────────────────────────────────
 
 export default function ReaderScreenWrapper() {
@@ -75,6 +83,19 @@ function ReaderScreen() {
   const [currentChapterIdx, setCurrentChapterIdx] = useState(-1);
   const [isRead, setIsRead] = useState(false);
   const [scrollPercent, setScrollPercent] = useState(0);
+
+  // P-4: only pages near the viewport are mounted (vertical mode); the rest
+  // are fixed-height placeholders. Mirrors the Home rail windowing (P-3).
+  const [pageWindow, setPageWindow] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
+
+  // Reset the window when a chapter loads / changes (scroll starts at top).
+  useEffect(() => {
+    const viewportPages = Math.max(1, Math.ceil(SCREEN_H / PAGE_ESTIMATED_HEIGHT));
+    setPageWindow({
+      start: 0,
+      end: Math.min(Math.max(pageUrls.length - 1, 0), viewportPages + PAGE_OVERSCAN),
+    });
+  }, [pageUrls.length]);
 
   const flatListRef = useRef<FlatList>(null);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -276,6 +297,13 @@ function ReaderScreen() {
     if (pageUrls.length > 0 && !progressSavedRef.current) {
       saveProgress(page, pageUrls.length);
     }
+    // P-4: windowing — visible pages = viewport ± overscan.
+    const start = Math.max(0, Math.floor(contentOffset.y / PAGE_ESTIMATED_HEIGHT) - PAGE_OVERSCAN);
+    const end = Math.min(
+      pageUrls.length - 1,
+      Math.floor((contentOffset.y + layoutMeasurement.height) / PAGE_ESTIMATED_HEIGHT) + PAGE_OVERSCAN,
+    );
+    setPageWindow((prev) => (prev.start === start && prev.end === end ? prev : { start, end }));
   }, [pageUrls.length, saveProgress]);
 
   // ─── Cycle reader mode ───────────────────────────────────────────────
@@ -390,7 +418,14 @@ function ReaderScreen() {
             saveProgress(currentPage, pageUrls.length);
           }}
         >
-          {pageUrls.map((uri, i) => renderPage(uri, i))}
+          {pageUrls.map((uri, i) => {
+            // P-4: windowing — mount only pages near the viewport; fixed-height
+            // placeholder preserves the ScrollView content height.
+            if (i < pageWindow.start || i > pageWindow.end) {
+              return <View key={`${i}-${uri}`} style={{ height: PAGE_ESTIMATED_HEIGHT }} />;
+            }
+            return renderPage(uri, i);
+          })}
         </ScrollView>
         {brightnessOverlay}
         {showControls && renderControls()}
