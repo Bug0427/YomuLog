@@ -8,6 +8,7 @@ import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { colors, spacing } from '../../styles/tokens';
 import { recordFunnelEvent } from '../../services/funnelService';
+import { openPremiumCheckout } from '../../services/stripeService';
 
 const { width } = Dimensions.get('window');
 
@@ -31,6 +32,20 @@ export default function PremiumUpsellScreen({ onFinish, onSkip }: Props) {
   useEffect(() => {
     void recordFunnelEvent('paywall_viewed', { source: 'onboarding' });
   }, []);
+
+  // LEAD-DECIDED (G-6/G-7, KPI 4): the "Get Premium" CTA must actually open
+  // the Stripe checkout — a paywall that converts is the point of the funnel.
+  // Non-blocking by design: checkout open is best-effort (records
+  // checkout_started on success via openPremiumCheckout); onboarding ALWAYS
+  // finishes so the user can never get stuck on this step.
+  const handleGetPremium = async () => {
+    try {
+      await openPremiumCheckout();
+    } catch {
+      // best-effort — never block onboarding on the checkout tab failing
+    }
+    onFinish();
+  };
 
   return (
     <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>
@@ -62,7 +77,7 @@ export default function PremiumUpsellScreen({ onFinish, onSkip }: Props) {
 
         <View style={styles.bottom}>
           <Pressable
-            onPress={onFinish}
+            onPress={handleGetPremium}
             style={[styles.cta, { backgroundColor: theme.warning }]}
           >
             <Feather name="star" size={18} color={colors.white} />
