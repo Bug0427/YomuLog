@@ -23,6 +23,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import type { BookmarkedManga } from './favoritesService';
 import type { ChapterProgress } from './readingProgress';
+import { getReadingSecondsByChapter, getReadingSecondsByDay } from './readingSessionService';
 import { resolveMangaDexUrl } from './mangaDexProxy';
 import { getCachedSubscriptionStatus } from './stripeService';
 
@@ -279,6 +280,9 @@ async function syncProgressReal(userId: string): Promise<void> {
   // --- Push local → Supabase ---
   const raw = await AsyncStorage.getItem(KEYS.LOCAL_PROGRESS);
   const local: ChapterProgress[] = raw ? JSON.parse(raw) : [];
+  // G-4: attach measured per-chapter reading seconds (real reading time) so
+  // the server can SQL-aggregate hours/week from reading_progress.
+  const secondsByChapter = await getReadingSecondsByChapter();
   if (local.length > 0) {
     const rows = local.map((p) => ({
       user_id: userId,
@@ -291,6 +295,7 @@ async function syncProgressReal(userId: string): Promise<void> {
       scroll_percentage: p.scrollPercentage,
       is_read: p.isRead,
       last_read_at: p.lastReadAt,
+      seconds_read: secondsByChapter[p.chapterId] ?? 0,
     }));
     const { error } = await supabase
       .from('reading_progress')
@@ -469,6 +474,55 @@ export async function pushRetentionToCloud(): Promise<void> {
   }
 }
 
+// ─── Stats scope (G-5, KPI 2 — reading engagement: hours/week) ─────────
+
+/**
+ * Push measured reading time to cloud:
+ *   - reading_stats: daily-seconds rollup (last 7 days) — the 'stats' scope.
+ *     Hours/week = SUM(seconds_read) over the last 7 days, queryable for the
+ *     whole authenticated population.
+ *   - reading_progress.seconds_read is pushed separately in syncProgressReal
+ *     for per-chapter granularity (server-side SQL aggregation).
+ */
+async function syncStatsReal(userId: string): Promise<void> {
+  const byDay = await getReadingSecondsByDay();
+  const now = isoNow();
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 6);
+  cutoff.setHours(0, 0, 0, 0);
+  const cutoffKey = cutoff.toISOString().slice(0, 10);
+
+  const rows: Array<{ user_id: string; day: string; seconds_read: number; updated_at: string }> = [];
+  for (const [day, seconds] of Object.entries(byDay)) {
+    if (seconds > 0 && day >= cutoffKey) {
+      rows.push({ user_id: userId, day, seconds_read: seconds, updated_at: now });
+    }
+  }
+  if (rows.length === 0) return;
+
+  const { error } = await supabase
+    .from('reading_stats')
+    .upsert(rows, { onConflict: 'user_id,day' });
+  if (error) throw new Error(`Stats push: ${error.message}`);
+}
+
+/**
+ * Lightweight stats push — deliberately NOT premium-gated, same rationale as
+ * pushRetentionToCloud: KPI 2 covers every authenticated user (free + premium)
+ * and "free users invisible cloud-side" is exactly the gap this fixes. Only
+ * measured reading-time rollups are written (no user content).
+ */
+export async function pushStatsToCloud(): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const userId = await getUserId();
+  if (!userId) return;
+  try {
+    await syncStatsReal(userId);
+  } catch (e) {
+    console.warn('Reading stats push failed (non-critical)', e);
+  }
+}
+
 // ─── Fallback: AsyncStorage mirror sync (for unauthenticated users) ──
 
 async function syncFavoritesFallback(): Promise<void> {
@@ -587,6 +641,7 @@ export async function performFullSync(): Promise<SyncState> {
         syncProgressReal(userId).then(() => 'progress' as SyncScope),
         syncDownloadsReal(userId).then(() => 'downloads' as SyncScope),
         syncPreferencesReal(userId).then(() => 'preferences' as SyncScope),
+        syncStatsReal(userId).then(() => 'stats' as SyncScope),
       ]);
 
       const errors = results
@@ -726,6 +781,8 @@ export async function pushLocalToCloud(): Promise<SyncState> {
       const userId = (await getUserId())!;
       // G-3: retention metadata rides the push path too (non-fatal by design).
       await pushRetentionToCloud();
+      // G-5: measured reading-time rollup rides the push path too.
+      await pushStatsToCloud();
       await Promise.all([
         syncFavoritesReal(userId),
         syncProgressReal(userId),
@@ -821,6 +878,7 @@ export async function resetSync(): Promise<void> {
         supabase.from('download_queue').delete().eq('user_id', userId),
         supabase.from('sync_state').delete().eq('user_id', userId),
         supabase.from('user_preferences').delete().eq('user_id', userId),
+        supabase.from('reading_stats').delete().eq('user_id', userId),
       ]);
     } catch { /* best effort */ }
   }

@@ -19,6 +19,7 @@ import {
 } from '../../services/readingProgress';
 import { getLocalPageUris } from '../../services/downloadManager';
 import { recordHeartbeat } from '../../services/retentionService';
+import { useReadingSession } from '../../hooks/useReadingSession';
 import {
   ReaderThemeProvider,
   useReaderTheme,
@@ -53,6 +54,10 @@ function ReaderScreen() {
   const navigation = useNavigation();
   const route = useRoute<ReaderRoute>();
   const { chapterId, mangaId, chapterNum } = route.params ?? {};
+
+  // G-4: measure real reading time for the open chapter (pause on background /
+  // unmount, 30s persist safety-net). Fire-and-forget, never blocks reading.
+  useReadingSession(chapterId);
 
   const [pageUrls, setPageUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
