@@ -554,19 +554,35 @@ function ReaderControls({
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       {/* Top bar */}
       <View style={[styles.topBar, { backgroundColor: overlayBg, paddingTop: insets.top + spacing.p8 }]}>
-        <Pressable onPress={onClose} style={styles.controlBtn}>
+        <Pressable
+          onPress={onClose}
+          style={styles.controlBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Close reader"
+        >
           <Text style={[styles.controlBtnText, { color: textColor }]}>✕</Text>
         </Pressable>
         <Text style={[styles.chapterTitle, { color: textColor }]}>
           Ch. {chapterNum}
         </Text>
         <View style={styles.topRightBtns}>
-          <Pressable onPress={onOpenThemePicker} style={styles.controlBtn}>
+          <Pressable
+            onPress={onOpenThemePicker}
+            style={styles.controlBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Open reader theme picker"
+          >
             <Text style={[styles.controlBtnText, { color: textColor, fontSize: 11 }]}>
               {activeConfig.icon} {activeConfig.label}
             </Text>
           </Pressable>
-          <Pressable onPress={onToggleMode} style={[styles.controlBtn, { marginLeft: 6 }]}>
+          <Pressable
+            onPress={onToggleMode}
+            style={[styles.controlBtn, { marginLeft: 6 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Reading direction"
+            accessibilityValue={{ text: modeLabels[readerMode] }}
+          >
             <Text style={[styles.controlBtnText, { color: textColor }]}>
               {modeLabels[readerMode]}
             </Text>
@@ -577,7 +593,13 @@ function ReaderControls({
       {/* Bottom bar */}
       <View style={[styles.bottomBar, { backgroundColor: overlayBg, paddingBottom: insets.bottom + spacing.p8 }]}>
         {/* Progress bar */}
-        <View style={styles.progressBar}>
+        <View
+          style={styles.progressBar}
+          accessible
+          accessibilityRole="adjustable"
+          accessibilityLabel="Reading progress"
+          accessibilityValue={{ min: 0, max: Math.max(0, totalPages - 1), now: currentPage }}
+        >
           <View style={[styles.progressFill, { width: `${Math.min(100, scrollPercent)}%`, backgroundColor: theme.accent }]} />
         </View>
 

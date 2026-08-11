@@ -102,8 +102,9 @@ export default function Anchor({ scrollRef, isScrolling }: AnchorProps) {
             <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Scroll to top"
-                hitSlop={8}
+                hitSlop={9}
                 onPress={scrollToTop}
+                style={AnchorStyles.pressable}
             >
                 <Text style={AnchorStyles.arrowText}>↑</Text>
             </Pressable>
@@ -116,8 +117,9 @@ export default function Anchor({ scrollRef, isScrolling }: AnchorProps) {
             <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Scroll to bottom"
-                hitSlop={8}
+                hitSlop={9}
                 onPress={scrollToBottom}
+                style={AnchorStyles.pressable}
             >
                 <Text style={AnchorStyles.arrowText}>↓</Text>
             </Pressable>
