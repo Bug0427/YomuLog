@@ -167,7 +167,7 @@ export default function ReadingStatsScreen() {
             </View>
             <View style={[s.timeRow, { marginTop: 8 }]}>
               <Text style={s.timeLabel}>Reading time this week</Text>
-              <Text style={[s.timeCount, { color: theme.textPrimary }]}>
+              <Text style={s.timeCount}>
                 {formatReadingTime(stats.readingMinutesThisWeek)}
               </Text>
             </View>
