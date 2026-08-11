@@ -18,6 +18,7 @@ import { usePremium } from '../../context/PremiumContext';
 import { useTheme } from '../../context/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors as tokens } from '../../styles/tokens';
+import { openPremiumCheckout } from '../../services/stripeService';
 import PremiumUpgradeModal from '../layout/PremiumUpgradeModal';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -178,6 +179,8 @@ export default function ThemePicker({ visible, onClose, inline }: Props) {
       <PremiumUpgradeModal
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
+        onUpgrade={openPremiumCheckout}
+        source="modal:theme_picker"
       />
     </View>
   );

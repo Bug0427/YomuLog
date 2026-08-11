@@ -3,7 +3,7 @@
 // attempt to enable Cloud Sync & Backup. Displays Stripe monthly pricing
 // of $2.99/mo and annual pricing of $24.99/year.
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useTheme, type ThemeColors } from '../../context/ThemeContext';
 import {
   Modal,
@@ -14,20 +14,33 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { colors, borders, spacing, u } from '../../styles/tokens';
+import { recordFunnelEvent } from '../../services/funnelService';
 
 type PremiumUpgradeModalProps = {
   visible: boolean;
   onClose: () => void;
   onUpgrade?: () => void;
+  /** Funnel attribution source for the paywall_viewed event (G-6, KPI 4). */
+  source?: string;
 };
 
 export default function PremiumUpgradeModal({
   visible,
   onClose,
   onUpgrade,
+  source = 'unknown',
 }: PremiumUpgradeModalProps) {
   const { colors: theme } = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
+
+  // G-6: record a paywall_viewed funnel event every time the modal opens.
+  // The *view* is the event (not the button press); fire-and-forget.
+  useEffect(() => {
+    if (visible) {
+      void recordFunnelEvent('paywall_viewed', { source });
+    }
+  }, [visible, source]);
+
   return (
     <Modal
       visible={visible}

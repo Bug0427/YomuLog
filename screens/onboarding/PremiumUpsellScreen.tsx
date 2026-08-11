@@ -1,12 +1,13 @@
 // screens/onboarding/PremiumUpsellScreen.tsx
 // Onboarding step 3 — Premium upsell with skip option.
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { colors, spacing } from '../../styles/tokens';
+import { recordFunnelEvent } from '../../services/funnelService';
 
 const { width } = Dimensions.get('window');
 
@@ -24,6 +25,12 @@ const PERKS = [
 
 export default function PremiumUpsellScreen({ onFinish, onSkip }: Props) {
   const { colors: theme } = useTheme();
+
+  // G-6: paywall_viewed when onboarding step 3 (the upsell) mounts.
+  // Fire-and-forget — the *view* is the event, not the CTA press.
+  useEffect(() => {
+    void recordFunnelEvent('paywall_viewed', { source: 'onboarding' });
+  }, []);
 
   return (
     <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.bg }]}>

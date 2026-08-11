@@ -79,6 +79,7 @@ export default function ReadingStatsScreen() {
           visible={showPremiumModal}
           onClose={() => setShowPremiumModal(false)}
           onUpgrade={openPremiumCheckout}
+          source="modal:stats"
         />
       </View>
     );

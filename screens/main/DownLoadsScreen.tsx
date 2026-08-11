@@ -445,6 +445,7 @@ export default function DownLoadsScreen() {
       <PremiumUpgradeModal
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
+        source="modal:downloads"
         onUpgrade={async () => {
           const result = await openPremiumCheckout();
           if (!result.success) {

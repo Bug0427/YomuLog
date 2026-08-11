@@ -11,6 +11,7 @@
 import { Linking, Platform } from 'react-native';
 import { isSupabaseConfigured, supabase } from './supabaseClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { recordFunnelEvent } from './funnelService';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -111,6 +112,9 @@ export async function openPremiumCheckout(): Promise<CheckoutResult> {
     if (Platform.OS === 'web') {
       if (typeof window !== 'undefined' && typeof window.open === 'function') {
         window.open(PREMIUM_CHECKOUT_URL, '_blank', 'noopener,noreferrer');
+        // G-6: checkout_started — only when the checkout actually opened
+        // (success path). Fire-and-forget.
+        void recordFunnelEvent('checkout_started', { plan: 'monthly', platform: 'web' });
         return { success: true };
       }
       return { success: false, error: 'Unable to open checkout in this browser' };
@@ -121,6 +125,8 @@ export async function openPremiumCheckout(): Promise<CheckoutResult> {
       return { success: false, error: 'Unable to open the secure checkout page' };
     }
     await Linking.openURL(PREMIUM_CHECKOUT_URL);
+    // G-6: checkout_started — only when the checkout actually opened.
+    void recordFunnelEvent('checkout_started', { plan: 'monthly', platform: 'native' });
     return { success: true };
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Failed to open checkout';

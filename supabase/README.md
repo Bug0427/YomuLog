@@ -14,14 +14,15 @@ Open your project → **Settings → API**:
 | `anon public` key | Settings → API → Project API keys | `EXPO_PUBLIC_SUPABASE_ANON_KEY` (safe in the web bundle) |
 | `service_role` key (optional) | Settings → API → Project API keys (hidden; reveal) | only for scripted seeding via the admin API — never ship it in the app |
 
-> ⚠️ `services/supabaseClient.ts` currently ships **hardcoded fallback** values
-> for both env vars (a default project URL + anon key). Until you set the real
-> env vars at build time the app may talk to that default project — set them
-> explicitly (see §4).
+> ℹ️ `services/supabaseClient.ts` is **env-only** (PR #190): without
+> `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` at build time the
+> app runs **local-only by design** (`isSupabaseConfigured()` = false — no
+> fallback project, no silent traffic). Set the real env vars at build time to
+> enable cloud sync/premium (see §4).
 
 ## 2. Run the SQL scripts
 
-Both scripts are idempotent (safe to re-run). Open **SQL Editor**, paste, Run:
+All scripts are idempotent (safe to re-run). Open **SQL Editor**, paste, Run:
 
 1. **`supabase/seed-test-users.sql`** — creates the three auth test users
    (`admin@yomulog.test` / `AdminPass1!`, `paid@yomulog.test` / `PaidPass1!`,
@@ -37,6 +38,14 @@ Both scripts are idempotent (safe to re-run). Open **SQL Editor**, paste, Run:
    (services/stripeService.ts) receives INSERT/UPDATE/DELETE events.
    Dashboard alternative: Database → Publications → `supabase_realtime` →
    tick `user_subscriptions`.
+3. **`services/migrations/009_user_activity.sql`** — retention heartbeat table
+   (KPI 1, G-3) with own-rows RLS.
+4. **`services/migrations/010_reading_stats.sql`** — measured reading-time
+   daily rollup (KPI 2, G-5) with own-rows RLS.
+5. **`services/migrations/011_user_events.sql`** — premium conversion funnel
+   event log (KPI 4, G-6) with own-rows RLS (write-only from the app; no
+   realtime publication needed). Owner-side reporting queries live in
+   **`supabase/reporting/kpi-reporting.sql`** (Q1.1–Q4.4).
 
 ## 3. Schema (derived from the app's own code — do not deviate)
 
@@ -54,6 +63,7 @@ and `services/stripeService.ts` read/write. Supabase Auth provides `auth.users`
 | `user_preferences` | settings (1 row per user) | `language`, `alerts_on`, `ai_search_on`, `direction_mode` |
 | `user_activity` | retention heartbeat (KPI 1, G-3) — links anonymous install to account | `install_id`, `first_launch_at`, `last_active_at` |
 | `reading_stats` | measured reading time daily rollup (KPI 2, G-5) — the `'stats'` sync scope | `day`, `seconds_read` (hours/week = SUM over last 7 days) |
+| `user_events` | premium conversion funnel events (KPI 4, G-6) — append-only, write-only from the app | `event_id` (idempotency key), `install_id`, `event_name`, `payload` (jsonb), `occurred_at` |
 
 ### Copy-paste DDL (SQL Editor)
 
@@ -162,6 +172,25 @@ create table if not exists public.reading_stats (
   updated_at     timestamptz not null default now(),
   primary key (user_id, day)
 );
+
+-- Premium conversion funnel events (KPI 4 — G-6 'funnel' instrumentation).
+-- Append-only, multi-row, write-only from the app (services/funnelService.ts →
+-- supabaseSyncService.pushFunnelEventsToCloud). event_id is the idempotency
+-- key so re-pushes upsert cleanly; install_id ties pre-signup events to the
+-- device. No realtime publication needed — nothing subscribes to it.
+create table if not exists public.user_events (
+  user_id      uuid not null references auth.users (id) on delete cascade,
+  event_id     text not null,
+  install_id   text,
+  event_name   text not null check (event_name in
+                 ('signup_complete','paywall_viewed','checkout_started','checkout_completed')),
+  payload      jsonb not null default '{}'::jsonb,
+  occurred_at  timestamptz not null,
+  created_at   timestamptz not null default now(),
+  primary key (user_id, event_id)
+);
+create index if not exists idx_user_events_user_time on public.user_events (user_id, occurred_at desc);
+create index if not exists idx_user_events_name on public.user_events (event_name, occurred_at);
 ```
 
 The app reads/writes these tables with the **anon key**, so row-level security
@@ -177,6 +206,7 @@ create policy "own rows" on public.download_queue     for all using (auth.uid() 
 create policy "own rows" on public.user_preferences   for all using (auth.uid() = user_id);
 create policy "own rows" on public.user_activity      for all using (auth.uid() = user_id);
 create policy "own rows" on public.reading_stats      for all using (auth.uid() = user_id);
+create policy "own rows" on public.user_events        for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 ```
 
 ## 4. Env vars at web build time

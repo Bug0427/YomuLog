@@ -22,6 +22,7 @@ import {
   recordHeartbeat,
 } from '../services/retentionService';
 import {
+  pushFunnelEventsToCloud,
   pushRetentionToCloud,
   pushStatsToCloud,
 } from '../services/supabaseSyncService';
@@ -49,6 +50,9 @@ export function useRetentionHeartbeat() {
         try {
           await pushRetentionToCloud();
           await pushStatsToCloud();
+          // G-6: funnel events (paywall→checkout→conversion, KPI 4) ride the
+          // same non-premium-gated foreground channel — free users convert too.
+          await pushFunnelEventsToCloud();
         } catch {
           // Non-critical instrumentation — retry on next foreground.
         }

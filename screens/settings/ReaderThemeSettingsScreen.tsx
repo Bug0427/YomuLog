@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
+import { openPremiumCheckout } from '../../services/stripeService';
 import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
 import {
   useReaderTheme,
@@ -347,6 +348,8 @@ export default function ReaderThemeSettingsScreen() {
       <PremiumUpgradeModal
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
+        onUpgrade={openPremiumCheckout}
+        source="modal:theme_settings"
       />
     </SafeAreaView>
   );
