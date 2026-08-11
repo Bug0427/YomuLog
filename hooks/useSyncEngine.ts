@@ -1,7 +1,9 @@
 // hooks/useSyncEngine.ts
 // Central sync orchestration hook — handles AppState foreground detection,
 // connectivity checks, and debounced auto-sync.
-// Uses real Supabase cloud sync when authenticated, falls back to simulated sync.
+// Routes all sync through supabaseSyncService.performFullSync, which uses
+// real Supabase cloud sync (documented tables) when configured+authenticated
+// and falls back to AsyncStorage mirrors otherwise (G-1 unified path).
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
@@ -12,10 +14,6 @@ import {
   type SyncState,
   type SyncStatus,
 } from '../services/supabaseSyncService';
-import {
-  performCloudSync,
-  isAuthenticated as isSupabaseAuthenticated,
-} from '../services/syncService';
 import { usePremium } from '../context/PremiumContext';
 import { useAuthContext } from '../context/AuthContext';
 
@@ -100,29 +98,24 @@ export function useSyncEngine() {
 
       setState((prev) => ({ ...prev, isOnline: true }));
 
-      // Try real Supabase cloud sync first (if authenticated)
-      const isSbAuthed = await isSupabaseAuthenticated();
-      if (isSbAuthed) {
-        const cloudResult = await performCloudSync();
-        setState((prev) => ({
-          ...prev,
-          status: cloudResult.status === 'synced' ? 'synced' : 'error',
-          lastSyncedAt: cloudResult.lastSyncedAt,
-          lastError: cloudResult.lastError,
-          isOnline: true,
-        }));
-      } else {
-        // Fall back to simulated sync
-        const result = await performFullSync();
-        setState((prev) => ({
-          ...prev,
-          status: result.status,
-          lastSyncedAt: result.lastSyncedAt,
-          lastError: result.lastError,
-          syncEnabled: result.syncEnabled,
-          isOnline: true,
-        }));
-      }
+      // G-1 (launch-blocking): unified sync — always route through
+      // supabaseSyncService.performFullSync. It targets the documented
+      // Supabase tables (user_library / reading_progress / download_queue /
+      // user_preferences) when Supabase is configured AND authenticated, and
+      // falls back to AsyncStorage mirrors otherwise (local-only mode
+      // unaffected — gated internally on isSupabaseConfigured()).
+      // The old syncService path (user_favorites / user_progress — tables no
+      // documented setup creates) is removed. The G-4 Premium gate for real
+      // cloud sync lives inside performFullSync (service-level defense).
+      const result = await performFullSync();
+      setState((prev) => ({
+        ...prev,
+        status: result.status,
+        lastSyncedAt: result.lastSyncedAt,
+        lastError: result.lastError,
+        syncEnabled: result.syncEnabled,
+        isOnline: true,
+      }));
     } catch (e) {
       setState((prev) => ({
         ...prev,
