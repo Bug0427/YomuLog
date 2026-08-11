@@ -36,7 +36,13 @@ export interface IDatabase {
 type WebRow = Record<string, unknown>;
 type WebColumn = { name: string; type: string | null; notnull: boolean; pk: boolean };
 
-type WhereCondition = { col: string; op: '=' | '<>' | '!='; paramIndex: number | null };
+type WhereCondition = {
+  col: string;
+  op: '=' | '<>' | '!=';
+  paramIndex: number | null;
+  /** Compare case-insensitively — the SQL wrapped an operand in lower(). */
+  ci: boolean;
+};
 
 const STORAGE_KEY = 'yomulog_webdb';
 
@@ -72,6 +78,13 @@ function splitList(s: string): string[] {
 function matchesCondition(row: WebRow, cond: WhereCondition, params: any[]): boolean {
   const actual = getCol(row, cond.col);
   const expected = cond.paramIndex === null ? undefined : params[cond.paramIndex];
+  if (cond.ci) {
+    // lower(...) wrapper → SQLite's case-insensitive comparison semantics.
+    const a = actual == null ? '' : String(actual).toLowerCase();
+    const b = expected == null ? '' : String(expected).toLowerCase();
+    if (cond.op === '=') return a === b;
+    return a !== b;
+  }
   if (cond.op === '=') return actual === expected;
   return actual !== expected;
 }
@@ -218,7 +231,10 @@ export class WebMockDB implements IDatabase {
     const out: WhereCondition[] = [];
     let i = 0;
     for (const part of where.split(/\s+AND\s+/i)) {
-      const m = part.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*(=|<>|!=)\s*(\?\d*)$/i);
+      // Identifier (or lower(...) wrapper) on either side of = / <> / !=.
+      const m = part.match(
+        /^(?:lower\s*\(\s*)?([A-Za-z_][A-Za-z0-9_]*)(?:\s*\))?\s*(=|<>|!=)\s*(?:lower\s*\(\s*)?(\?\d*)(?:\s*\))?$/i,
+      );
       if (!m) continue;
       let paramIndex: number | null;
       if (m[3] === '?') {
@@ -227,7 +243,12 @@ export class WebMockDB implements IDatabase {
       } else {
         paramIndex = Number(m[3].slice(1)) - 1;
       }
-      out.push({ col: m[1], op: m[2].toLowerCase() === '=' ? '=' : '<>', paramIndex });
+      out.push({
+        col: m[1],
+        op: m[2].toLowerCase() === '=' ? '=' : '<>',
+        paramIndex,
+        ci: /lower\s*\(/i.test(part),
+      });
     }
     void params;
     return out;
