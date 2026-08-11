@@ -11,6 +11,7 @@ import {
   downloadFileAsync,
   listDirAsync,
   deleteFileAsync,
+  getFileSizeAsync,
 } from './nativeFS';
 import { getChapterPages, buildPageUrlsFromChapterData } from './mangaAPI';
 import { isWeb } from '../utils/platformUtils';
@@ -32,6 +33,8 @@ export type DownloadJob = {
   downloadedPages: number;
   errorMessage?: string;
   createdAt: string;         // ISO timestamp
+  /** ISO timestamp set when the job reaches 'completed' (G-2) */
+  completedAt?: string;
   retryCount: number;
   /** Absolute local directory where pages are stored */
   localDir?: string;
@@ -68,6 +71,77 @@ export class DownloadLimitError extends Error {
     super(`Free tier limit reached (${limit} chapters). Upgrade to Premium for unlimited downloads.`);
     this.name = 'DownloadLimitError';
   }
+}
+
+// ─── Download reliability instrumentation (G-2, KPI 3) ──────────────
+//
+// Cumulative success/failure counters persisted in AsyncStorage so the
+// Download Reliability Rate stays computable even after clearCompleted(),
+// removeJob() or clearAllDownloads() wipe the queue/index. Counters are
+// cumulative since install. Web downloads are SIMULATED (nativeFS always
+// returns status 200), so web activity is counted separately and the rate is
+// gated to native (webSimulated=true) — see G-8.
+
+const RELIABILITY_KEY = '@YomuLog:downloadReliability';
+
+export type DownloadReliabilityStats = {
+  /** Cumulative real (native) downloads completed successfully */
+  totalCompleted: number;
+  /** Cumulative real (native) downloads that failed permanently (retries exhausted) */
+  totalFailed: number;
+  /** Cumulative web-simulated completions (informational — not a real metric) */
+  webSimulatedCompleted: number;
+  /** True on web — the real counters are not populated, rate is not valid */
+  webSimulated: boolean;
+};
+
+type ReliabilityDelta = {
+  completed?: number;
+  failed?: number;
+  webSimulatedCompleted?: number;
+};
+
+export async function getDownloadReliabilityStats(): Promise<DownloadReliabilityStats> {
+  const stored = await getJson<Partial<DownloadReliabilityStats>>(RELIABILITY_KEY, {});
+  return {
+    totalCompleted: stored.totalCompleted ?? 0,
+    totalFailed: stored.totalFailed ?? 0,
+    webSimulatedCompleted: stored.webSimulatedCompleted ?? 0,
+    webSimulated: isWeb,
+  };
+}
+
+async function incrementReliability(delta: ReliabilityDelta): Promise<void> {
+  const stats = await getDownloadReliabilityStats();
+  await setJson(RELIABILITY_KEY, {
+    totalCompleted: stats.totalCompleted + (delta.completed ?? 0),
+    totalFailed: stats.totalFailed + (delta.failed ?? 0),
+    webSimulatedCompleted: stats.webSimulatedCompleted + (delta.webSimulatedCompleted ?? 0),
+  });
+}
+
+/**
+ * Download Reliability Rate — completed / (completed + failed), cumulative
+ * since install. `valid: false` on web (downloads are simulated there, so the
+ * rate would be meaningless) or when there is no history yet (rate: null).
+ */
+export async function getDownloadReliabilityRate(): Promise<{
+  valid: boolean;
+  rate: number | null;
+  totalCompleted: number;
+  totalFailed: number;
+}> {
+  const stats = await getDownloadReliabilityStats();
+  if (stats.webSimulated) {
+    return { valid: false, rate: null, totalCompleted: stats.totalCompleted, totalFailed: stats.totalFailed };
+  }
+  const denominator = stats.totalCompleted + stats.totalFailed;
+  return {
+    valid: true,
+    rate: denominator === 0 ? null : stats.totalCompleted / denominator,
+    totalCompleted: stats.totalCompleted,
+    totalFailed: stats.totalFailed,
+  };
 }
 
 /** True when the cached premium entitlement is set (fail-closed: false on error). */
@@ -303,6 +377,7 @@ export async function processNextDownload(): Promise<boolean> {
     job.status = 'completed';
     job.progress = 100;
     job.localDir = localDir;
+    job.completedAt = new Date().toISOString();
     await saveQueue(queue);
 
     // 5. Record in downloaded chapters index
@@ -317,6 +392,15 @@ export async function processNextDownload(): Promise<boolean> {
       downloadedAt: new Date().toISOString(),
     });
 
+    // G-2: persist the cumulative success counter. On web downloads are
+    // simulated (nativeFS always returns 200) — count them separately so the
+    // real reliability metric isn't polluted (G-8).
+    if (isWeb) {
+      await incrementReliability({ webSimulatedCompleted: 1 });
+    } else {
+      await incrementReliability({ completed: 1 });
+    }
+
     return true;
   } catch (err: any) {
     job.status = 'failed';
@@ -324,6 +408,13 @@ export async function processNextDownload(): Promise<boolean> {
     const baseDir = await resolveBaseDir();
     job.localDir = `${baseDir}${job.mangaId}/${job.chapterId}/`;
     await saveQueue(queue);
+
+    // G-2: count only permanent failures (retries exhausted) as a failure —
+    // a retryable attempt that will be retried isn't a final outcome. Web
+    // downloads are simulated → excluded from the real counters.
+    if (!isWeb && job.retryCount >= MAX_RETRIES) {
+      await incrementReliability({ failed: 1 });
+    }
     return false;
   }
 }
@@ -456,6 +547,34 @@ export async function isChapterDownloaded(chapterId: string): Promise<boolean> {
   return list.some((c) => c.chapterId === chapterId);
 }
 
+/**
+ * G-2: remove a corrupted chapter from the completed index and re-queue its
+ * job (mark failed with retries reset) so the normal retry machinery re-downloads
+ * it instead of silently serving a broken chapter. Counts one failure.
+ */
+async function handleCorruptedDownload(chapter: DownloadedChapter): Promise<void> {
+  // Remove from the completed index so offline reads fall back to online
+  const list = await getDownloadedChaptersRaw();
+  await setJson(DOWNLOADED_CHAPTERS_KEY, list.filter((c) => c.chapterId !== chapter.chapterId));
+
+  // Re-queue: reset the job to retryable 'failed' (retryCount 0) so
+  // processNextDownload/retryFailedDownloads picks it up again.
+  const queue = await getDownloadQueue();
+  const job = queue.find((j) => j.chapterId === chapter.chapterId);
+  if (job) {
+    job.status = 'failed';
+    job.errorMessage = 'Download corrupted (missing or empty pages) — retry to re-download';
+    job.retryCount = 0;
+    job.completedAt = undefined;
+    await saveQueue(queue);
+  }
+
+  // A corrupted completed download is a failed outcome for the reliability rate
+  if (!isWeb) {
+    await incrementReliability({ failed: 1 });
+  }
+}
+
 /** Get local file URIs for a downloaded chapter's pages. */
 export async function getLocalPageUris(chapterId: string): Promise<string[] | null> {
   const list = await getDownloadedChaptersRaw();
@@ -471,6 +590,23 @@ export async function getLocalPageUris(chapterId: string): Promise<string[] | nu
         const numB = parseInt(b.match(/\d+/)?.[0] ?? '0', 10);
         return numA - numB;
       });
+
+    // G-2 corruption check (lightweight): every expected page must be present
+    // (count vs the chapter's recorded totalPages) and non-empty on native.
+    if (pageFiles.length < chapter.totalPages) {
+      await handleCorruptedDownload(chapter);
+      return null;
+    }
+    if (!isWeb) {
+      for (const f of pageFiles) {
+        const size = await getFileSizeAsync(`${chapter.localDir}${f}`);
+        if (size === 0) {
+          await handleCorruptedDownload(chapter);
+          return null;
+        }
+      }
+    }
+
     const uris = pageFiles.map((f) => `${chapter.localDir}${f}`);
     return uris.length > 0 ? uris : null;
   } catch {
