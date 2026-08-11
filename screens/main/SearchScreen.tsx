@@ -97,6 +97,11 @@ export default function SearchScreen() {
 
   /** Launch the reverse image search flow: pick → fingerprint → match. */
   const handleRisPress = useCallback(async () => {
+    // G-6: Reverse image search is Premium per the business plan.
+    if (!isPremium) {
+      setShowPremiumModal(true);
+      return;
+    }
     setRisError(null);
     const asset = await pickImageFromLibrary();
     if (!asset) return;
@@ -117,7 +122,7 @@ export default function SearchScreen() {
     } finally {
       setRisLoading(false);
     }
-  }, []);
+  }, [isPremium]);
 
   /** Navigate to manga detail from RIS result. */
   const handleRisSelectManga = useCallback(
@@ -129,8 +134,10 @@ export default function SearchScreen() {
   );
 
   // ── Effective AI mode — auto-enables for natural language queries (3+ words)
+  // G-5: NLP enhancement is a Premium feature. Resolve to off for free users so
+  // the behavior is gated (not just the toggle button) — fail-closed.
   const isNaturalLanguage = searchText.trim().split(/\s+/).length >= 3;
-  const effectiveAiMode = aiMode === 'on' || (aiMode === 'auto' && isNaturalLanguage);
+  const effectiveAiMode = isPremium && (aiMode === 'on' || (aiMode === 'auto' && isNaturalLanguage));
 
   // ── Build API params: NLP-enhanced search + manual filter merge ──
   const buildParams = useCallback(
@@ -294,10 +301,11 @@ export default function SearchScreen() {
       />
       {/* AI mode toggle + Reverse Image Search */}
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: spacing.p12, marginTop: spacing.p4, gap: spacing.p8 }}>
-          {/* Reverse image search button */}
+          {/* Reverse image search button (Premium — G-6) */}
           <Pressable
             onPress={handleRisPress}
-            accessibilityLabel="Search by image"
+            accessibilityLabel={isPremium ? 'Search by image' : 'Search by image (Premium feature)'}
+            accessibilityState={{ disabled: !isPremium }}
             style={{
               width: 34,
               height: 34,
@@ -307,9 +315,27 @@ export default function SearchScreen() {
               backgroundColor: theme.bgCard,
               justifyContent: 'center',
               alignItems: 'center',
+              opacity: isPremium ? 1 : 0.55,
             }}
           >
             <MaterialCommunityIcons name="image-search" size={18} color={theme.textPrimary} />
+            {!isPremium && (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: -3,
+                  right: -3,
+                  width: 14,
+                  height: 14,
+                  borderRadius: 7,
+                  backgroundColor: theme.accent,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <MaterialCommunityIcons name="lock" size={9} color={theme.textInverse} />
+              </View>
+            )}
           </Pressable>
           <Pressable
             onPress={() => {
@@ -344,15 +370,17 @@ export default function SearchScreen() {
                 color: effectiveAiMode ? theme.textInverse : theme.textMuted,
               }}
             >
-              {aiMode === 'auto'
-                ? (isNaturalLanguage ? '🤖 AI Auto (detected)' : '🤖 AI Auto (standby)')
-                : aiMode === 'on'
-                  ? '🤖 AI Enhancer ON'
-                  : 'AI Enhancer OFF'}
+              {!isPremium
+                ? '🔒 AI Enhancer (Premium)'
+                : aiMode === 'auto'
+                  ? (isNaturalLanguage ? '🤖 AI Auto (detected)' : '🤖 AI Auto (standby)')
+                  : aiMode === 'on'
+                    ? '🤖 AI Enhancer ON'
+                    : 'AI Enhancer OFF'}
             </Text>
           </Pressable>
         </View>
-      {aiSummary ? (
+      {effectiveAiMode && aiSummary ? (
         <View
           style={{
             marginHorizontal: spacing.p12,

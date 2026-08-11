@@ -29,11 +29,12 @@ import {
 
 export default function ManageSubscriptionScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { isPremium, deactivatePremium } = usePremium();
+  const { isPremium, deactivatePremium, refreshStatus } = usePremium();
   const { colors: theme } = useTheme();
   const [status, setStatus] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -46,6 +47,17 @@ export default function ManageSubscriptionScreen() {
     })();
     return () => { mounted = false; };
   }, []);
+
+  /** Manual refresh — re-fetches entitlement and syncs the context. */
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const s = await refreshStatus();
+      setStatus(s);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshStatus]);
 
   const handleCancel = useCallback(async () => {
     Alert.alert(
@@ -109,6 +121,18 @@ export default function ManageSubscriptionScreen() {
             <Feather name="arrow-left" size={24} color={theme.textPrimary} />
           </Pressable>
           <Text style={[styles.title, { color: theme.textPrimary }]}>Manage Subscription</Text>
+          <Pressable
+            onPress={handleRefresh}
+            disabled={refreshing || actionLoading}
+            style={styles.refreshBtn}
+            accessibilityLabel="Refresh subscription status"
+          >
+            {refreshing ? (
+              <ActivityIndicator size="small" color={theme.accent} />
+            ) : (
+              <Feather name="refresh-cw" size={20} color={theme.accent} />
+            )}
+          </Pressable>
         </View>
 
         {/* Status card */}
@@ -210,7 +234,16 @@ const styles = StyleSheet.create({
     marginBottom: spacing.p20,
   },
   closeBtn: { marginRight: spacing.p12 },
-  title: { fontSize: 20, fontWeight: '700' },
+  title: { fontSize: 20, fontWeight: '700', flex: 1 },
+  refreshBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(128,128,128,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   card: {
     marginHorizontal: spacing.p16,
     borderRadius: 14,

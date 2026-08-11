@@ -168,7 +168,8 @@ export async function fetchSubscriptionStatus(): Promise<SubscriptionStatus> {
   }
 }
 
-async function getCachedSubscriptionStatus(): Promise<SubscriptionStatus> {
+/** Read the locally cached subscription status (no network). */
+export async function getCachedSubscriptionStatus(): Promise<SubscriptionStatus> {
   try {
     const raw = await AsyncStorage.getItem(SUBSCRIPTION_CACHE_KEY);
     if (raw) return JSON.parse(raw) as SubscriptionStatus;

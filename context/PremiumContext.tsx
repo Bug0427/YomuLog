@@ -14,6 +14,7 @@ import React, {
   useRef,
   type ReactNode,
 } from 'react';
+import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   fetchSubscriptionStatus,
@@ -37,6 +38,13 @@ export type PremiumContextValue = {
   deactivatePremium: () => Promise<void>;
   /** Toggle for dev testing (only when not using real Stripe) */
   togglePremium: () => Promise<void>;
+  /**
+   * Re-fetch subscription status from Supabase and sync context + cache.
+   * Used on app foreground (AppState) and by the Manage Subscription
+   * "Refresh" button so a completed checkout is picked up without restart.
+   * Returns the freshly fetched status.
+   */
+  refreshStatus: () => Promise<SubscriptionStatus>;
 };
 
 // ─── Storage ─────────────────────────────────────────────────────────
@@ -123,6 +131,38 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
     await saveCachedPremium(status.isActive);
   }, []);
 
+  /**
+   * Re-fetch entitlement from Supabase. Used by the AppState foreground
+   * listener (G-7: recover when Realtime misses the webhook-driven change)
+   * and by the Manage Subscription "Refresh" button.
+   */
+  const refreshStatus = useCallback(async () => {
+    const status = await fetchSubscriptionStatus();
+    setSubscriptionStatus(status);
+    setIsPremium(status.isActive);
+    await saveCachedPremium(status.isActive);
+    return status;
+  }, []);
+
+  // G-7: re-fetch subscription status whenever the app returns to the
+  // foreground. Covers the case where Supabase Realtime failed to deliver
+  // the post-checkout change — a paying user should not stay free until
+  // restart. Debounced to avoid hammering on rapid app switches.
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    let lastForegroundRefresh = 0;
+    const FOREGROUND_REFRESH_DEBOUNCE_MS = 15_000;
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState !== 'active') return;
+      const now = Date.now();
+      if (now - lastForegroundRefresh >= FOREGROUND_REFRESH_DEBOUNCE_MS) {
+        lastForegroundRefresh = now;
+        refreshStatus();
+      }
+    });
+    return () => sub.remove();
+  }, [isLoggedIn, refreshStatus]);
+
   const deactivatePremium = useCallback(async () => {
     setIsPremium(false);
     await saveCachedPremium(false);
@@ -141,8 +181,8 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
   }, [isPremium, activatePremium, deactivatePremium]);
 
   const value = useMemo<PremiumContextValue>(
-    () => ({ isPremium, subscriptionStatus, loading, activatePremium, deactivatePremium, togglePremium }),
-    [isPremium, subscriptionStatus, loading, activatePremium, deactivatePremium, togglePremium],
+    () => ({ isPremium, subscriptionStatus, loading, activatePremium, deactivatePremium, togglePremium, refreshStatus }),
+    [isPremium, subscriptionStatus, loading, activatePremium, deactivatePremium, togglePremium, refreshStatus],
   );
 
   return <PremiumContext.Provider value={value}>{children}</PremiumContext.Provider>;

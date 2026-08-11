@@ -316,6 +316,12 @@ export default function SettingsScreen() {
 
   const handleManualSync = async () => {
     if (!syncState.syncEnabled) return;
+    // G-4: Cloud Sync is a Premium feature — a lapsed subscriber with a stale
+    // syncEnabled flag must hit the upsell instead of triggering real cloud sync.
+    if (!isPremium) {
+      setShowPremiumModal(true);
+      return;
+    }
     setSyncLoading(true);
     try {
       const newState = await performFullSync();
@@ -341,6 +347,7 @@ export default function SettingsScreen() {
       return `Error: ${err}`;
     }
     if (syncState.status === 'synced') return `Last synced: ${formatSyncTimestamp(syncState.lastSyncedAt)}`;
+    if (syncState.syncEnabled && !isPremium) return 'Cloud Sync requires Premium — tap to upgrade';
     if (syncState.syncEnabled) return 'Sync enabled — pending sync';
     return isPremium ? 'Tap to enable cloud backup' : 'Premium feature — tap to upgrade';
   })();
