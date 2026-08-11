@@ -2,6 +2,7 @@
 // Secure storage wrapper — uses AsyncStorage on web (where SecureStore is unavailable),
 // and expo-secure-store on native platforms. All access is lazy to avoid bundler crashes.
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isWeb } from './platformUtils';
 
 let counter = 0; // keeps track across calls
 
@@ -12,6 +13,9 @@ const USER_SEQ_STORE_PREFIX = 'user_id_v1_'; // last value guard for user IDs
 let _SecureStore: typeof import('expo-secure-store') | null = null;
 async function getSecureStore() {
   if (_SecureStore) return _SecureStore;
+  // expo-secure-store has no functional web build (the web module is an empty
+  // object, so its methods throw) — always fall back to AsyncStorage on web.
+  if (isWeb) return null;
   try {
     _SecureStore = await import('expo-secure-store');
     return _SecureStore;
