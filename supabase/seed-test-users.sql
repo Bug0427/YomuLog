@@ -100,11 +100,21 @@ create table if not exists public.user_subscriptions (
 );
 
 -- RLS: the app reads this table with the anon key (JWT), so the owner must
--- selectable rows to the row's own user. If this policy already exists the
--- IF NOT EXISTS guard makes the script safe to re-run.
+-- grant select to the row's own user. CREATE POLICY has no IF NOT EXISTS
+-- clause, so the policy creation is guarded by a pg_policies check to keep
+-- the script idempotent (safe to re-run, as the E2E re-runs this file).
 alter table public.user_subscriptions enable row level security;
-create policy "user_subscriptions_select_own" on public.user_subscriptions
-  for select using (auth.uid() = user_id);
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'user_subscriptions'
+      and policyname = 'user_subscriptions_select_own'
+  ) then
+    create policy "user_subscriptions_select_own" on public.user_subscriptions
+      for select using (auth.uid() = user_id);
+  end if;
+end $$;
 
 -- ── 3. The premium "paid row flip" ─────────────────────────────────────────
 -- Marks paid@yomulog.test as an ACTIVE premium subscriber with a future
