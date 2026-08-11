@@ -111,13 +111,28 @@ export async function getDownloadReliabilityStats(): Promise<DownloadReliability
   };
 }
 
+/**
+ * Promise-chain mutex for the reliability counters (G-2 hygiene): the counter
+ * update is read→modify→write on AsyncStorage, and 3+ call sites can fire
+ * concurrently (download completion, permanent failure, corrupt-download
+ * reconciliation, retriggers) — without serialization two interleaved
+ * increments can both read the same base value and undercount the KPI.
+ */
+let reliabilityChain: Promise<unknown> = Promise.resolve();
+
 async function incrementReliability(delta: ReliabilityDelta): Promise<void> {
-  const stats = await getDownloadReliabilityStats();
-  await setJson(RELIABILITY_KEY, {
-    totalCompleted: stats.totalCompleted + (delta.completed ?? 0),
-    totalFailed: stats.totalFailed + (delta.failed ?? 0),
-    webSimulatedCompleted: stats.webSimulatedCompleted + (delta.webSimulatedCompleted ?? 0),
+  const op = reliabilityChain.then(async () => {
+    const stats = await getDownloadReliabilityStats();
+    await setJson(RELIABILITY_KEY, {
+      totalCompleted: stats.totalCompleted + (delta.completed ?? 0),
+      totalFailed: stats.totalFailed + (delta.failed ?? 0),
+      webSimulatedCompleted: stats.webSimulatedCompleted + (delta.webSimulatedCompleted ?? 0),
+    });
   });
+  // Keep the chain alive even if this op fails — later increments must still
+  // run. Callers observe the real outcome via `op`.
+  reliabilityChain = op.catch(() => {});
+  return op;
 }
 
 /**
@@ -419,11 +434,26 @@ export async function processNextDownload(): Promise<boolean> {
   }
 }
 
+/**
+ * Module-level processing gate (G-2 hygiene): 3 invocation sites (queue
+ * trigger, retry path, app-start reconciliation) can start concurrent
+ * drain-loops; a boolean gate keeps at most one loop running so they can't
+ * interleave counter updates. Skipped re-entrant calls are safe — the running
+ * loop drains the whole queue in one pass.
+ */
+let downloadsProcessing = false;
+
 /** Process all pending downloads in the queue sequentially. */
 export async function processAllDownloads(): Promise<void> {
-  let processed = true;
-  while (processed) {
-    processed = await processNextDownload();
+  if (downloadsProcessing) return;
+  downloadsProcessing = true;
+  try {
+    let processed = true;
+    while (processed) {
+      processed = await processNextDownload();
+    }
+  } finally {
+    downloadsProcessing = false;
   }
 }
 
