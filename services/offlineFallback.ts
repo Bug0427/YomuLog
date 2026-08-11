@@ -10,7 +10,7 @@ import { Manga } from './mangaAPI';
 
 // ─── Cache types ─────────────────────────────────────────────────────
 
-type CacheEntry<T> = {
+export type CacheEntry<T> = {
   data: T;
   timestamp: number;
 };
@@ -49,6 +49,35 @@ async function withStaleFallback<T>(
       }
     } catch { /* cache miss */ }
     throw err; // no valid cache — propagate error
+  }
+}
+
+// ─── Read-only cache reader (stale-while-revalidate) ─────────────────
+
+/**
+ * Reads a previously-cached response WITHOUT touching the network.
+ * Returns the entry `{ data, timestamp }` when a fresh-enough cache exists,
+ * else null. Used by the stale-while-revalidate pattern (P-2 — render cached
+ * Home rails instantly on tab focus, then refresh in the background).
+ * Never throws.
+ *
+ * @param cacheKey AsyncStorage key (same keys written by withStaleFallback)
+ * @param maxAgeMs Maximum acceptable age (default 30 minutes)
+ */
+export async function readCachedData<T>(
+  cacheKey: string,
+  maxAgeMs = 30 * 60 * 1000,
+): Promise<CacheEntry<T> | null> {
+  try {
+    const raw = await AsyncStorage.getItem(cacheKey);
+    if (!raw) return null;
+    const entry: CacheEntry<T> = JSON.parse(raw);
+    if (Date.now() - entry.timestamp < maxAgeMs) {
+      return entry;
+    }
+    return null;
+  } catch {
+    return null;
   }
 }
 
