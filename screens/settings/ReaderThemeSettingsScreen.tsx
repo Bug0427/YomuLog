@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
 import { usePremium } from '../../context/PremiumContext';
+import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
 import {
   useReaderTheme,
   type ReaderThemePreset,
@@ -183,6 +184,7 @@ export default function ReaderThemeSettingsScreen() {
   const [fontFamily, setFontFamily] = useState<'serif' | 'sans-serif' | 'monospace'>('sans-serif');
   const [lineSpacing, setLineSpacing] = useState(1.6);
   const [margin, setMargin] = useState(16);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const fontFamilies = [
     { key: 'sans-serif' as const, label: 'Sans Serif', preview: 'System default' },
@@ -303,12 +305,18 @@ export default function ReaderThemeSettingsScreen() {
             </View>
           </View>
         ) : (
-          <View style={[styles.premiumNudge, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+          <Pressable
+            onPress={() => setShowPremiumModal(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Upgrade to unlock advanced theme controls"
+            style={[styles.premiumNudge, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
+          >
             <Feather name="lock" size={16} color={colors.lavender} />
             <Text style={[styles.premiumNudgeText, { color: theme.textSecondary }]}>
               Advanced theme controls are Premium-only.
             </Text>
-          </View>
+            <Feather name="chevron-right" size={16} color={theme.textMuted} />
+          </Pressable>
         )}
 
         {/* Reset button */}
@@ -334,6 +342,12 @@ export default function ReaderThemeSettingsScreen() {
           <Text style={[styles.resetText, { color: theme.textSecondary }]}>Reset to Defaults</Text>
         </Pressable>
       </ScrollView>
+
+      {/* Premium upgrade modal (free users tapping the nudge) */}
+      <PremiumUpgradeModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+      />
     </SafeAreaView>
   );
 }

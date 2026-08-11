@@ -472,7 +472,15 @@ export default function SettingsScreen() {
             </Text>
 
             <Pressable
-              onPress={() => setShowPremiumModal(true)}
+              onPress={() => {
+                // G-9: premium users go to Manage Subscription (the tile is the
+                // Settings entry point); free users get the upgrade modal.
+                if (isPremium) {
+                  navigation.navigate('ManageSubscriptionScreen' as never);
+                } else {
+                  setShowPremiumModal(true);
+                }
+              }}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',

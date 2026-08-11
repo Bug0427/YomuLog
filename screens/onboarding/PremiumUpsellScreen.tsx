@@ -18,8 +18,8 @@ type Props = {
 const PERKS = [
   { icon: 'cloud', label: 'Cloud backup & cross-device sync' },
   { icon: 'download', label: 'Unlimited offline downloads' },
-  { icon: 'cpu', label: 'AI search & smart recommendations' },
-  { icon: 'bar-chart-2', label: 'Advanced reading analytics' },
+  { icon: 'cpu', label: 'AI natural-language & reverse image search' },
+  { icon: 'bar-chart-2', label: 'Advanced reading analytics & custom themes' },
 ];
 
 export default function PremiumUpsellScreen({ onFinish, onSkip }: Props) {
@@ -59,7 +59,7 @@ export default function PremiumUpsellScreen({ onFinish, onSkip }: Props) {
             style={[styles.cta, { backgroundColor: theme.warning }]}
           >
             <Feather name="star" size={18} color={colors.white} />
-            <Text style={styles.ctaText}>Try Premium Free</Text>
+            <Text style={styles.ctaText}>Get Premium</Text>
           </Pressable>
 
           <Pressable
