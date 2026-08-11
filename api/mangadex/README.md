@@ -50,24 +50,11 @@ EXPO_PUBLIC_MANGADEX_PROXY_URL=https://<your-host>/api/mangadex
   dev and native still work with zero config.
 
 ## Supabase Edge Function variant
-
-The same handler works as a Supabase Edge Function. Create
-`supabase/functions/mangadex-proxy/index.ts` with the Deno entry point:
-
-```ts
-// supabase/functions/mangadex-proxy/index.ts
-// Copy the handler logic from api/mangadex/[...path].ts (CORS headers,
-// header whitelist, OPTIONS preflight), then expose it with:
-Deno.serve(async (req: Request) => {
-  // The path prefix differs: the function is mounted at
-  // /functions/v1/mangadex-proxy, so strip that instead of /api/mangadex:
-  const url = new URL(req.url);
-  const path = url.pathname.replace(/^\/functions\/v1\/mangadex-proxy/, '');
-  const targetUrl = `https://api.mangadex.org${path}${url.search}`;
-  // ...same forwarding + CORS logic...
-  return new Response(upstream.body, { status: upstream.status, headers: responseHeaders });
-});
-```
+A ready-to-deploy Supabase Edge Function lives at
+`supabase/functions/mangadex-proxy/index.ts`. It shares the same proxy core
+(`services/proxyCore.ts`) as the Vercel handler — no logic is duplicated. The
+only difference is the mount prefix: the function is mounted at
+`/functions/v1/mangadex-proxy` instead of `/api/mangadex`.
 
 Deploy with the Supabase CLI:
 
