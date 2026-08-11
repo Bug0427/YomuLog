@@ -607,6 +607,37 @@ export default function SettingsScreen() {
             </GridItem>
             {/* Log Out removed from Settings per BUG-12 — kept only in Account Profile */}
           </View>
+
+          {/* ─── Divider before legal section ─────────────────────── */}
+          <View style={{
+            height: 2,
+            backgroundColor: theme.border,
+            opacity: 0.25,
+            marginBottom: 16,
+            marginHorizontal: 4,
+          }} />
+
+          {/* ─── Legal Section ────────────────────────────────────── */}
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{
+              fontSize: 18,
+              fontWeight: '800',
+              color: theme.textPrimary,
+              marginBottom: 10,
+              paddingLeft: 4,
+            }}>
+              Legal
+            </Text>
+
+            <View style={[SettingButtonStyles.grid, { backgroundColor: theme.bgSecondary }]}>
+              <GridItem label="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy' as never)}>
+                <Feather name="shield" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
+              </GridItem>
+              <GridItem label="Terms of Service" onPress={() => navigation.navigate('TermsOfService' as never)}>
+                <Feather name="file-text" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
+              </GridItem>
+            </View>
+          </View>
         </View>
       </ScrollView>
 

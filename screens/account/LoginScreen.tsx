@@ -173,6 +173,16 @@ const formContent = (
             >
                 <Text style={[FeedbackStyles.helper, { color: theme.textMuted }]}>Create account →</Text>
             </Pressable>
+
+            {/* Legal links */}
+            <View style={{ flexDirection: 'row', marginTop: 14, gap: 20 }}>
+                <Pressable accessibilityRole="button" onPress={() => navigation.navigate('PrivacyPolicy')}>
+                    <Text style={[FeedbackStyles.helper, { color: theme.textMuted }]}>Privacy Policy</Text>
+                </Pressable>
+                <Pressable accessibilityRole="button" onPress={() => navigation.navigate('TermsOfService')}>
+                    <Text style={[FeedbackStyles.helper, { color: theme.textMuted }]}>Terms of Service</Text>
+                </Pressable>
+            </View>
         </View>
         </View>
 

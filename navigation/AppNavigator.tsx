@@ -33,6 +33,8 @@ import OnboardingFlow from '../screens/onboarding/OnboardingFlow';
 import ReaderThemeSettingsScreen from '../screens/settings/ReaderThemeSettingsScreen';
 import UpgradeScreen from '../screens/premium/UpgradeScreen';
 import ManageSubscriptionScreen from '../screens/premium/ManageSubscriptionScreen';
+import PrivacyPolicyScreen from '../screens/legal/PrivacyPolicyScreen';
+import TermsOfServiceScreen from '../screens/legal/TermsOfServiceScreen';
 import { RootStackParamList } from '../navigation/navigation';
 
 const Stack = Platform.OS === 'web'
@@ -90,6 +92,8 @@ const OnboardingView = withScreenBoundary('OnboardingFlow', OnboardingFlow);
 const ReaderThemeSettingsView = withScreenBoundary('ReaderThemeSettingsScreen', ReaderThemeSettingsScreen);
 const UpgradeView = withScreenBoundary('UpgradeScreen', UpgradeScreen);
 const ManageSubscriptionView = withScreenBoundary('ManageSubscriptionScreen', ManageSubscriptionScreen);
+const PrivacyPolicyView = withScreenBoundary('PrivacyPolicy', PrivacyPolicyScreen);
+const TermsOfServiceView = withScreenBoundary('TermsOfService', TermsOfServiceScreen);
 
 export default function AppNavigator() {
     return (
@@ -130,6 +134,8 @@ export default function AppNavigator() {
             <Stack.Screen name="ReaderThemeSettingsScreen" component={ReaderThemeSettingsView} />
             <Stack.Screen name="UpgradeScreen" component={UpgradeView} />
             <Stack.Screen name="ManageSubscriptionScreen" component={ManageSubscriptionView} />
+            <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyView} />
+            <Stack.Screen name="TermsOfService" component={TermsOfServiceView} />
         </Stack.Navigator>
         </NavigationContainer>
       </ErrorBoundary>
