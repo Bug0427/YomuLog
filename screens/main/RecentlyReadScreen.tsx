@@ -65,7 +65,7 @@ export default function RecentlyReadScreen() {
 
           {/* Text info */}
           <View style={[CardViewStyles.rowTextWrap, CardViewStyles.rowTextCenter, { flex: 1 }]}>
-            <Text style={CardViewStyles.rowTitle} numberOfLines={1}>
+            <Text style={[CardViewStyles.rowTitle, { color: theme.textPrimary }]} numberOfLines={1}>
               {item.mangaTitle}
             </Text>
             <Text style={{ fontSize: 12, color: theme.textSecondary, marginTop: 2 }}>
@@ -112,7 +112,7 @@ export default function RecentlyReadScreen() {
 
       {recentlyRead.length === 0 && !loading ? (
         <View style={CardViewStyles.emptyWrap}>
-          <Text style={CardViewStyles.emptyText}>
+          <Text style={[CardViewStyles.emptyText, { color: theme.textSecondary }]}>
             No reading history yet. Start reading a manga to see it here!
           </Text>
         </View>
