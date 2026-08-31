@@ -43,6 +43,14 @@ const LANGUAGE_FLAGS: Record<Language, string> = { en: '🇺🇸', ja: '🇯🇵
 /** Direction cycle order */
 const DIRECTIONS: DirectionMode[] = ['ltr', 'rtl', 'vertical'];
 
+/**
+ * Dev-only flag that gates destructive developer tooling (the local-database reset).
+ * False in any release build (`__DEV__` is false), so a production Settings screen
+ * can never initiate a wipe. EXPO_PUBLIC_DEV_TOOLS can only ever narrow it further
+ * (e.g. set to 'false' to also hide it in dev).
+ */
+const DEV_TOOLS_ENABLED = __DEV__ && process.env.EXPO_PUBLIC_DEV_TOOLS !== 'false';
+
 const GridItem = ({ label, children, onPress }: { label: string; children?: React.ReactNode; onPress?: () => void }) => {
   const { colors: theme } = useTheme();
   return (
@@ -257,10 +265,24 @@ export default function SettingsScreen() {
   };
 
   const handleRefreshMetadata = () => {
-    Alert.alert("Refresh Metadata", "This will reset the database.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "OK", style: "destructive", onPress: async () => { try { await resetDatabase(); } catch (e) { console.warn('Reset DB failed', e); } } },
-    ]);
+    // Dev-only hardening: this destructive control must never be reachable in a
+    // release build — it wipes the entire local database. The Settings tile is
+    // also hidden behind the same gate (see JSX), and this guard is defense-in-depth.
+    if (!DEV_TOOLS_ENABLED) return;
+    Alert.alert(
+      'Reset all data (dev only)',
+      'This permanently deletes ALL locally stored data — your library, reading progress, downloaded chapters, preferences, and current login session. This CANNOT be undone. You will need to sign in again.\n\nIt is not a metadata refresh; it wipes the entire database.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset everything',
+          style: 'destructive',
+          onPress: async () => {
+            try { await resetDatabase(); } catch (e) { console.warn('Reset DB failed', e); }
+          },
+        },
+      ],
+    );
   };
 
   const goFeedback = () => {
@@ -567,9 +589,11 @@ export default function SettingsScreen() {
             <GridItem label="Reading Stats" onPress={() => navigation.navigate('ReadingStatsScreen' as never)}>
               <Feather name="bar-chart-2" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
             </GridItem>
-            <GridItem label="Refresh metadata" onPress={handleRefreshMetadata}>
-              <Feather name="refresh-ccw" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
-            </GridItem>
+            {DEV_TOOLS_ENABLED && (
+              <GridItem label="Reset all data (dev)" onPress={handleRefreshMetadata}>
+                <Feather name="refresh-ccw" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
+              </GridItem>
+            )}
             <GridItem label="Clear cache" onPress={handleClearCache}>
               <Feather name="trash-2" style={[SettingButtonStyles.icon, { color: theme.accent }]} />
             </GridItem>

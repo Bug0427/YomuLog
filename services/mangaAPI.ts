@@ -158,10 +158,6 @@ export async function fetchChapters(mangaId: string, limit = 100, offset = 0): P
   catch (err) { console.warn(`Failed to fetch chapters for ${mangaId}:`, err); throw new ApiError(`Failed to fetch chapters for ${mangaId}`, undefined, '/chapter'); }
 }
 
-export async function searchManga(title: string, limit = 20): Promise<Manga[]> {
-  return fetchMangaList({ title, limit });
-}
-
 export type MangaResult<T> = {
   data: T[];
   total: number;

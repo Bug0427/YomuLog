@@ -29,7 +29,7 @@ function FeatureRow({ icon, title, description }: { icon: string; title: string;
   return (
     <View style={styles.featureRow}>
       <View style={[styles.featureIconBg, { backgroundColor: theme.bgSecondary }]}>
-        <Feather name={icon as any} size={18} color={colors.lavender} />
+        <Feather name={icon as any} size={18} color={theme.accentLight} />
       </View>
       <View style={styles.featureText}>
         <Text style={[styles.featureTitle, { color: theme.textPrimary }]}>{title}</Text>
@@ -76,7 +76,7 @@ export default function UpgradeScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
         <View style={styles.alreadyPremium}>
-          <Feather name="check-circle" size={48} color={colors.success} />
+          <Feather name="check-circle" size={48} color={theme.success} />
           <Text style={[styles.alreadyTitle, { color: theme.textPrimary }]}>
             You're Premium!
           </Text>
@@ -104,7 +104,7 @@ export default function UpgradeScreen() {
           <Pressable onPress={() => navigation.goBack()} style={styles.closeBtn}>
             <Feather name="x" size={24} color={theme.textPrimary} />
           </Pressable>
-          <Feather name="star" size={40} color={colors.lavender} />
+          <Feather name="star" size={40} color={theme.accentLight} />
           <Text style={[styles.headline, { color: theme.textPrimary }]}>YomuLog Premium</Text>
           <Text style={[styles.subheadline, { color: theme.textSecondary }]}>
             Unlock the full reading experience
@@ -112,7 +112,7 @@ export default function UpgradeScreen() {
         </View>
 
         {/* Price */}
-        <View style={[styles.priceCard, { backgroundColor: theme.bgCard, borderColor: colors.lavender }]}>
+        <View style={[styles.priceCard, { backgroundColor: theme.bgCard, borderColor: theme.accentLight }]}>
           <Text style={[styles.priceAmount, { color: theme.textPrimary }]}>$2.99</Text>
           <Text style={[styles.pricePeriod, { color: theme.textSecondary }]}>/ month</Text>
           <Text style={[styles.priceNote, { color: theme.textSecondary }]}>
@@ -122,7 +122,7 @@ export default function UpgradeScreen() {
 
         {/* Upgrade button */}
         <Pressable
-          style={[styles.upgradeButton, { backgroundColor: colors.plum, opacity: loading ? 0.7 : 1 }]}
+          style={[styles.upgradeButton, { backgroundColor: theme.accent, opacity: loading ? 0.7 : 1 }]}
           onPress={handleUpgrade}
           disabled={loading}
         >
