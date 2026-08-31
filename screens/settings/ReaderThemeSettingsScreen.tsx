@@ -61,7 +61,7 @@ function StepSlider({
       <View style={styles.sliderRow}>
         <Text style={[styles.sliderLabel, { color: theme.textSecondary }]}>{leftLabel}</Text>
         <View style={[styles.sliderTrack, { backgroundColor: theme.bgSecondary }]}>
-          <View style={[styles.sliderFill, { width: `${percent}%`, backgroundColor: disabled ? theme.textMuted : colors.lavender }]} />
+          <View style={[styles.sliderFill, { width: `${percent}%`, backgroundColor: disabled ? theme.textMuted : theme.accentLight }]} />
         </View>
         <Text style={[styles.sliderLabel, { color: theme.textSecondary }]}>{rightLabel}</Text>
       </View>
@@ -76,7 +76,7 @@ function StepSlider({
                 styles.stepDot,
                 {
                   borderColor: theme.border,
-                  backgroundColor: active ? colors.lavender : theme.bgInput,
+                  backgroundColor: active ? theme.accentLight : theme.bgInput,
                 },
               ]}
               onPress={() => !disabled && onChange(val)}
@@ -109,7 +109,7 @@ function PresetCard({
         styles.presetCard,
         {
           backgroundColor: config.bg,
-          borderColor: isActive ? colors.lavender : 'transparent',
+          borderColor: isActive ? theme.accentLight : 'transparent',
           borderWidth: isActive ? 2 : 1,
           opacity: isLocked ? 0.5 : 1,
         },
@@ -128,7 +128,7 @@ function PresetCard({
         <Feather name="lock" size={12} color={config.text} style={styles.lockIcon} />
       )}
       {isActive && (
-        <View style={[styles.activeBadge, { backgroundColor: colors.success }]}>
+        <View style={[styles.activeBadge, { backgroundColor: theme.success }]}>
           <Feather name="check" size={10} color={colors.white} />
         </View>
       )}
@@ -154,12 +154,12 @@ function OptionRow({
     <Pressable
       style={[
         styles.optionRow,
-        { backgroundColor: selected ? colors.lavender + '20' : 'transparent', borderColor: theme.border },
+        { backgroundColor: selected ? theme.accentLight + '20' : 'transparent', borderColor: theme.border },
       ]}
       onPress={onSelect}
     >
       <Text style={[styles.optionText, { color: theme.textPrimary }]}>{label}</Text>
-      {selected && <Feather name="check" size={16} color={colors.lavender} />}
+      {selected && <Feather name="check" size={16} color={theme.accentLight} />}
     </Pressable>
   );
 }
@@ -312,7 +312,7 @@ export default function ReaderThemeSettingsScreen() {
             accessibilityLabel="Upgrade to unlock advanced theme controls"
             style={[styles.premiumNudge, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
           >
-            <Feather name="lock" size={16} color={colors.lavender} />
+            <Feather name="lock" size={16} color={theme.accentLight} />
             <Text style={[styles.premiumNudgeText, { color: theme.textSecondary }]}>
               Advanced theme controls are Premium-only.
             </Text>

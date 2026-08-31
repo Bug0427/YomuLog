@@ -99,7 +99,7 @@ export default function ManageSubscriptionScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.lavender} />
+          <ActivityIndicator size="large" color={theme.accentLight} />
         </View>
       </SafeAreaView>
     );
@@ -141,7 +141,7 @@ export default function ManageSubscriptionScreen() {
             <Feather
               name={status?.isActive ? 'check-circle' : 'x-circle'}
               size={24}
-              color={status?.isActive ? colors.success : colors.error}
+              color={status?.isActive ? theme.success : theme.error}
             />
             <Text style={[styles.statusText, { color: theme.textPrimary }]}>
               {status?.isActive ? 'Active' : 'Inactive'}
@@ -179,14 +179,14 @@ export default function ManageSubscriptionScreen() {
           <View style={styles.actions}>
             {!status.cancelAtPeriodEnd && (
               <Pressable
-                style={[styles.actionButton, { borderColor: colors.error }]}
+                style={[styles.actionButton, { borderColor: theme.error }]}
                 onPress={handleCancel}
                 disabled={actionLoading}
               >
                 {actionLoading ? (
-                  <ActivityIndicator size="small" color={colors.error} />
+                  <ActivityIndicator size="small" color={theme.error} />
                 ) : (
-                  <Text style={[styles.actionText, { color: colors.error }]}>Cancel Subscription</Text>
+                  <Text style={[styles.actionText, { color: theme.error }]}>Cancel Subscription</Text>
                 )}
               </Pressable>
             )}
@@ -210,7 +210,7 @@ export default function ManageSubscriptionScreen() {
               Ready to come back?
             </Text>
             <Pressable
-              style={[styles.resubscribeButton, { backgroundColor: colors.plum }]}
+              style={[styles.resubscribeButton, { backgroundColor: theme.accent }]}
               onPress={() => navigation.navigate('UpgradeScreen')}
             >
               <Text style={styles.resubscribeButtonText}>Resubscribe</Text>

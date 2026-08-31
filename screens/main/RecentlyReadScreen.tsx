@@ -7,7 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useReadingProgress } from '../../hooks/useReadingProgress';
 import { GeneralStyles, CardViewStyles } from '../../styles/global';
-import { colors, u, spacing } from '../../styles/tokens';
+import { useTheme } from '../../context/ThemeContext';
+import { spacing } from '../../styles/tokens';
 import Header from '../../components/layout/Header';
 
 function toImageSource(img: any): any {
@@ -18,6 +19,7 @@ function toImageSource(img: any): any {
 export default function RecentlyReadScreen() {
   const navigation = useNavigation();
   const { recentlyRead, loading, refresh } = useReadingProgress();
+  const { colors: theme } = useTheme();
 
   const renderItem = ({ item }: { item: typeof recentlyRead[number] }) => {
     const progressPct =
@@ -26,7 +28,7 @@ export default function RecentlyReadScreen() {
         : 0;
 
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.lavender }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>
       <Pressable
           onPress={() =>
             (navigation as any).navigate('MangaInfoScreen', {
@@ -66,7 +68,7 @@ export default function RecentlyReadScreen() {
             <Text style={CardViewStyles.rowTitle} numberOfLines={1}>
               {item.mangaTitle}
             </Text>
-            <Text style={{ fontSize: 12, color: colors.deepPlum, marginTop: 2 }}>
+            <Text style={{ fontSize: 12, color: theme.textSecondary, marginTop: 2 }}>
               {item.readChapters}/{item.totalChapters} chapters
             </Text>
 
@@ -76,7 +78,7 @@ export default function RecentlyReadScreen() {
                 marginTop: 6,
                 height: 4,
                 borderRadius: 2,
-                backgroundColor: colors.paleLavender,
+                backgroundColor: theme.bgSecondary,
                 overflow: 'hidden',
                 width: '100%',
               }}
@@ -85,7 +87,7 @@ export default function RecentlyReadScreen() {
                 style={{
                   width: `${progressPct}%`,
                   height: '100%',
-                  backgroundColor: colors.plum,
+                  backgroundColor: theme.accent,
                   borderRadius: 2,
                 }}
               />
