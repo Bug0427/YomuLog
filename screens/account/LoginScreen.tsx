@@ -44,10 +44,10 @@ const onSubmit = async () => {
           console.warn('Supabase sign-in failed (local login still works):', sb.error);
         }
       }
-      (globalThis as any).currentAccountId = row.ACCOUNTID;
-      (globalThis as any).currentUsername = row.USERNM;
-      (globalThis as any).currentSecurityLevel = row.SECURITYLVL;
-      (globalThis as any).forceLoggedOut = false;
+      globalThis.currentAccountId = row.ACCOUNTID;
+      globalThis.currentUsername = row.USERNM;
+      globalThis.currentSecurityLevel = row.SECURITYLVL;
+      globalThis.forceLoggedOut = false;
       authLogin(row.ACCOUNTID, row.USERNM, row.SECURITYLVL ?? 0);
 
       console.log('🔐 Session set from Login:', {

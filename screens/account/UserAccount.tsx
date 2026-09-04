@@ -2,9 +2,12 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ActivityIndicator, Modal, Image, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, StackActions } from '@react-navigation/native';
+import { useNavigation, StackActions, type NavigationState } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../navigation/navigation';
+import type { ImageRequireSource } from 'react-native';
 import { FeedbackStyles, GeneralStyles } from '../../styles/global';
-import { queryFirst, runAsync, getUserByUsername, verifyUser } from '../../services/feedbackRepo';
+import { queryFirst, runAsync, getUserByUsername, verifyUser, type UserAuthRow } from '../../services/feedbackRepo';
 import { Ionicons } from '@expo/vector-icons';
 import { profileIcons } from '../../data/profileIcons';
 import { deleteAccount } from '../../services/deleteAccount';
@@ -18,11 +21,21 @@ function validatePassword(pw: string): string | null {
     if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(pw)) return 'Password needs a special character.';
     return null;
 }
-function resolveIconSrc(iconId?: string | null): any | null {
-    if (!iconId) return null;
+/** Full profile row loaded from the local users table (includes auth + icon columns). */
+type UserProfileRow = {
+  ACCOUNTID: string;
+  USERNM: string;
+  EMAIL?: string;
+  PSWD?: string;
+  SECURITYLVL?: number;
+  PROFILEICON?: string | null;
+  CREATED_AT?: string;
+};
+function resolveIconSrc(iconId?: string | null): ImageRequireSource | undefined {
+    if (!iconId) return undefined;
     const all = [...profileIcons.animals, ...profileIcons.female, ...profileIcons.male];
     const found = all.find(i => i.name === iconId);
-    return found?.path ?? null; 
+    return found?.path ?? undefined;
 }
 
 /** Mask email for display: u***r@email.com */
@@ -35,12 +48,12 @@ function maskEmail(email: string): string {
 
 export default function UserAccount() {
   const { colors: theme } = useTheme();
-    const navigation = useNavigation<any>();
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
     useEffect(() => {
         try {
             navigation.setOptions?.({ contentStyle: { backgroundColor: theme.bg } });
-            navigation.setOptions?.({ cardStyle: { backgroundColor: theme.bg } });
+            navigation.setOptions?.({ cardStyle: { backgroundColor: theme.bg } } as unknown as Parameters<NonNullable<typeof navigation.setOptions>>[0]);
         } catch {}
     }, [navigation]);
 
@@ -51,8 +64,8 @@ export default function UserAccount() {
     function handleBack() {
     try {
         const state = navigation.getState?.();
-        const routes = (state as any)?.routes ?? [];
-        const idx = (state as any)?.index ?? -1;
+        const routes = (state as NavigationState | undefined)?.routes ?? [];
+        const idx = (state as NavigationState | undefined)?.index ?? -1;
         const prev = idx > 0 ? routes[idx - 1] : undefined;
 
         // If the previous route is the picker, pop two to skip it
@@ -72,8 +85,8 @@ export default function UserAccount() {
     }
 
     // Pull the current session values (set on login)
-    const sessionAccountId = (globalThis as any).currentAccountId as string | undefined;
-    const sessionUsername = (globalThis as any).currentUsername as string | undefined;
+    const sessionAccountId = globalThis.currentAccountId as string | undefined;
+    const sessionUsername = globalThis.currentUsername as string | undefined;
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -112,15 +125,15 @@ export default function UserAccount() {
                 return;
             }
             // Prefer loading by username first, fallback to accountId
-            let row: any | undefined = undefined;
+            let row: UserProfileRow | UserAuthRow | undefined = undefined;
             if (sessionUsername) {
-                row = await getUserByUsername(sessionUsername);
+                row = (await getUserByUsername(sessionUsername)) ?? undefined;
             }
             if (!row && sessionAccountId) {
-            row = await queryFirst<any>(
+            row = (await queryFirst<UserProfileRow>(
                 `SELECT ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL, PROFILEICON FROM users WHERE ACCOUNTID = ? LIMIT 1`,
                 [sessionAccountId]
-            );
+            )) ?? undefined;
             }
             if (!row) {
                 setError('Could not load your profile.');
@@ -135,16 +148,16 @@ export default function UserAccount() {
             // Do NOT pre-fill verifyUserNm — identity verification fields must start empty
             setPwLen((row.PSWD?.length ?? 0) || 8);
             setProfileIconId(row.PROFILEICON ?? null);
-            (globalThis as any).currentProfileIconId = row.PROFILEICON ?? null;
+            globalThis.currentProfileIconId = row.PROFILEICON ?? null;
             if (!row.PROFILEICON && row.ACCOUNTID) {
             try {
-                const r2 = await queryFirst<any>(
+                const r2 = await queryFirst<UserProfileRow>(
                 `SELECT PROFILEICON FROM users WHERE ACCOUNTID = ? LIMIT 1`,
                 [row.ACCOUNTID]
                 );
                 if (r2) {
                 setProfileIconId(r2.PROFILEICON ?? null);
-                (globalThis as any).currentProfileIconId = r2.PROFILEICON ?? null;
+                globalThis.currentProfileIconId = r2.PROFILEICON ?? null;
                 }
             } catch {}
             }
@@ -161,13 +174,13 @@ export default function UserAccount() {
     const unsub = navigation.addListener('focus', async () => {
         try {
         if (!sessionAccountId) return;
-        const r = await queryFirst<any>(
+        const r = await queryFirst<UserProfileRow>(
             'SELECT PROFILEICON FROM users WHERE ACCOUNTID = ? LIMIT 1',
             [sessionAccountId]
         );
         if (r) {
             setProfileIconId(r.PROFILEICON ?? null);
-            (globalThis as any).currentProfileIconId = r.PROFILEICON ?? null;
+            globalThis.currentProfileIconId = r.PROFILEICON ?? null;
         }
         } catch {}
     });
@@ -188,7 +201,7 @@ export default function UserAccount() {
         return;
     }
     try {
-        const row: any = await verifyUser(verifyUserNm, verifyPw);
+        const row = await verifyUser(verifyUserNm, verifyPw);
         if (!row || (accountId && row.ACCOUNTID !== accountId)) {
         setVerifyError('Invalid credentials.');
         return;
@@ -225,11 +238,11 @@ export default function UserAccount() {
         await runAsync(`UPDATE users SET USERNM = ? WHERE ACCOUNTID = ?`, [u, accountId]);
 
         setUsername(u);
-        (globalThis as any).currentUsername = u;
+        globalThis.currentUsername = u;
         setError('Username updated.');
         setCanEditUsername(false);
-        } catch (e: any) {
-        console.error('Update username failed', e);
+        } catch (e) {
+                  console.error('Update username failed', e);
         setError('Failed to update username.');
         }
     }
@@ -402,7 +415,7 @@ export default function UserAccount() {
             {/* Logout */}
             <Pressable
             accessibilityRole="button"
-            onPress={() => logout(navigation)}
+            onPress={() => logout(navigation as unknown as Parameters<typeof logout>[0])}
             style={[FeedbackStyles.item, { marginTop: 20, paddingHorizontal: 140 }]}
             >
             <Text style={FeedbackStyles.itemText}>Log Out</Text>
@@ -458,7 +471,7 @@ export default function UserAccount() {
                     <Pressable onPress={() => setShowDeleteConfirm(false)} style={[FeedbackStyles.item, { paddingHorizontal: 16 }]}>
                     <Text style={FeedbackStyles.itemText}>Cancel</Text>
                     </Pressable>
-                    <Pressable onPress={() => deleteAccount(accountId, navigation, setError, setShowDeleteConfirm)} style={[FeedbackStyles.item, { paddingHorizontal: 16, marginRight:60 }]}>
+                    <Pressable onPress={() => deleteAccount(accountId, navigation as unknown as Parameters<typeof deleteAccount>[1], setError, setShowDeleteConfirm)} style={[FeedbackStyles.item, { paddingHorizontal: 16, marginRight:60 }]}>
                     <Text style={[FeedbackStyles.itemText]}>Delete</Text>
                     </Pressable>
                 </View>

@@ -33,8 +33,8 @@ import {
 } from '../../services/preferencesService';
 
 type VerifyRow = { SECURITYLVL: SecurityLevel } | null;
-const isAdminLevel = (lvl: any) => lvl === SecurityLevel?.Admin || lvl === 1 || lvl === '1' || lvl === 'Admin';
-const isFeedbackAllowed = (lvl: any) => lvl === 2 || lvl === 3 || lvl === '2' || lvl === '3' || lvl === (SecurityLevel as any)?.Level2 || lvl === (SecurityLevel as any)?.Level3;
+const isAdminLevel = (lvl: unknown) => lvl === SecurityLevel?.Admin || lvl === 1 || lvl === '1' || lvl === 'Admin';
+const isFeedbackAllowed = (lvl: unknown) => lvl === 2 || lvl === 3 || lvl === '2' || lvl === '3' || lvl === SecurityLevel?.Paid || lvl === SecurityLevel?.Regular;
 
 /** Language cycle order */
 const LANGUAGES: Language[] = ['en', 'ja', 'ko'];
@@ -179,9 +179,9 @@ export default function SettingsScreen() {
   useEffect(() => {
     let isMounted = true;
     (async () => {
-      const savedUsername = (globalThis as any).currentUsername;
-      const savedPassword = (globalThis as any).currentPassword;
-      const savedAccountId = (globalThis as any).currentAccountId;
+      const savedUsername = globalThis.currentUsername;
+      const savedPassword = globalThis.currentPassword;
+      const savedAccountId = globalThis.currentAccountId;
       if (!savedUsername || !savedPassword) {
         if (isMounted) { setSecurityLevel(null); setLoading(false); setAccountId(null); }
         return;
@@ -196,8 +196,8 @@ export default function SettingsScreen() {
   }, []);
 
   useFocusEffect(useCallback(() => {
-    setSecurityLevel((globalThis as any).currentSecurityLevel ?? null);
-    setAccountId((globalThis as any).currentAccountId ?? null);
+    setSecurityLevel((globalThis.currentSecurityLevel ?? null) as SecurityLevel | null);
+    setAccountId(globalThis.currentAccountId ?? null);
     (async () => {
       const ss = await getSyncState();
       setSyncState(ss);
@@ -286,14 +286,14 @@ export default function SettingsScreen() {
   };
 
   const goFeedback = () => {
-    const level = (globalThis as any).currentSecurityLevel;
+    const level = globalThis.currentSecurityLevel;
     if (!accountId) { navigation.navigate('LoginScreen' as never); return; }
     if (isFeedbackAllowed(level)) { navigation.navigate('FeedBackHome' as never); return; }
   };
 
   const goChangeLogin = async () => {
-    const savedUsername = (globalThis as any).currentUsername;
-    const savedPassword = (globalThis as any).currentPassword;
+    const savedUsername = globalThis.currentUsername;
+    const savedPassword = globalThis.currentPassword;
     try {
       let level = securityLevel;
       if (!level && savedUsername && savedPassword) {

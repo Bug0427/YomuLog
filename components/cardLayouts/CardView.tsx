@@ -1,8 +1,9 @@
-function toRNImageSource(img: any): any {
+function toRNImageSource(img: CardImageSource | undefined): ImageSourcePropType | undefined {
   if (!img) return undefined;
   return typeof img === 'string' ? { uri: img } : img;
 }
 import React, { useCallback, useMemo } from 'react';
+import { ImageSourcePropType, NativeScrollEvent, NativeSyntheticEvent, FlatListProps } from 'react-native';
 import {
   FlatList,
   View,
@@ -12,6 +13,7 @@ import {
   RefreshControl,
   LayoutChangeEvent,
   ViewStyle,
+  StyleProp,
   Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -25,11 +27,15 @@ import MascotLoader from '../general/MascotLoader';
 
 export type ViewMode = 'grid' | 'row';
 
+/** A card's image may be a remote URL string, a bundled asset (require(...)),
+ *  or an RN image source object — toRNImageSource normalizes all of these. */
+export type CardImageSource = ImageSourcePropType | string;
+
 export type CardItem = {
   id: string | number;
   title: string;
   // Support either a bundled local image (require(...)) or a remote URL
-  image?: any;
+  image?: CardImageSource;
   imageUrl?: string;
 };
 
@@ -46,23 +52,23 @@ type Props = {
   contentPadding?: number;           // horizontal & bottom padding inside list (default 5)
 
   // Decorative
-  headerComponent?: React.ComponentType<any> | React.ReactElement | null;
+  headerComponent?: React.ComponentType<unknown> | React.ReactElement | null;
 
   // Pagination hooks
   isLoading?: boolean;
   hasMore?: boolean;
   onLoadMore?: () => void;
   emptyMessage?: string;
-  listRef?: React.Ref<any>;
-  onScrollBeginDrag?: (e: any) => void;
-  onScrollEndDrag?: (e: any) => void;
-  onMomentumScrollEnd?: (e: any) => void;
+  listRef?: React.Ref<FlatList<CardItem>>;
+  onScrollBeginDrag?: () => void;
+  onScrollEndDrag?: () => void;
+  onMomentumScrollEnd?: () => void;
 
   /** Optional per-item container style (e.g., for selection highlight) */
-  itemStyle?: (item: CardItem) => any;
+  itemStyle?: (item: CardItem) => StyleProp<ViewStyle>;
 
   /** Optional per-media (thumbnail) style applied to image wrapper only */
-  mediaStyle?: (item: CardItem) => any;
+  mediaStyle?: (item: CardItem) => StyleProp<ViewStyle>;
 
   // ── Selection mode ──────────────────────────────────────────────
   /** When true, tapping toggles selection and long-press is disabled */
@@ -306,8 +312,8 @@ const CardView: React.FC<Props> = ({
         maxToRenderPerBatch={10}
         initialNumToRender={8}
         removeClippedSubviews={Platform.OS === 'android'}
-        {...({ contentContainerStyle: listContentStyle } as any)}
-        ref={listRef as any}
+        {...({ contentContainerStyle: listContentStyle } as Partial<FlatListProps<CardItem>>)}
+                  ref={listRef}
         onScrollBeginDrag={onScrollBeginDrag}
         onScrollEndDrag={onScrollEndDrag}
         onMomentumScrollEnd={onMomentumScrollEnd}

@@ -13,8 +13,8 @@ export default function LoginIcon({ userImage }: { userImage?: string }) {
     <Pressable
       onPress={async () => {
         try {
-          const savedUsername: string | undefined = (globalThis as any).currentUsername;
-          const savedPassword: string | undefined = (globalThis as any).currentPassword;
+          const savedUsername: string | undefined = globalThis.currentUsername;
+          const savedPassword: string | undefined = globalThis.currentPassword;
           if (!savedUsername || !savedPassword) {
             navigation.navigate('LoginScreen');
             return;

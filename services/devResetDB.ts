@@ -11,10 +11,10 @@ const TABLES = [
 ];
 
 function clearAllSessions() {
-    (globalThis as any).currentAccountId = undefined;
-    (globalThis as any).currentUsername = undefined;
-    (globalThis as any).currentPassword = undefined;
-    (globalThis as any).currentSecurityLevel = null;
+    globalThis.currentAccountId = undefined;
+    globalThis.currentUsername = undefined;
+    globalThis.currentPassword = undefined;
+    globalThis.currentSecurityLevel = null;
     // Reset in-memory securityLevel as well
     // Broadcast an app-wide logout signal so any screen can react
     DeviceEventEmitter.emit('app:forceLogout');

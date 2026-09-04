@@ -63,7 +63,7 @@ export default function ChooseProfileIcon() {
   async function handleSave() {
     if (!selectedId) return;
     try {
-      const accountId = (globalThis as any).currentAccountId as string | undefined;
+      const accountId = globalThis.currentAccountId as string | undefined;
       if (!accountId) {
         // Not logged in – send to login
         navigation.replace?.('LoginScreen');
@@ -74,7 +74,7 @@ export default function ChooseProfileIcon() {
       await updateProfileIcon(accountId, selectedId);
 
       // Cache in memory for immediate use
-      (globalThis as any).currentProfileIconId = selectedId;
+      globalThis.currentProfileIconId = selectedId;
 
       // Return to account screen (works across nested stacks)
       navigateToUserAccount();

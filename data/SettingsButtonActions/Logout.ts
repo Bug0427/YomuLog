@@ -17,11 +17,11 @@ export async function logout(navigation: LegacyNavigation) {
   // Supabase user id) — best-effort, never blocks the local sign-out.
   await supabaseSignOut();
   // Clear globals (legacy)
-  (globalThis as any).currentAccountId = undefined;
-  (globalThis as any).currentUsername = undefined;
-  (globalThis as any).currentPassword = undefined;
-  (globalThis as any).currentSecurityLevel = null;
-  (globalThis as any).forceLoggedOut = true;
-  (globalThis as any).authEpoch = ((globalThis as any).authEpoch || 0) + 1;
+  globalThis.currentAccountId = undefined;
+  globalThis.currentUsername = undefined;
+  globalThis.currentPassword = undefined;
+  globalThis.currentSecurityLevel = null;
+  globalThis.forceLoggedOut = true;
+  globalThis.authEpoch = (globalThis.authEpoch || 0) + 1;
   navigation.replace?.('LoginScreen');
 }

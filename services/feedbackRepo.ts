@@ -14,10 +14,14 @@
 
 // 0) Imports & constants ------------------------------------------------------
 import { openDatabase, type IDatabase } from './nativeDB';
+import type { SQLiteBindValue } from 'expo-sqlite';
 import { makeIdSafe, makeUserIdSafe } from '../utils/idGenerator';
 
 // Dev toggle: set true to clear all tables on app start (useful while iterating)
 const RESET_DB_ON_START = false; // flip to true temporarily when you want a clean slate
+
+/** Row shape returned by `PRAGMA table_info(users)` (used for column-migration checks). */
+type PRAGMAUserColumn = { name: string; [k: string]: unknown };
 
 // 1) DB open & low-level helpers ---------------------------------------------
 // Lazy-init: call getDb() to obtain the platform-safe database instance.
@@ -28,20 +32,20 @@ async function getDb(): Promise<IDatabase> {
 }
 
 // Convenience wrapper – keep signature compatible with previous calls
-export const runAsync = async (sql: string, params: any[] = []) => {
-  const db = await getDb();
-  return db.runAsync(sql, params);
-};
+  export const runAsync = async (sql: string, params: SQLiteBindValue[] = []) => {
+    const db = await getDb();
+    return db.runAsync(sql, params);
+  };
 
-// Typed query helpers (also platform-safe)
-export const queryAll = async <T = any>(sql: string, params: any[] = []) => {
-  const db = await getDb();
-  return db.getAllAsync<T>(sql, params);
-};
-export const queryFirst = async <T = any>(sql: string, params: any[] = []) => {
-  const db = await getDb();
-  return db.getFirstAsync<T>(sql, params);
-};
+  // Typed query helpers (also platform-safe)
+  export const queryAll = async <T = unknown>(sql: string, params: SQLiteBindValue[] = []) => {
+    const db = await getDb();
+    return db.getAllAsync<T>(sql, params);
+  };
+  export const queryFirst = async <T = unknown>(sql: string, params: SQLiteBindValue[] = []) => {
+    const db = await getDb();
+    return db.getFirstAsync<T>(sql, params);
+  };
 
 // 2) DB maintenance (reset, hard delete) -------------------------------------
 // Wipe all application tables (children first), then VACUUM to reclaim space
@@ -67,7 +71,7 @@ export async function deleteDbFile(dbName: string = 'yomulog.db') {
   try {
     const db = await getDb();
     // Try native deleteDatabaseAsync if available (expo-sqlite specific)
-    const maybeDelete = (db as any)?.deleteDatabaseAsync;
+          const maybeDelete = (db as IDatabase & { deleteDatabaseAsync?: (name: string) => Promise<void> })?.deleteDatabaseAsync;
     if (typeof maybeDelete === 'function') {
       await maybeDelete(dbName);
       console.log(`🧨 Deleted DB file: ${dbName}`);
@@ -134,8 +138,8 @@ export async function initDb() {
   // --- Migrations: EMAIL column & index ------------------------------------
   try {
     // Use getAllAsync so we get a plain array result from PRAGMA
-    const cols: any[] = await db.getAllAsync(`PRAGMA table_info(users)`);
-    const hasEmail = Array.isArray(cols) && cols.some((c: any) => String(c?.name).toUpperCase() === 'EMAIL');
+    const cols: PRAGMAUserColumn[] = await db.getAllAsync<PRAGMAUserColumn>(`PRAGMA table_info(users)`);
+    const hasEmail = Array.isArray(cols) && cols.some((c) => String(c?.name).toUpperCase() === 'EMAIL');
     if (!hasEmail) {
       await db.execAsync(`ALTER TABLE users ADD COLUMN EMAIL TEXT`);
       console.log('ℹ︎ Added users.EMAIL via migration');
@@ -143,7 +147,7 @@ export async function initDb() {
     // Ensure unique index exists (idempotent)
     await db.execAsync(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(EMAIL)`);
   } catch (e) {
-    const msg = String((e as any)?.message || e);
+    const msg = String((e as { message?: unknown })?.message || e);
     if (/duplicate column name: EMAIL/i.test(msg)) {
       // Column already exists — ignore silently
     } else {
@@ -153,14 +157,14 @@ export async function initDb() {
 
   // --- Migrations: PROFILEICON column --------------------------------------
   try {
-    const cols2: any[] = await db.getAllAsync(`PRAGMA table_info(users)`);
-    const hasProfileIcon = Array.isArray(cols2) && cols2.some((c: any) => String(c?.name).toUpperCase() === 'PROFILEICON');
+    const cols2: PRAGMAUserColumn[] = await db.getAllAsync<PRAGMAUserColumn>(`PRAGMA table_info(users)`);
+    const hasProfileIcon = Array.isArray(cols2) && cols2.some((c) => String(c?.name).toUpperCase() === 'PROFILEICON');
     if (!hasProfileIcon) {
       await db.execAsync(`ALTER TABLE users ADD COLUMN PROFILEICON TEXT`);
       console.log('ℹ︎ Added users.PROFILEICON via migration');
     }
   } catch (e) {
-    const msg2 = String((e as any)?.message || e);
+    const msg2 = String((e as { message?: unknown })?.message || e);
     if (/duplicate column name: PROFILEICON/i.test(msg2)) {
       // already exists — ignore
     } else {
@@ -170,14 +174,14 @@ export async function initDb() {
 
   // --- Migrations: CREATED_AT column (G-3 retention — signup timestamp) ----
   try {
-    const cols3: any[] = await db.getAllAsync(`PRAGMA table_info(users)`);
-    const hasCreatedAt = Array.isArray(cols3) && cols3.some((c: any) => String(c?.name).toUpperCase() === 'CREATED_AT');
+    const cols3: PRAGMAUserColumn[] = await db.getAllAsync<PRAGMAUserColumn>(`PRAGMA table_info(users)`);
+    const hasCreatedAt = Array.isArray(cols3) && cols3.some((c) => String(c?.name).toUpperCase() === 'CREATED_AT');
     if (!hasCreatedAt) {
       await db.execAsync(`ALTER TABLE users ADD COLUMN CREATED_AT TEXT`);
       console.log('ℹ︎ Added users.CREATED_AT via migration');
     }
   } catch (e) {
-    const msg3 = String((e as any)?.message || e);
+    const msg3 = String((e as { message?: unknown })?.message || e);
     if (/duplicate column name: CREATED_AT/i.test(msg3)) {
       // already exists — ignore
     } else {
@@ -188,7 +192,7 @@ export async function initDb() {
   // --- Optional dev reset ---------------------------------------------------
   try {
     // also allow toggling via globalThis.RESET_DB_ON_START = true at runtime
-    if (RESET_DB_ON_START || (globalThis as any)?.RESET_DB_ON_START === true) {
+    if (RESET_DB_ON_START || globalThis.RESET_DB_ON_START === true) {
       console.log('⚠️  RESET_DB_ON_START is true → wiping all tables');
       await resetDb();
     }
@@ -350,8 +354,20 @@ export async function upsertUser(row: UserRow) {
   return row.accountId;
 }
 
-export async function getUserByUsername(userNm: string) {
-  return await queryFirst(
+/** Row shape returned by username/credential auth lookups (no PSWD/PROFILEICON). */
+export type UserAuthRow = {
+  ACCOUNTID: string;
+  USERNM: string;
+  EMAIL?: string;
+  PSWD?: string;
+  SECURITYLVL?: number;
+  CREATED_AT?: string;
+  /** Present only when the caller's SELECT includes it (getUserByUsername does not). */
+  PROFILEICON?: string | null;
+};
+
+export async function getUserByUsername(userNm: string): Promise<UserAuthRow | null> {
+  return await queryFirst<UserAuthRow>(
     `SELECT ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL, CREATED_AT FROM users WHERE USERNM = ? LIMIT 1`,
     [userNm]
   );
@@ -364,10 +380,10 @@ export async function setUserSecurityLevel(accountId: string, level: SecurityLev
   );
 }
 
-export async function verifyUser(userNm: string, pswd: string) {
+export async function verifyUser(userNm: string, pswd: string): Promise<UserAuthRow | null> {
   // EMAIL is included so sign-in screens can establish the matching
   // Supabase Auth session (entitlement/cloud sync are keyed by Supabase id).
-  return await queryFirst(
+  return await queryFirst<UserAuthRow>(
     `SELECT ACCOUNTID, USERNM, EMAIL, SECURITYLVL, CREATED_AT FROM users WHERE USERNM = ? AND PSWD = ? LIMIT 1`,
     [userNm, pswd]
   );

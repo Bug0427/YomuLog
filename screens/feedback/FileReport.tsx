@@ -49,7 +49,7 @@ export default function FileReport() {
     if ((isFreeTextSub && !subject) || (!isFreeTextSub && !selectedIssue) || !cleanComment) return;
 
     // Get accountId directly from globalThis.currentAccountId (same as securityLevel)
-    const accountId = (globalThis as any).currentAccountId;
+    const accountId = globalThis.currentAccountId;
 
     console.log('🔍 FileReport resolved accountId:', accountId);
 
@@ -63,8 +63,8 @@ export default function FileReport() {
     console.log('Submitting report payload:', payload);
 
     try {
-      await insertReport(payload);
-      (globalThis as any).__feedbackFlash = { message: 'Report submitted successfully!', at: Date.now(), ms: 3000 };
+      await insertReport({ ...payload, accountId: payload.accountId as string });
+      globalThis.__feedbackFlash = { message: 'Report submitted successfully!', at: Date.now(), ms: 3000 };
       navigation.goBack();
       return;
     } catch (e) {
@@ -72,8 +72,8 @@ export default function FileReport() {
       if (/no column named sid/i.test(msg)) {
         console.warn('🔧 Missing SID column detected. Running initDb() and retrying…');
         await initDb();
-        await insertReport(payload);
-        (globalThis as any).__feedbackFlash = { message: 'Report submitted successfully!', at: Date.now(), ms: 3000 };
+        await insertReport({ ...payload, accountId: payload.accountId as string });
+        globalThis.__feedbackFlash = { message: 'Report submitted successfully!', at: Date.now(), ms: 3000 };
         navigation.goBack();
         return;
       } else {

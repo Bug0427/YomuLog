@@ -37,11 +37,11 @@ export default function FeedBackHome() {
 
     React.useEffect(() => {
         const unsub = (navigation as any).addListener?.('focus', () => {
-            const gf = (globalThis as any).__feedbackFlash;
+            const gf = globalThis.__feedbackFlash;
             if (gf && gf.message) {
                 console.log('🔔', gf.message);
                 Alert.alert('Success', gf.message);
-                (globalThis as any).__feedbackFlash = null;
+                globalThis.__feedbackFlash = null;
                 setTimeout(() => {
                     console.log('✅ Flash cleared');
                 }, gf.ms ?? 3000);

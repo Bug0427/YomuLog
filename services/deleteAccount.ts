@@ -24,8 +24,8 @@ try {
 
 // Cleanup session + close modal
 setShowDeleteConfirm(false);
-(globalThis as any).currentAccountId = undefined;
-(globalThis as any).currentUsername = undefined;
+globalThis.currentAccountId = undefined;
+globalThis.currentUsername = undefined;
 
 // Clear the Supabase session so entitlement/cloud sync data for this
 // user is no longer resolvable in-app (best-effort, after local delete).
