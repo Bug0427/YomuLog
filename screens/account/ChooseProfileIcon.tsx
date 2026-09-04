@@ -4,8 +4,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { GeneralStyles, SettingButtonStyles, FeedbackStyles } from '../../styles/global';
 import { profileIcons } from '../../data/profileIcons';
+import type { RootStackParamList } from '../../navigation/navigation';
 import CardView from '../../components/cardLayouts/CardView';
 import { updateProfileIcon } from '../../services/feedbackRepo';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
@@ -24,7 +26,7 @@ const ICON_ITEMS = [
 
 export default function ChooseProfileIcon() {
   const { colors: theme } = useTheme();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const listRef = React.useRef<any>(null);
   const { isScrolling, handleScrollStart, handleScrollEnd } = useScrollTracker();
@@ -45,8 +47,9 @@ export default function ChooseProfileIcon() {
     const parent = navigation.getParent?.();
     if (parent) {
       try {
-        // @ts-ignore nested navigation
-        parent.navigate('UserAccount');
+        // Nested navigators aren't in RootStackParamList — call with a cast so
+        // the route is still checked against the root param list.
+        parent.navigate('UserAccount' as never);
         return;
       } catch {}
     }
@@ -63,7 +66,6 @@ export default function ChooseProfileIcon() {
       const accountId = (globalThis as any).currentAccountId as string | undefined;
       if (!accountId) {
         // Not logged in – send to login
-        // @ts-ignore
         navigation.replace?.('LoginScreen');
         return;
       }
