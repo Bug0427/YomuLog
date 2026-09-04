@@ -38,18 +38,69 @@ export type SimilarManga = {
 const COVER_BASE = 'https://uploads.mangadex.org/covers';
 let tagCache: MangaTag[] | null = null;
 
-function extractTitle(attrs: any): string {
+// ─── MangaDex API response shapes ────────────────────────────────────
+interface MangaDexRelationship {
+  id: string;
+  type: string;
+  attributes?: {
+    name?: string;
+    fileName?: string;
+  };
+}
+interface MangaDexAttributes {
+  title?: Record<string, string>;
+  altTitles?: Record<string, string>[];
+  description?: Record<string, string>;
+  tags?: MangaDexTag[];
+  status?: Manga['status'];
+  year?: number;
+  contentRating?: string;
+  updatedAt?: string;
+}
+interface MangaDexTag {
+  id: string;
+  attributes?: { name?: Record<string, string>; group?: string };
+}
+interface MangaDexMangaItem {
+  id: string;
+  type?: string;
+  attributes?: MangaDexAttributes;
+  relationships?: MangaDexRelationship[];
+}
+interface MangaDexChapterItem {
+  id: string;
+  attributes?: {
+    chapter?: string;
+    title?: string;
+    volume?: string;
+    pages?: number;
+    updatedAt?: string;
+    translatedLanguage?: string;
+  };
+  relationships?: MangaDexRelationship[];
+}
+interface MangaDexListResponse<T> {
+  result?: string;
+  total?: number;
+  data?: T[];
+  errors?: unknown[];
+}
+
+function extractTitle(attrs: MangaDexAttributes | undefined): string {
   const title = attrs?.title;
   if (!title) return 'Untitled';
   return title.en || Object.values(title)[0] as string || 'Untitled';
+}
+function tagName(tag: MangaDexTag | undefined): string {
+  return tag?.attributes?.name?.en ?? 'Unknown';
 }
 
 export async function fetchTags(force?: boolean): Promise<MangaTag[]> {
   if (tagCache && !force) return tagCache;
   try {
     const res = await fetch(resolveMangaDexUrl('/manga/tag'));
-    const json = await res.json();
-    tagCache = (json?.data ?? []).map((t: any) => ({ id: t.id, name: t.attributes?.name?.en ?? 'Unknown', group: t.attributes?.group ?? 'genre' }));
+    const json = (await res.json()) as MangaDexListResponse<MangaDexTag>;
+    tagCache = (json?.data ?? []).map((t) => ({ id: t.id, name: tagName(t), group: t.attributes?.group ?? 'genre' }));
     return tagCache as MangaTag[];
   } catch (err) { console.warn('Failed to fetch MangaDex tags:', err); return []; }
 }
@@ -75,18 +126,18 @@ export async function fetchMangaList(params: MangaListParams = {}): Promise<Mang
   if (params.order) { Object.entries(params.order).forEach(([k, v]) => query.set(`order[${k}]`, v)); }
   try {
     const res = await fetch(resolveMangaDexUrl(`/manga?${query.toString()}`));
-    const json = await res.json();
-    const rawItems: any[] = json?.data ?? [];
+    const json = (await res.json()) as MangaDexListResponse<MangaDexMangaItem>;
+    const rawItems: MangaDexMangaItem[] = json?.data ?? [];
     // Deduplicate by manga ID — keep the entry with the most complete data
     const dedupMap = new Map<string, Manga>();
     for (const item of rawItems) {
       const id = item.id; const attrs = item.attributes ?? {};
-      const coverRel = (item.relationships ?? []).find((r: any) => r.type === 'cover_art');
+      const coverRel = (item.relationships ?? []).find((r) => r.type === 'cover_art');
       const coverFileName = coverRel?.attributes?.fileName;
-      const tags: string[] = (attrs.tags ?? []).map((t: any) => t.attributes?.name?.en ?? 'Unknown');
+      const tags: string[] = (attrs.tags ?? []).map((t) => tagName(t));
       const manga: Manga = {
         id, title: extractTitle(attrs),
-        altTitles: attrs.altTitles?.map((t: any) => Object.values(t)[0] as string),
+        altTitles: attrs.altTitles?.map((t) => Object.values(t)[0] as string),
         status: attrs.status ?? undefined,
         coverImageUrl: coverFileName ? `${COVER_BASE}/${id}/${coverFileName}.256.jpg` : '',
         description: attrs.description?.en ?? undefined,
@@ -110,16 +161,16 @@ export async function fetchMangaList(params: MangaListParams = {}): Promise<Mang
 export async function fetchMangaById(id: string): Promise<Manga | null> {
   try {
     const res = await fetch(resolveMangaDexUrl(`/manga/${id}?includes[]=cover_art&includes[]=author&includes[]=artist`));
-    const json = await res.json();
+    const json = (await res.json()) as { data?: MangaDexMangaItem };
     if (!json?.data) return null;
     const d = json.data;
     const a = d.attributes ?? {};
     const rels = d.relationships ?? [];
 
-    const coverRel = rels.find((r: any) => r.type === 'cover_art');
-    const authorRel = rels.find((r: any) => r.type === 'author');
-    const artistRel = rels.find((r: any) => r.type === 'artist');
-    const tags: string[] = (a.tags ?? []).map((t: any) => t.attributes?.name?.en ?? 'Unknown');
+    const coverRel = rels.find((r) => r.type === 'cover_art');
+    const authorRel = rels.find((r) => r.type === 'author');
+    const artistRel = rels.find((r) => r.type === 'artist');
+    const tags: string[] = (a.tags ?? []).map((t) => tagName(t));
 
     // Extract alt titles
     const altTitles: string[] = [];
@@ -154,7 +205,7 @@ export async function fetchMangaById(id: string): Promise<Manga | null> {
 
 export async function fetchChapters(mangaId: string, limit = 100, offset = 0): Promise<MangaChapter[]> {
   const query = new URLSearchParams(); query.set('manga', mangaId); query.set('limit', String(limit)); query.set('offset', String(offset)); query.set('translatedLanguage[]', 'en'); query.set('order[chapter]', 'desc');
-  try { const res = await fetch(resolveMangaDexUrl(`/chapter?${query.toString()}`)); const json = await res.json(); return (json?.data ?? []).map((item: any) => ({ id: item.id, mangaId, chapter: item.attributes?.chapter ?? '0', title: item.attributes?.title, volume: item.attributes?.volume, pages: item.attributes?.pages ?? 0, updatedAt: item.attributes?.updatedAt, language: item.attributes?.translatedLanguage ?? 'en', })); }
+  try { const res = await fetch(resolveMangaDexUrl(`/chapter?${query.toString()}`)); const json = (await res.json()) as MangaDexListResponse<MangaDexChapterItem>; return (json?.data ?? []).map((item) => ({ id: item.id, mangaId, chapter: item.attributes?.chapter ?? '0', title: item.attributes?.title, volume: item.attributes?.volume, pages: item.attributes?.pages ?? 0, updatedAt: item.attributes?.updatedAt, language: item.attributes?.translatedLanguage ?? 'en', })); }
   catch (err) { console.warn(`Failed to fetch chapters for ${mangaId}:`, err); throw new ApiError(`Failed to fetch chapters for ${mangaId}`, undefined, '/chapter'); }
 }
 
@@ -189,13 +240,13 @@ async function _fetchFeed(
     console.warn(`getMangaFeed HTTP ${res.status} for manga ${mangaId}`);
     return { data: [], total: 0 };
   }
-  const json = await res.json();
+  const json = (await res.json()) as MangaDexListResponse<MangaDexChapterItem>;
   if (json.result !== 'ok') {
     console.warn(`getMangaFeed API error for manga ${mangaId}:`, json.errors);
     return { data: [], total: 0 };
   }
-  const data: MangaChapter[] = (json?.data ?? []).map((item: any) => {
-    const scanRel = (item.relationships ?? []).find((r: any) => r.type === 'scanlation_group');
+  const data: MangaChapter[] = (json.data ?? []).map((item) => {
+    const scanRel = (item.relationships ?? []).find((r) => r.type === 'scanlation_group');
     return {
       id: item.id, mangaId,
       chapter: item.attributes?.chapter ?? '0',
