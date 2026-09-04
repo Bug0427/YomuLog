@@ -340,8 +340,8 @@ export async function upsertUser(row: UserRow) {
     `UPDATE users SET USERNM = ?, EMAIL = ?, PSWD = ?, SECURITYLVL = ? WHERE ACCOUNTID = ?`,
     [row.userNm, row.email, row.pswd, row.securityLvl, row.accountId]
   );
-  // @ts-ignore rowsAffected exists on result for runAsync
-  if (!res?.rowsAffected) {
+  // rowsAffected may be undefined on some platforms; treat as no-op update
+  if (!(res?.rowsAffected ?? 0)) {
     await runAsync(
       `INSERT INTO users (ACCOUNTID, USERNM, EMAIL, PSWD, SECURITYLVL, CREATED_AT) VALUES (?,?,?,?,?,?)`,
       [row.accountId, row.userNm, row.email, row.pswd, row.securityLvl, row.createdAt ?? new Date().toISOString()]

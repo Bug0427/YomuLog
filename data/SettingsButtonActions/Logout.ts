@@ -9,7 +9,10 @@ export function useLogout() {
 }
 
 // Legacy-compatible export for non-hook callers (kept for gradual migration)
-export async function logout(navigation: any) {
+type LegacyNavigation = {
+  replace?: (name: string) => void;
+};
+export async function logout(navigation: LegacyNavigation) {
   // Clear the Supabase session first (entitlement/cloud sync are keyed by
   // Supabase user id) — best-effort, never blocks the local sign-out.
   await supabaseSignOut();
@@ -20,6 +23,5 @@ export async function logout(navigation: any) {
   (globalThis as any).currentSecurityLevel = null;
   (globalThis as any).forceLoggedOut = true;
   (globalThis as any).authEpoch = ((globalThis as any).authEpoch || 0) + 1;
-  // @ts-ignore
   navigation.replace?.('LoginScreen');
 }

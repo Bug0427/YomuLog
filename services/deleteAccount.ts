@@ -3,10 +3,10 @@ import { runAsync } from './feedbackRepo';
 import { supabaseSignOut } from './supabaseAuth';
 
 export async function deleteAccount(
-accountId: string,
-navigation: any,
-setError: (msg: string) => void,
-setShowDeleteConfirm: (val: boolean) => void
+  accountId: string,
+  navigation: { replace?: (name: string) => void },
+  setError: (msg: string) => void,
+  setShowDeleteConfirm: (val: boolean) => void
 ) {
 try {
     await runAsync('BEGIN');
@@ -32,6 +32,5 @@ setShowDeleteConfirm(false);
 await supabaseSignOut();
 
 // Kick back to login
-// @ts-ignore
-navigation.replace?.('LoginScreen');
+  navigation.replace?.('LoginScreen');
 }
