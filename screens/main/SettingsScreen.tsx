@@ -7,6 +7,7 @@ import Header from '../../components/layout/Header';
 import { useScrollTracker } from '../../hooks/useScrollTracker';
 import Anchor from '../../components/layout/Anchor';
 import { resetDatabase } from '../../services/devResetDB';
+import log from '../../services/logger';
 import ChangeLoginModal from '../../components/admin/ChangeLoginModal';
 import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
 import { GeneralStyles, SettingButtonStyles } from '../../styles/global';
@@ -243,7 +244,7 @@ export default function SettingsScreen() {
         {
           text: 'Clear Cache',
           style: 'destructive',
-          onPress: () => console.log('🗑️ Cache cleared'),
+          onPress: () => log.log('🗑️ Cache cleared'),
         },
       ],
     );
@@ -258,7 +259,7 @@ export default function SettingsScreen() {
         {
           text: 'Reset',
           style: 'destructive',
-          onPress: () => console.log('🔄 AI recommendations reset'),
+          onPress: () => log.log('🔄 AI recommendations reset'),
         },
       ],
     );

@@ -7,6 +7,7 @@ import { useAuthContext } from '../../context/AuthContext';
 import { FeedbackStyles, SubmitButtonStyles } from '../../styles/global';
 import { verifyUser } from '../../services/feedbackRepo';
 import { supabaseSignIn } from '../../services/supabaseAuth';
+import log from '../../services/logger';
 
 
 export default function LoginScreen() {
@@ -50,7 +51,7 @@ const onSubmit = async () => {
       globalThis.forceLoggedOut = false;
       authLogin(row.ACCOUNTID, row.USERNM, row.SECURITYLVL ?? 0);
 
-      console.log('🔐 Session set from Login:', {
+      log.log('🔐 Session set from Login:', {
         accountId: row.ACCOUNTID,
         username: row.USERNM,
         level: row.SECURITYLVL,
