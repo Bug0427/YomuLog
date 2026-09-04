@@ -7,6 +7,7 @@ import { FeedbackStyles, SubmitButtonStyles } from '../../styles/global';
 import { CreateNewUser, runAsync, SecurityLevel } from '../../services/feedbackRepo';
 import { supabaseSignUp } from '../../services/supabaseAuth';
 import { recordFunnelEvent } from '../../services/funnelService';
+import log from '../../services/logger';
 
 // Ensure default security level mapping even if enum values shift
 // Expected mapping: 1 = Admin, 2 = Purchase, 3 = Regular
@@ -87,7 +88,7 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
             pswd: pw,
             securityLvl: REGULAR_LVL,
         });
-        console.log('✅ Created user with security level:', REGULAR_LVL);
+        log.log('✅ Created user with security level:', REGULAR_LVL);
         } catch (err: any) {
         const msg = String(err?.message || err);
         if (msg.includes('users.EMAIL')) {

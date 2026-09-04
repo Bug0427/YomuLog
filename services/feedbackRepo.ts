@@ -16,6 +16,7 @@
 import { openDatabase, type IDatabase } from './nativeDB';
 import type { SQLiteBindValue } from 'expo-sqlite';
 import { makeIdSafe, makeUserIdSafe } from '../utils/idGenerator';
+import log from './logger';
 
 // Dev toggle: set true to clear all tables on app start (useful while iterating)
 const RESET_DB_ON_START = false; // flip to true temporarily when you want a clean slate
@@ -74,12 +75,12 @@ export async function deleteDbFile(dbName: string = 'yomulog.db') {
           const maybeDelete = (db as IDatabase & { deleteDatabaseAsync?: (name: string) => Promise<void> })?.deleteDatabaseAsync;
     if (typeof maybeDelete === 'function') {
       await maybeDelete(dbName);
-      console.log(`🧨 Deleted DB file: ${dbName}`);
+      log.log(`🧨 Deleted DB file: ${dbName}`);
       return;
     }
     // Fallback for older SDKs
     await resetDb();
-    console.log('🧨 Soft reset executed (deleteDatabaseAsync not available)');
+    log.log('🧨 Soft reset executed (deleteDatabaseAsync not available)');
   } catch (e) {
     console.warn('deleteDbFile failed; falling back to soft reset', e);
     try { await resetDb(); } catch {}
@@ -142,7 +143,7 @@ export async function initDb() {
     const hasEmail = Array.isArray(cols) && cols.some((c) => String(c?.name).toUpperCase() === 'EMAIL');
     if (!hasEmail) {
       await db.execAsync(`ALTER TABLE users ADD COLUMN EMAIL TEXT`);
-      console.log('ℹ︎ Added users.EMAIL via migration');
+      log.log('ℹ︎ Added users.EMAIL via migration');
     }
     // Ensure unique index exists (idempotent)
     await db.execAsync(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(EMAIL)`);
@@ -161,7 +162,7 @@ export async function initDb() {
     const hasProfileIcon = Array.isArray(cols2) && cols2.some((c) => String(c?.name).toUpperCase() === 'PROFILEICON');
     if (!hasProfileIcon) {
       await db.execAsync(`ALTER TABLE users ADD COLUMN PROFILEICON TEXT`);
-      console.log('ℹ︎ Added users.PROFILEICON via migration');
+      log.log('ℹ︎ Added users.PROFILEICON via migration');
     }
   } catch (e) {
     const msg2 = String((e as { message?: unknown })?.message || e);
@@ -178,7 +179,7 @@ export async function initDb() {
     const hasCreatedAt = Array.isArray(cols3) && cols3.some((c) => String(c?.name).toUpperCase() === 'CREATED_AT');
     if (!hasCreatedAt) {
       await db.execAsync(`ALTER TABLE users ADD COLUMN CREATED_AT TEXT`);
-      console.log('ℹ︎ Added users.CREATED_AT via migration');
+      log.log('ℹ︎ Added users.CREATED_AT via migration');
     }
   } catch (e) {
     const msg3 = String((e as { message?: unknown })?.message || e);
@@ -193,7 +194,7 @@ export async function initDb() {
   try {
     // also allow toggling via globalThis.RESET_DB_ON_START = true at runtime
     if (RESET_DB_ON_START || globalThis.RESET_DB_ON_START === true) {
-      console.log('⚠️  RESET_DB_ON_START is true → wiping all tables');
+      log.log('⚠️  RESET_DB_ON_START is true → wiping all tables');
       await resetDb();
     }
   } catch (e) {
@@ -206,13 +207,13 @@ export async function initDb() {
     if (!row || !row.c) {
       await seedDefaultUsers();
       const check = await db.getFirstAsync<{ c: number }>(`SELECT COUNT(*) as c FROM users`);
-      console.log(`🌱 Auto-seeded users because table was empty. Count now: ${check?.c ?? 0}`);
+      log.log(`🌱 Auto-seeded users because table was empty. Count now: ${check?.c ?? 0}`);
     }
   } catch (e) {
     console.warn('Auto-seed check failed', e);
   }
 
-  console.log('✅ Database initialized');
+  log.log('✅ Database initialized');
 }
 
 // 4) Seeding (dev convenience) -----------------------------------------------
@@ -231,7 +232,7 @@ export async function seedDefaultUsers() {
     ['mainAccount', 'buggy', 'regular@yomulog.test', 'P@22w0rd', 3, seededAt]
   );
   const users = await queryAll(`SELECT ACCOUNTID, USERNM, EMAIL, SECURITYLVL, CREATED_AT FROM users ORDER BY USERNM`);
-  console.log('🌱 After seed, users:', users);
+  log.log('🌱 After seed, users:', users);
 }
 // 5) Inserts (reports, comments, ratings) ------------------------------------
 export async function insertReport(row: {
