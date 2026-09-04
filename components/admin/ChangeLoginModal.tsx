@@ -44,7 +44,7 @@ const ChangeLoginModal: React.FC<ChangeLoginModalProps> = ({ visible, onClose, a
   const validatePassword = (pw: string) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(pw);
 
   const handleSubmit = async () => {
-    const acctId = accountId || (globalThis as any).currentAccountId;
+    const acctId = accountId || globalThis.currentAccountId;
     if (!acctId) {
       setError('No active account. Please log in again.');
       return;
@@ -74,8 +74,8 @@ const ChangeLoginModal: React.FC<ChangeLoginModalProps> = ({ visible, onClose, a
       return;
     }
     // Refresh in-memory session
-    (globalThis as any).currentUsername = newUsername.trim();
-    (globalThis as any).currentPassword = newPassword;
+    globalThis.currentUsername = newUsername.trim();
+    globalThis.currentPassword = newPassword;
 
     // Run current processes
     resetForm();

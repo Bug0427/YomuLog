@@ -27,7 +27,7 @@ export default function LeaveReview() {
     setSubmitting(true);
     try {
       // Get accountId directly from globalThis.currentAccountId
-      const accountId = (globalThis as any).currentAccountId;
+      const accountId = globalThis.currentAccountId;
 
       console.log('🔍 LeaveReview resolved accountId:', accountId);
 
@@ -43,11 +43,11 @@ export default function LeaveReview() {
       if (typeof repo.insertReview !== 'function') {
         throw new Error('insertReview not exported from feedbackRepo');
       }
-      const saved = await repo.insertReview(payload);
+      const saved = await repo.insertReview({ ...payload, accountId: payload.accountId as string });
       console.log('✅ insertReview result:', saved);
 
       // surface success on previous screen
-      (globalThis as any).__feedbackFlash = {
+      globalThis.__feedbackFlash = {
         message: 'Review submitted successfully!',
         at: Date.now(),
         ms: 3000,

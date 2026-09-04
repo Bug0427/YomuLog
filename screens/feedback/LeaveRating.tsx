@@ -16,7 +16,7 @@ export default function LeaveRating() {
 
     React.useEffect(() => {
         const unsub = (navigation as any).addListener?.('focus', () => {
-            console.log('👤 activeUser (LeaveRating focus):', (globalThis as any).__activeUser);
+            console.log('👤 activeUser (LeaveRating focus):', globalThis.__activeUser);
             console.log('🛠 LeaveRating state:', { rating, submitting });
         });
         return () => { if (typeof unsub === 'function') unsub(); };
@@ -27,7 +27,7 @@ export default function LeaveRating() {
         setSubmitting(true);
         try {
             // Get accountId directly from globalThis.currentAccountId (same as FileReport)
-            const accountId = (globalThis as any).currentAccountId;
+            const accountId = globalThis.currentAccountId;
             console.log('🔍 LeaveRating resolved accountId:', accountId);
             const payload = {
                 accountId,
@@ -39,11 +39,11 @@ export default function LeaveRating() {
             if (typeof repo.insertRating !== 'function') {
                 throw new Error('insertRating not exported from feedbackRepo');
             }
-            const saved = await repo.insertRating(payload);
+            const saved = await repo.insertRating({ ...payload, accountId: payload.accountId as string });
             console.log('✅ insertRating result:', saved);
 
             console.log('🟢 Setting success flash and leaving LeaveRating');
-            (globalThis as any).__feedbackFlash = {
+            globalThis.__feedbackFlash = {
                 message: 'Rating submitted successfully!',
                 at: Date.now(),
                 ms: 3000,
