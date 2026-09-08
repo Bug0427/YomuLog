@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
-export type Language = 'en' | 'ja' | 'ko';
+export type Language = 'all' | 'en' | 'ja' | 'ko';
 export type DirectionMode = 'ltr' | 'rtl' | 'vertical';
 
 export type UserPreferences = {
@@ -28,7 +28,7 @@ const KEYS = {
 // ─── Defaults ─────────────────────────────────────────────────────────
 
 const DEFAULTS: UserPreferences = {
-  language: 'en',
+  language: 'all',
   alertsOn: true,
   aiSearchOn: false,
   directionMode: 'ltr',
@@ -57,8 +57,8 @@ async function getBool(key: string, fallback: boolean): Promise<boolean> {
 
 export async function getLanguage(): Promise<Language> {
   const val = await getString(KEYS.language, DEFAULTS.language);
-  if (val === 'ja' || val === 'ko') return val;
-  return 'en';
+  if (val === 'en' || val === 'ja' || val === 'ko' || val === 'all') return val;
+  return 'all';
 }
 
 export async function setLanguage(lang: Language): Promise<void> {

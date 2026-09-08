@@ -17,6 +17,7 @@ import { spacing, colors } from '../../styles/tokens';
 import { getRecentFavoritesUpdates, MangaUpdate } from '../../services/favoritesService';
 import { fetchMangaList, MangaListParams, Manga } from '../../services/mangaAPI';
 import { enhanceSearch } from '../../services/aiSearchEnhancer';
+import { getLanguage, type Language } from '../../services/preferencesService';
 import {
   FilterState,
   DEFAULT_FILTER_STATE,
@@ -66,6 +67,16 @@ export default function SearchScreen() {
   const [showGenreModal, setShowGenreModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [sortOrder, setSortOrder] = useState<string>('relevance');
+  const [language, setLanguage] = useState<Language>('all');
+  // Resolve persisted language preference on mount (D-1 A2: 'all' default)
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      const lang = await getLanguage();
+      if (isMounted) setLanguage(lang);
+    })();
+    return () => { isMounted = false; };
+  }, []);
   const [excludedGenres, setExcludedGenres] = useState<Set<GenreTag>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
 
@@ -173,6 +184,7 @@ export default function SearchScreen() {
       if (filter.pubStatus.length > 0) {
         params.status = [...filter.pubStatus];
       }
+      if (language !== 'all') params.originalLanguage = [language];
       if (filter.contentFormat.length > 0) {
         // MangaDex does not support a direct "format" parameter;
         // contentFormat filters are applied client-side for now.
@@ -186,7 +198,7 @@ export default function SearchScreen() {
 
       return params;
     },
-    [searchText, filter, effectiveAiMode, sortOrder, excludedGenres]
+    [searchText, filter, effectiveAiMode, sortOrder, excludedGenres, language]
   );
 
   // ── Fetch from MangaDex ──────────────────────────────────────────

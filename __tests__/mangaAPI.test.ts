@@ -100,6 +100,21 @@ describe('fetchMangaList — dedup & parsing', () => {
     expect(captured[0]).toContain('limit=20');
     (globalThis as any).fetch = orig;
   });
+  it('appends originalLanguage[] params when provided (D-1)', async () => {
+    const captured: string[] = [];
+    const orig: any = (globalThis as any).fetch;
+    (globalThis as any).fetch = async (url: string) => {
+      captured.push(url);
+      return { ok: true, status: 200, json: async () => ({ data: [] }) };
+    };
+    await fetchMangaList({ limit: 10, originalLanguage: ['ja'] });
+    expect(captured[0]).toContain('originalLanguage%5B%5D=ja');
+    // absent when omitted (default 'all' → no filter)
+    captured.length = 0;
+    await fetchMangaList({ limit: 10 });
+    expect(captured[0]).not.toContain('originalLanguage');
+    (globalThis as any).fetch = orig;
+  });
 
   it('throws ApiError when the fetch rejects', async () => {
     const orig: any = (globalThis as any).fetch;

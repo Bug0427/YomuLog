@@ -38,8 +38,8 @@ const isAdminLevel = (lvl: unknown) => lvl === SecurityLevel?.Admin || lvl === 1
 const isFeedbackAllowed = (lvl: unknown) => lvl === 2 || lvl === 3 || lvl === '2' || lvl === '3' || lvl === SecurityLevel?.Paid || lvl === SecurityLevel?.Regular;
 
 /** Language cycle order */
-const LANGUAGES: Language[] = ['en', 'ja', 'ko'];
-const LANGUAGE_FLAGS: Record<Language, string> = { en: '🇺🇸', ja: '🇯🇵', ko: '🇰🇷' };
+const LANGUAGES: Language[] = ['all', 'en', 'ja', 'ko'];
+const LANGUAGE_FLAGS: Record<Language, string> = { all: '🌐', en: '🇺🇸', ja: '🇯🇵', ko: '🇰🇷' };
 
 /** Direction cycle order */
 const DIRECTIONS: DirectionMode[] = ['ltr', 'rtl', 'vertical'];

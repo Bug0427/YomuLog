@@ -11,6 +11,7 @@ import { getFavorites, BookmarkedManga } from './favoritesService';
 import { getAllChapterProgress, getMangaProgress } from './readingProgress';
 import { fetchMangaList, Manga, fetchMangaById } from './mangaAPI';
 import { GENRE_TAGS, GenreTag } from '../utils/filters';
+import type { Language } from './preferencesService';
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -253,7 +254,7 @@ export async function computeGenreWeights(): Promise<GenreWeight[]> {
  *
  * @param limit Max number of manga to return (default 10).
  */
-export async function getPersonalisedRecommendations(limit = 10): Promise<Manga[]> {
+export async function getPersonalisedRecommendations(limit = 10, language?: Language): Promise<Manga[]> {
   const weights = await computeGenreWeights();
 
   // Pick top 3 positively-weighted genres
@@ -274,7 +275,7 @@ export async function getPersonalisedRecommendations(limit = 10): Promise<Manga[
 
   if (tagIds.length === 0) {
     // Ultimate fallback: popular manga
-    return fetchMangaList({ limit, order: { followedCount: 'desc' } });
+    return fetchMangaList({ limit, order: { followedCount: 'desc' }, originalLanguage: language && language !== 'all' ? [language] : undefined });
   }
 
   // Get already-voted manga IDs to exclude
@@ -286,6 +287,7 @@ export async function getPersonalisedRecommendations(limit = 10): Promise<Manga[
       limit: limit + excludeIds.size,
       includedTags: tagIds,
       order: { rating: 'desc' },
+      originalLanguage: language && language !== 'all' ? [language] : undefined,
     });
 
     return results

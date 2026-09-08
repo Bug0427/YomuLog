@@ -14,6 +14,7 @@ import { colors, spacing } from '../../styles/tokens';
 import { fetchMangaList, Manga } from '../../services/mangaAPI';
 import { GENRE_TAG_IDS, GenreTag } from '../../utils/filters';
 import { getPersonalisedRecommendations } from '../../services/metadataClassification';
+import { getLanguage } from '../../services/preferencesService';
 import { useTheme, type ThemeColors } from '../../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MascotLoader from '../../components/general/MascotLoader';
@@ -134,6 +135,9 @@ export default function HomeScreen() {
       setFailedSliders(new Set());
     }
     try {
+      // Resolve language preference once per run (D-1 A2: 'all' → no filter)
+      const lang = await getLanguage();
+      const originalLanguage = lang === 'all' ? undefined : [lang];
       // Fetch sliders in batches of 3 with 350ms delay — MangaDex allows ~5 req/s
       const map: SliderDataMap = {};
       // P-2: raw Manga[] per rail for the cache — SliderItem[] can't be
@@ -146,14 +150,14 @@ export default function HomeScreen() {
         try {
           let result: Manga[] = [];
           if (config.type === 'order') {
-            result = await fetchMangaList({ limit: 10, order: config.order });
+            result = await fetchMangaList({ limit: 10, order: config.order, originalLanguage });
           } else if (config.type === 'genre') {
             const tagId = GENRE_TAG_IDS[config.genre];
             if (tagId) {
-              result = await fetchMangaList({ limit: 10, includedTags: [tagId] });
+              result = await fetchMangaList({ limit: 10, includedTags: [tagId], originalLanguage });
             }
           } else if (config.type === 'personalised') {
-            result = await getPersonalisedRecommendations(10);
+            result = await getPersonalisedRecommendations(10, lang);
           }
           if (result.length) {
             rawMap[config.title] = result;
@@ -169,7 +173,7 @@ export default function HomeScreen() {
       setFailedSliders(failed);
       setUsingCachedData(false);
       // Cache raw Manga[] for offline/SWR fallback (see rawMap note above)
-      AsyncStorage.setItem('@YomuLog:cache:homeSliders', JSON.stringify({
+      AsyncStorage.setItem(`@YomuLog:cache:homeSliders:${lang}`, JSON.stringify({
         data: rawMap, timestamp: Date.now(),
       })).catch(() => {});
     } catch (e) {
@@ -207,8 +211,9 @@ export default function HomeScreen() {
     useCallback(() => {
       let cancelled = false;
       (async () => {
+        const lang = await getLanguage();
         const cached = await readCachedData<Record<string, Manga[]>>(
-          '@YomuLog:cache:homeSliders',
+          `@YomuLog:cache:homeSliders:${lang}`,
           5 * 60_000,
         );
         if (cancelled) return;
@@ -240,16 +245,18 @@ export default function HomeScreen() {
   // ── Retry a single failed slider ────────────────────────────────────
   const retrySlider = useCallback(async (config: SliderConfig) => {
     try {
+      const lang = await getLanguage();
+      const originalLanguage = lang === 'all' ? undefined : [lang];
       let result: Manga[] = [];
       if (config.type === 'order') {
-        result = await fetchMangaList({ limit: 10, order: config.order });
+        result = await fetchMangaList({ limit: 10, order: config.order, originalLanguage });
       } else if (config.type === 'genre') {
         const tagId = GENRE_TAG_IDS[config.genre];
         if (tagId) {
-          result = await fetchMangaList({ limit: 10, includedTags: [tagId] });
+          result = await fetchMangaList({ limit: 10, includedTags: [tagId], originalLanguage });
         }
       } else if (config.type === 'personalised') {
-        result = await getPersonalisedRecommendations(10);
+        result = await getPersonalisedRecommendations(10, lang);
       }
       if (result.length) {
         setSliderDataMap((prev) => ({
