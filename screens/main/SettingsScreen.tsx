@@ -11,6 +11,8 @@ import log from '../../services/logger';
 import ChangeLoginModal from '../../components/admin/ChangeLoginModal';
 import PremiumUpgradeModal from '../../components/layout/PremiumUpgradeModal';
 import { GeneralStyles, SettingButtonStyles } from '../../styles/global';
+import GridItem from '../../components/settings/GridItem';
+import SyncGridItem from '../../components/settings/SyncGridItem';
 import { SecurityLevel, verifyUser } from '../../services/feedbackRepo';
 import {
   getSyncState,
@@ -51,80 +53,6 @@ const DIRECTIONS: DirectionMode[] = ['ltr', 'rtl', 'vertical'];
  * (e.g. set to 'false' to also hide it in dev).
  */
 const DEV_TOOLS_ENABLED = __DEV__ && process.env.EXPO_PUBLIC_DEV_TOOLS !== 'false';
-
-const GridItem = ({ label, children, onPress }: { label: string; children?: React.ReactNode; onPress?: () => void }) => {
-  const { colors: theme } = useTheme();
-  return (
-    <View style={SettingButtonStyles.cell}>
-      <Pressable style={[SettingButtonStyles.button, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={onPress} hitSlop={10}>
-        {children}
-      </Pressable>
-      <Text style={[SettingButtonStyles.cellLabel, { color: theme.textSecondary }]}>{label}</Text>
-    </View>
-  );
-};
-
-/** Larger grid item for the sync section — spans full width, theme-aware */
-const SyncGridItem = ({
-  label,
-  subtitle,
-  children,
-  onPress,
-  bg,
-  borderColor,
-  iconBg,
-  textColor,
-  subColor,
-}: {
-  label: string;
-  subtitle?: string;
-  children?: React.ReactNode;
-  onPress?: () => void;
-  bg: string;
-  borderColor: string;
-  iconBg: string;
-  textColor: string;
-  subColor: string;
-}) => {
-  return (
-    <View style={{
-      width: '100%',
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: spacing.p12,
-      paddingHorizontal: spacing.p12,
-      marginBottom: 8,
-      backgroundColor: bg,
-      borderRadius: 12,
-      borderWidth: 2,
-      borderColor: borderColor,
-    }}>
-      <Pressable
-        style={{
-          width: 56,
-          height: 56,
-          borderRadius: 12,
-          backgroundColor: iconBg,
-          borderWidth: 3,
-          borderColor: borderColor,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 14,
-        }}
-        onPress={onPress}
-        hitSlop={10}
-      >
-        {children}
-      </Pressable>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: textColor }}>{label}</Text>
-        {subtitle ? (
-          <Text style={{ fontSize: 12, color: subColor, marginTop: 2 }}>{subtitle}</Text>
-        ) : null}
-      </View>
-    </View>
-  );
-};
 
 export default function SettingsScreen() {
   const { mode: themeMode, cycleTheme, colors: theme } = useTheme();
