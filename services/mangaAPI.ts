@@ -107,7 +107,7 @@ export async function fetchTags(force?: boolean): Promise<MangaTag[]> {
 
 export function getCachedTags(): MangaTag[] { return tagCache ?? []; }
 
-export type MangaListParams = { limit?: number; offset?: number; title?: string; includedTags?: string[]; excludedTags?: string[]; status?: string | string[]; contentRating?: string[]; order?: Record<string, string>; };
+export type MangaListParams = { limit?: number; offset?: number; title?: string; includedTags?: string[]; excludedTags?: string[]; status?: string | string[]; contentRating?: string[]; originalLanguage?: string[]; order?: Record<string, string>; };
 
 export async function fetchMangaList(params: MangaListParams = {}): Promise<Manga[]> {
   const query = new URLSearchParams();
@@ -123,6 +123,7 @@ export async function fetchMangaList(params: MangaListParams = {}): Promise<Mang
   if (params.excludedTags?.length) { params.excludedTags.forEach((id) => query.append('excludedTags[]', id)); }
   if (params.contentRating?.length) { params.contentRating.forEach((r) => query.append('contentRating[]', r)); }
   else { query.append('contentRating[]', 'safe'); query.append('contentRating[]', 'suggestive'); query.append('contentRating[]', 'erotica'); }
+  if (params.originalLanguage?.length) { params.originalLanguage.forEach((l) => query.append('originalLanguage[]', l)); }
   if (params.order) { Object.entries(params.order).forEach(([k, v]) => query.set(`order[${k}]`, v)); }
   try {
     const res = await fetch(resolveMangaDexUrl(`/manga?${query.toString()}`));
@@ -292,7 +293,7 @@ export async function getMangaFeed(
 
 // ─── Similar manga / recommendations ──────────────────────────────
 
-export async function fetchSimilarManga(mangaId: string, limit = 10): Promise<SimilarManga[]> {
+export async function fetchSimilarManga(mangaId: string, limit = 10, language?: string): Promise<SimilarManga[]> {
   try {
     // Use the MangaDex relation endpoint for "related" manga
     const tagIds = await fetchTags();
@@ -311,6 +312,7 @@ export async function fetchSimilarManga(mangaId: string, limit = 10): Promise<Si
       includedTags,
       limit,
       order: { followedCount: 'desc' },
+      originalLanguage: language ? [language] : undefined,
     });
 
     return results

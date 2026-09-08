@@ -35,7 +35,7 @@ export async function syncPreferencesReal(userId: string): Promise<void> {
 
   const { setLanguage, setAlertsOn, setAISearchOn, setDirectionMode } = await import('../preferencesService');
   await Promise.all([
-    setLanguage(data.language as 'en' | 'ja' | 'ko'),
+    setLanguage(data.language as 'all' | 'en' | 'ja' | 'ko'),
     setAlertsOn(data.alerts_on),
     setAISearchOn(data.ai_search_on),
     setDirectionMode(data.direction_mode as 'ltr' | 'rtl' | 'vertical'),
@@ -53,7 +53,7 @@ export async function syncPreferencesFallback(): Promise<void> {
 export async function applyCloudPrefs(cloudPrefs: any): Promise<void> {
   const { setLanguage, setAlertsOn, setAISearchOn, setDirectionMode } = await import('../preferencesService');
   await Promise.all([
-    setLanguage(cloudPrefs.language as 'en' | 'ja' | 'ko'),
+    setLanguage(cloudPrefs.language as 'all' | 'en' | 'ja' | 'ko'),
     setAlertsOn(cloudPrefs.alerts_on),
     setAISearchOn(cloudPrefs.ai_search_on),
     setDirectionMode(cloudPrefs.direction_mode as 'ltr' | 'rtl' | 'vertical'),
