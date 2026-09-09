@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/navigation';
 import type { ImageRequireSource } from 'react-native';
 import { FeedbackStyles, GeneralStyles } from '../../styles/global';
+import { spacing } from '../../styles/tokens';
 import { queryFirst, runAsync, getUserByUsername, verifyUser, type UserAuthRow } from '../../services/feedbackRepo';
 import { Ionicons } from '@expo/vector-icons';
 import { profileIcons } from '../../data/profileIcons';
@@ -416,13 +417,13 @@ export default function UserAccount() {
             <Pressable
             accessibilityRole="button"
             onPress={() => logout(navigation as unknown as Parameters<typeof logout>[0])}
-            style={[FeedbackStyles.item, { marginTop: 20, paddingHorizontal: 140 }]}
+            style={[FeedbackStyles.item, { marginTop: spacing.p20, alignSelf: 'center', paddingHorizontal: spacing.p24 }]}
             >
             <Text style={FeedbackStyles.itemText}>Log Out</Text>
             </Pressable>
 
             {/* Delete account */}
-            <Pressable accessibilityRole="button" onPress={handleDeleteAccount} style={[FeedbackStyles.item, { marginTop: 20, paddingHorizontal: 120  }]}> 
+            <Pressable accessibilityRole="button" onPress={handleDeleteAccount} style={[FeedbackStyles.item, { marginTop: spacing.p20, alignSelf: 'center', paddingHorizontal: spacing.p24 }]}> 
                 <Text style={FeedbackStyles.itemText}>Delete account</Text>
             </Pressable>
 
@@ -471,7 +472,7 @@ export default function UserAccount() {
                     <Pressable onPress={() => setShowDeleteConfirm(false)} style={[FeedbackStyles.item, { paddingHorizontal: 16 }]}>
                     <Text style={FeedbackStyles.itemText}>Cancel</Text>
                     </Pressable>
-                    <Pressable onPress={() => deleteAccount(accountId, navigation as unknown as Parameters<typeof deleteAccount>[1], setError, setShowDeleteConfirm)} style={[FeedbackStyles.item, { paddingHorizontal: 16, marginRight:60 }]}>
+                    <Pressable onPress={() => deleteAccount(accountId, navigation as unknown as Parameters<typeof deleteAccount>[1], setError, setShowDeleteConfirm)} style={[FeedbackStyles.item, { paddingHorizontal: 16 }]}>
                     <Text style={[FeedbackStyles.itemText]}>Delete</Text>
                     </Pressable>
                 </View>

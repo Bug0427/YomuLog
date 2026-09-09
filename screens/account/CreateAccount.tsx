@@ -207,7 +207,7 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
                     if (isSubmitting) return;
                     onSubmit();
                 }}
-                style={[SubmitButtonStyles.item, { marginTop: 16, width: 120, alignSelf: 'center', opacity: isSubmitting ? 0.6 : 1 }]}
+                style={[SubmitButtonStyles.item, { marginTop: 16, minWidth: 120, opacity: isSubmitting ? 0.6 : 1 }]}
                 >
                 <Text style={[FeedbackStyles.itemText, { color: theme.textPrimary }]}>Submit</Text>
                 </Pressable>
@@ -231,7 +231,7 @@ const REGULAR_LVL: number = (SecurityLevel as any)?.Regular ?? 3;
 
         {/* Exit button at bottom */}
         <View style={{ alignItems: 'center', marginVertical: 16 }}>
-            <Pressable accessibilityRole="button" onPress={exit} style={[SubmitButtonStyles.item, { width: 120, marginBottom: 40 }]}>
+            <Pressable accessibilityRole="button" onPress={exit} style={[SubmitButtonStyles.item, { minWidth: 120, marginBottom: 40 }]}>
             <Text style={[FeedbackStyles.itemText, { color: theme.textPrimary }]}>Exit</Text>
             </Pressable>
         </View>
