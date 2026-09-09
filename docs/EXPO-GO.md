@@ -1,10 +1,10 @@
 # Running YomuLog in Expo Go (quick-start)
 
-YomuLog is an Expo (SDK 54) React Native app. The fastest way to run it on a
+YomuLog is an Expo (SDK 57) React Native app. The fastest way to run it on a
 physical device is the **Expo Go** app. This guide covers the dev-server flow
 (`npx expo start`) that Expo Go connects to.
 
-> Verified 2026-08-11: the SDK 54 dev server serves a valid manifest and a
+> Verified 2026-08-11 (SDK 54 era): the dev server serves a valid manifest and a
 > bundle for both iOS and Android (`expo/AppEntry.js` → `App`, 0 missing-module
 > errors). If you hit "Expo Go won't load the application", follow the steps
 > below — the usual causes are an SDK mismatch or the app running with no
@@ -16,7 +16,7 @@ physical device is the **Expo Go** app. This guide covers the dev-server flow
 - **Expo Go** app installed on your phone:
   - iOS: App Store → "Expo Go"
   - Android: Google Play → "Expo Go"
-  - Use a version that matches **SDK 54** (the app's `expo` dependency version).
+  - Use a version that matches **SDK 57** (the app's `expo` dependency version).
 - Phone and computer on the **same Wi-Fi network** (for the default LAN mode).
 
 ## Quick start
@@ -24,7 +24,7 @@ physical device is the **Expo Go** app. This guide covers the dev-server flow
 ```bash
 git clone https://github.com/Bug0427/YomuLog.git
 cd YomuLog
-npm install              # installs dependencies (incl. Expo SDK 54)
+npm install              # installs dependencies (incl. Expo SDK 57)
 npx expo start           # starts the dev server + Metro bundler
 ```
 
@@ -75,7 +75,7 @@ up env changes on a running server.
 
 | Symptom | Fix |
 |---|---|
-| Expo Go shows "Something went wrong" / won't load | Confirm your Expo Go supports **SDK 54**; update Expo Go. |
+| Expo Go shows "Something went wrong" / won't load | Confirm your Expo Go supports **SDK 57**; update Expo Go. |
 | Bundling takes forever / hangs | First bundle is slow (30–60 s); wait. If it never finishes, `Ctrl+C` and run `npx expo start --clear` (clears the Metro cache). |
 | Device can't reach the dev server | Same Wi-Fi? Try `npx expo start --tunnel`. |
 | App loads but data is missing | Local-only mode — see "What runs without env vars". |
