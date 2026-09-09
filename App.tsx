@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { View, StyleSheet, useWindowDimensions, Platform, StatusBar } from 'react-native';
+import { View, StyleSheet, useWindowDimensions, Platform, StatusBar, Text } from 'react-native';
 import AppNavigator from './navigation/AppNavigator';
 import { initDb } from './services/feedbackRepo';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -12,6 +12,19 @@ import SyncStatusBanner from './components/layout/SyncStatusBanner';
 
 /** Maximum width for desktop browsers to prevent stretching on ultrawide screens */
 const WEB_MAX_WIDTH = 1200;
+
+/**
+ * Global text-scale clamp (a11y). When the OS "Large" font/zoom setting is
+ * active, RN scales every fixed-px fontSize with no upper bound, crushing
+ * fixed-px layouts and producing the owner-reported "everything looks way too
+ * big". Cap the multiplier so text stays readable but layouts stay intact.
+ * Applied at module scope → effective for every <Text> in the app at boot.
+ */
+const textDefaults = Text as unknown as { defaultProps?: { maxFontSizeMultiplier?: number } };
+textDefaults.defaultProps = {
+  ...(textDefaults.defaultProps ?? {}),
+  maxFontSizeMultiplier: 1.3,
+};
 
 function StatusBarTheme() {
   const { mode, colors } = useTheme();
