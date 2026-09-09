@@ -160,8 +160,8 @@ const FeedbackStyles = StyleSheet.create({
 const SubmitButtonStyles = StyleSheet.create({
     item: {
         ...ux.cellItem, ...u.rowCenter,
-        paddingVertical: 14, justifyContent: 'center',
-        marginLeft: 130, marginRight: 130,
+        paddingVertical: 14, paddingHorizontal: spacing.p16,
+        justifyContent: 'center', alignSelf: 'center',
     },
 });
 

@@ -56,7 +56,7 @@ export default function ForgotCredentials() {
           </Text>
           <Pressable
             onPress={() => navigation.goBack()}
-            style={[SubmitButtonStyles.item, { width: 140 }]}
+            style={[SubmitButtonStyles.item, { minWidth: 140 }]}
           >
             <Text style={[FeedbackStyles.itemText, { color: theme.textPrimary }]}>Back to Login</Text>
           </Pressable>
@@ -103,7 +103,7 @@ export default function ForgotCredentials() {
             <Pressable
               onPress={handleReset}
               disabled={loading}
-              style={[SubmitButtonStyles.item, { marginTop: 16, width: 160, alignSelf: 'center', opacity: loading ? 0.6 : 1 }]}
+              style={[SubmitButtonStyles.item, { marginTop: 16, minWidth: 160, opacity: loading ? 0.6 : 1 }]}
             >
               <Text style={[FeedbackStyles.itemText, { color: theme.textPrimary }]}>
                 {loading ? 'Sending...' : 'Send Reset Link'}

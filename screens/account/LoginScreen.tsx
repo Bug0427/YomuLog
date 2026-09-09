@@ -152,7 +152,7 @@ const formContent = (
             }
             onSubmit();
             }}
-            style={[SubmitButtonStyles.item, { marginTop: 16, width: 120, alignSelf: 'center' }]}
+            style={[SubmitButtonStyles.item, { marginTop: 16, minWidth: 120 }]}
             >
             <Text style={[FeedbackStyles.itemText, { color: theme.textPrimary }]}>Submit</Text>
             </Pressable>
@@ -189,7 +189,7 @@ const formContent = (
 
     {/* Exit button at bottom */}
     <View style={{ alignItems: 'center', marginVertical: 16 }}>
-        <Pressable accessibilityRole="button" onPress={exit} style={[SubmitButtonStyles.item, { width: 120, marginBottom: 40 }]}>
+        <Pressable accessibilityRole="button" onPress={exit} style={[SubmitButtonStyles.item, { minWidth: 120, marginBottom: 40 }]}>
         <Text style={[FeedbackStyles.itemText, { color: theme.textPrimary }]}>Exit</Text>
         </Pressable>
     </View>
