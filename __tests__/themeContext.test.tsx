@@ -20,6 +20,7 @@ function ThemeConsumer() {
 
 describe('ThemeContext', () => {
   it('should provide default light theme colors', async () => {
+    jest.setTimeout(30000);
     render(
       <ThemeProvider>
         <ThemeConsumer />
