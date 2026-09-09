@@ -4,7 +4,11 @@
     "slug": "YomuLog",
     "version": "1.0.0",
     "orientation": "portrait",
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "icon": "./assets/logo.png",
     "owner": "bug0427",
     "jsEngine": "hermes",
@@ -18,7 +22,9 @@
       "fallbackToCacheTimeout": 0,
       "url": "https://u.expo.dev/YOMULOG_PROJECT_ID"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yomulog.app",
@@ -35,14 +41,19 @@
         "backgroundColor": "#AFA6DD"
       },
       "package": "com.yomulog.app",
-      "permissions": ["INTERNET", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]
+      "permissions": [
+        "INTERNET",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/logo.png"
     },
     "plugins": [
       "expo-sqlite",
-      "expo-secure-store"
+      "expo-secure-store",
+      "@stripe/stripe-react-native"
     ],
     "extra": {
       "eas": {
