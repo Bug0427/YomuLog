@@ -59,7 +59,7 @@ npx expo start
 ```
 
 ### Running in Expo Go (dev-server flow)
-Scan the QR code printed by `npx expo start` with the **Expo Go** app (SDK 54).
+Scan the QR code printed by `npx expo start` with the **Expo Go** app (SDK 57).
 Full quick-start guide, tunnel mode for physical devices off-LAN
 (`npx expo start --tunnel`), and troubleshooting:
 **[docs/EXPO-GO.md](docs/EXPO-GO.md)**.
