@@ -26,18 +26,22 @@ CREATE TABLE IF NOT EXISTS user_manga_tags (
 -- ─── RLS for user_collections ───────────────────────────────────────
 ALTER TABLE user_collections ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can read own collections" ON user_collections;
 CREATE POLICY "Users can read own collections"
   ON user_collections FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own collections" ON user_collections;
 CREATE POLICY "Users can insert own collections"
   ON user_collections FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own collections" ON user_collections;
 CREATE POLICY "Users can update own collections"
   ON user_collections FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own collections" ON user_collections;
 CREATE POLICY "Users can delete own collections"
   ON user_collections FOR DELETE
   USING (auth.uid() = user_id);
@@ -45,23 +49,27 @@ CREATE POLICY "Users can delete own collections"
 -- ─── RLS for user_manga_tags ────────────────────────────────────────
 ALTER TABLE user_manga_tags ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can read own manga tags" ON user_manga_tags;
 CREATE POLICY "Users can read own manga tags"
   ON user_manga_tags FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own manga tags" ON user_manga_tags;
 CREATE POLICY "Users can insert own manga tags"
   ON user_manga_tags FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own manga tags" ON user_manga_tags;
 CREATE POLICY "Users can update own manga tags"
   ON user_manga_tags FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own manga tags" ON user_manga_tags;
 CREATE POLICY "Users can delete own manga tags"
   ON user_manga_tags FOR DELETE
   USING (auth.uid() = user_id);
 
 -- ─── Indexes ────────────────────────────────────────────────────────
-CREATE INDEX idx_collections_user ON user_collections(user_id);
-CREATE INDEX idx_manga_tags_user ON user_manga_tags(user_id);
-CREATE INDEX idx_manga_tags_manga ON user_manga_tags(user_id, manga_id);
+CREATE INDEX IF NOT EXISTS idx_collections_user ON user_collections(user_id);
+CREATE INDEX IF NOT EXISTS idx_manga_tags_user ON user_manga_tags(user_id);
+CREATE INDEX IF NOT EXISTS idx_manga_tags_manga ON user_manga_tags(user_id, manga_id);

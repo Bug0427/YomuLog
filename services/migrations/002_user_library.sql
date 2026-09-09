@@ -27,18 +27,22 @@ CREATE INDEX IF NOT EXISTS idx_user_library_user_status
 -- RLS: users can only access their own rows
 ALTER TABLE user_library ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can read own library" ON user_library;
 CREATE POLICY "Users can read own library"
   ON user_library FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own library" ON user_library;
 CREATE POLICY "Users can insert own library"
   ON user_library FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own library" ON user_library;
 CREATE POLICY "Users can update own library"
   ON user_library FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own library" ON user_library;
 CREATE POLICY "Users can delete own library"
   ON user_library FOR DELETE
   USING (auth.uid() = user_id);

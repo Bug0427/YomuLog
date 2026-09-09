@@ -29,19 +29,23 @@ CREATE INDEX IF NOT EXISTS idx_user_subscriptions_active
 -- RLS: users can only read their own subscription
 ALTER TABLE user_subscriptions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can read own subscription" ON user_subscriptions;
 CREATE POLICY "Users can read own subscription"
   ON user_subscriptions FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Only the service role (Stripe webhook) can insert/update/delete
+DROP POLICY IF EXISTS "Service can insert subscriptions" ON user_subscriptions;
 CREATE POLICY "Service can insert subscriptions"
   ON user_subscriptions FOR INSERT
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service can update subscriptions" ON user_subscriptions;
 CREATE POLICY "Service can update subscriptions"
   ON user_subscriptions FOR UPDATE
   USING (true);
 
+DROP POLICY IF EXISTS "Service can delete subscriptions" ON user_subscriptions;
 CREATE POLICY "Service can delete subscriptions"
   ON user_subscriptions FOR DELETE
   USING (true);

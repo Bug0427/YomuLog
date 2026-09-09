@@ -1,13 +1,15 @@
 -- services/migrations/007_stripe_edge_functions.sql
--- Reference for Supabase Edge Functions needed for Stripe integration.
--- These are NOT SQL migrations — they are Deno/TypeScript edge functions
--- deployed to Supabase via `supabase functions deploy`.
---
--- Files to create:
---   supabase/functions/stripe-checkout/index.ts
---   supabase/functions/stripe-portal/index.ts
---   supabase/functions/stripe-cancel/index.ts
---   supabase/functions/stripe-webhook/index.ts
+-- Reference index for the Stripe Supabase Edge Functions.
+-- NOTE: checkout is a Stripe-hosted payment link (no stripe-checkout function
+-- exists or is needed — the app opens PREMIUM_CHECKOUT_URL directly). The
+-- deployable functions live in supabase/functions/ and are deployed via
+-- `supabase functions deploy <name> --project-ref <project>`:
+--   supabase/functions/stripe-portal/index.ts   (Manage screen → portal URL)
+--   supabase/functions/stripe-cancel/index.ts   (Manage screen → cancel at period end)
+--   supabase/functions/stripe-webhook/index.ts  (Stripe → user_subscriptions entitlement)
+-- The pseudocode sketches below document the request/response shapes the app
+-- expects (services/stripeService.ts). They are NOT SQL — do not paste this
+-- file into the SQL Editor.
 --
 -- Required secrets (set via `supabase secrets set`):
 --   STRIPE_SECRET_KEY=sk_live_...
