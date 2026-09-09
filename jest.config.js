@@ -9,6 +9,9 @@ module.exports = {
   moduleNameMapper: {
     '^@react-native-async-storage/async-storage$':
       '@react-native-async-storage/async-storage/jest/async-storage-mock',
+    // RN 0.86 removed react-native/setup-env; @react-native/jest-preset still
+    // mocks it in setup.js. Point it at a local shim (see __mocks__/setup-env.js).
+    '^react-native/setup-env$': '<rootDir>/__mocks__/setup-env.js',
   },
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@react-native-async-storage/.*|react-native-screens|react-native-safe-area-context|react-native-gesture-handler|react-native-reanimated|react-native-svg|react-native-web|react-native-dropdown-picker|expo-file-system|expo-secure-store|expo-sqlite)',

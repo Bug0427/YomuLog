@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@expo/cli": "^0.24.20",
+    "@react-native/jest-preset": "0.86.1",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^12.5.0",
     "@types/jest": "^29.5.14",

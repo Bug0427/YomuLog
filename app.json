@@ -52,8 +52,7 @@
     },
     "plugins": [
       "expo-sqlite",
-      "expo-secure-store",
-      "@stripe/stripe-react-native"
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {
