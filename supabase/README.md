@@ -22,6 +22,18 @@ Open your project → **Settings → API**:
 
 ## 2. Run the SQL scripts
 
+> ⚠️ **The authoritative order is `supabase/BOOTSTRAP.md`** — it lists the 13
+> files in order, proves they are re-run-safe, and covers the Edge Function
+> secrets. Easiest path: paste **`supabase/bootstrap-one-paste.sql`** into the
+> SQL Editor once (generated from the same ordered list). The list below is the
+> script-by-script summary; where the two disagree, BOOTSTRAP.md wins.
+>
+> §3's "Copy-paste DDL" is **historical**: it predates the migrations and its
+> column shapes differ from them (e.g. `user_subscriptions` uses `user_id` as PK
+> there, but the canonical table from `services/migrations/006` has an `id` PK
+> plus `user_id UNIQUE`, a `plan` CHECK and `stripe_event_created_at`). Do not
+> paste it — run the migrations instead.
+
 All scripts are idempotent (safe to re-run). Open **SQL Editor**, paste, Run:
 
 1. **`supabase/seed-test-users.sql`** — creates the three auth test users
