@@ -143,11 +143,48 @@ export function mergeLWW<T extends Record<string, unknown>>(
 // ─── Supabase-backed scope sync ──────────────────────────────────────
 
 export async function syncFavoritesReal(userId: string): Promise<void> {
-  // --- Push local → Supabase ---
+  // --- Pull Supabase → local FIRST ---
+  // True LWW requires reading the cloud row BEFORE any push: previously we
+  // upserted every local row with updated_at: isoNow() first, so by pull time
+  // cloud.bookmarked_at === local.bookmarkedAt and the > guard could never see
+  // a genuinely newer remote change — multi-device cloud sync silently lost it.
+  const { data, error } = await supabase
+    .from('user_library')
+    .select('*')
+    .eq('user_id', userId)
+    .order('bookmarked_at', { ascending: false });
+  if (error) throw new Error(`Favorites pull: ${error.message}`);
+  const cloud = data ?? [];
+
   const raw = await AsyncStorage.getItem(KEYS.LOCAL_FAVORITES);
   const local: BookmarkedManga[] = raw ? JSON.parse(raw) : [];
-  if (local.length > 0) {
-    const rows = local.map((f) => ({
+
+  // --- LWW merge into local (cloud adopted only when strictly newer; tie → local) ---
+  const localMap = new Map(local.map((f) => [f.mangaId, f]));
+  for (const cloudRow of cloud) {
+    const existing = localMap.get(cloudRow.manga_id);
+    if (!existing || new Date(cloudRow.bookmarked_at) > new Date(existing.bookmarkedAt)) {
+      localMap.set(cloudRow.manga_id, {
+        mangaId: cloudRow.manga_id,
+        mangaTitle: cloudRow.manga_title,
+        mangaImage: cloudRow.manga_image,
+        genres: cloudRow.genres,
+        bookmarkedAt: cloudRow.bookmarked_at,
+        readingStatus: cloudRow.reading_status,
+      });
+    }
+  }
+  await AsyncStorage.setItem(KEYS.LOCAL_FAVORITES, JSON.stringify(Array.from(localMap.values())));
+
+  // --- Conditional push: only local rows that are strictly newer than the cloud
+  //     copy, or absent in the cloud (union). Never re-push a row the cloud won. ---
+  const cloudMap = new Map(cloud.map((c) => [c.manga_id, c]));
+  const toPush = local.filter((f) => {
+    const cloudRow = cloudMap.get(f.mangaId);
+    return !cloudRow || new Date(f.bookmarkedAt) > new Date(cloudRow.bookmarked_at);
+  });
+  if (toPush.length > 0) {
+    const rows = toPush.map((f) => ({
       user_id: userId,
       manga_id: f.mangaId,
       manga_title: f.mangaTitle,
@@ -157,47 +194,59 @@ export async function syncFavoritesReal(userId: string): Promise<void> {
       reading_status: f.readingStatus,
       updated_at: isoNow(),
     }));
-    const { error } = await supabase
+    const { error: pushErr } = await supabase
       .from('user_library')
       .upsert(rows, { onConflict: 'user_id,manga_id' });
-    if (error) throw new Error(`Favorites push: ${error.message}`);
+    if (pushErr) throw new Error(`Favorites push: ${pushErr.message}`);
   }
-
-  // --- Pull Supabase → local (LWW merge) ---
-  const { data, error } = await supabase
-    .from('user_library')
-    .select('*')
-    .eq('user_id', userId)
-    .order('bookmarked_at', { ascending: false });
-  if (error) throw new Error(`Favorites pull: ${error.message}`);
-  if (!data || data.length === 0) return;
-
-  const localMap = new Map(local.map((f) => [f.mangaId, f]));
-  for (const cloud of data) {
-    const existing = localMap.get(cloud.manga_id);
-    if (!existing || new Date(cloud.bookmarked_at) > new Date(existing.bookmarkedAt)) {
-      localMap.set(cloud.manga_id, {
-        mangaId: cloud.manga_id,
-        mangaTitle: cloud.manga_title,
-        mangaImage: cloud.manga_image,
-        genres: cloud.genres,
-        bookmarkedAt: cloud.bookmarked_at,
-        readingStatus: cloud.reading_status,
-      });
-    }
-  }
-  await AsyncStorage.setItem(KEYS.LOCAL_FAVORITES, JSON.stringify(Array.from(localMap.values())));
 }
 
 export async function syncProgressReal(userId: string): Promise<void> {
-  // --- Push local → Supabase ---
+  // --- Pull Supabase → local FIRST (true LWW, same rationale as favorites) ---
+  const { data, error } = await supabase
+    .from('reading_progress')
+    .select('*')
+    .eq('user_id', userId)
+    .order('last_read_at', { ascending: false })
+    .limit(500);
+  if (error) throw new Error(`Progress pull: ${error.message}`);
+  const cloud = data ?? [];
+
   const raw = await AsyncStorage.getItem(KEYS.LOCAL_PROGRESS);
   const local: ChapterProgress[] = raw ? JSON.parse(raw) : [];
+
+  // --- LWW merge into local (cloud adopted only when strictly newer; tie → local) ---
+  const localMap = new Map(local.map((p) => [p.chapterId, p]));
+  for (const cloudRow of cloud) {
+    const existing = localMap.get(cloudRow.chapter_id);
+    if (!existing || new Date(cloudRow.last_read_at) > new Date(existing.lastReadAt)) {
+      localMap.set(cloudRow.chapter_id, {
+        chapterId: cloudRow.chapter_id,
+        mangaId: cloudRow.manga_id,
+        mangaTitle: cloudRow.manga_title,
+        mangaImage: cloudRow.manga_image,
+        chapterTitle: cloudRow.chapter_title,
+        chapterNumber: cloudRow.chapter_number,
+        scrollPercentage: cloudRow.scroll_percentage,
+        isRead: cloudRow.is_read,
+        lastReadAt: cloudRow.last_read_at,
+      });
+    }
+  }
+  await AsyncStorage.setItem(KEYS.LOCAL_PROGRESS, JSON.stringify(Array.from(localMap.values())));
+
+  // --- Conditional push: only local rows strictly newer than the cloud copy or
+  //     absent in the cloud (union). Never re-push a row the cloud won. ---
   // G-4: attach measured per-chapter reading seconds (real reading time) so
   // the server can SQL-aggregate hours/week from reading_progress.
-  const secondsByChapter = await getReadingSecondsByChapter();
-  if (local.length > 0) {
-    const rows = local.map((p) => ({
+  const cloudMap = new Map(cloud.map((c) => [c.chapter_id, c]));
+  const toPush = local.filter((p) => {
+    const cloudRow = cloudMap.get(p.chapterId);
+    return !cloudRow || new Date(p.lastReadAt) > new Date(cloudRow.last_read_at);
+  });
+  if (toPush.length > 0) {
+    const secondsByChapter = await getReadingSecondsByChapter();
+    const rows = toPush.map((p) => ({
       user_id: userId,
       chapter_id: p.chapterId,
       manga_id: p.mangaId,
@@ -210,48 +259,61 @@ export async function syncProgressReal(userId: string): Promise<void> {
       last_read_at: p.lastReadAt,
       seconds_read: secondsByChapter[p.chapterId] ?? 0,
     }));
-    const { error } = await supabase
+    const { error: pushErr } = await supabase
       .from('reading_progress')
       .upsert(rows, { onConflict: 'user_id,chapter_id' });
-    if (error) throw new Error(`Progress push: ${error.message}`);
+    if (pushErr) throw new Error(`Progress push: ${pushErr.message}`);
   }
-
-  // --- Pull Supabase → local ---
-  const { data, error } = await supabase
-    .from('reading_progress')
-    .select('*')
-    .eq('user_id', userId)
-    .order('last_read_at', { ascending: false })
-    .limit(500);
-  if (error) throw new Error(`Progress pull: ${error.message}`);
-  if (!data || data.length === 0) return;
-
-  const localMap = new Map(local.map((p) => [p.chapterId, p]));
-  for (const cloud of data) {
-    const existing = localMap.get(cloud.chapter_id);
-    if (!existing || new Date(cloud.last_read_at) > new Date(existing.lastReadAt)) {
-      localMap.set(cloud.chapter_id, {
-        chapterId: cloud.chapter_id,
-        mangaId: cloud.manga_id,
-        mangaTitle: cloud.manga_title,
-        mangaImage: cloud.manga_image,
-        chapterTitle: cloud.chapter_title,
-        chapterNumber: cloud.chapter_number,
-        scrollPercentage: cloud.scroll_percentage,
-        isRead: cloud.is_read,
-        lastReadAt: cloud.last_read_at,
-      });
-    }
-  }
-  await AsyncStorage.setItem(KEYS.LOCAL_PROGRESS, JSON.stringify(Array.from(localMap.values())));
 }
 
 export async function syncDownloadsReal(userId: string): Promise<void> {
-  // --- Push local → Supabase ---
+  // --- Pull Supabase → local FIRST (true LWW, same rationale as favorites) ---
+  const { data, error } = await supabase
+    .from('download_queue')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) throw new Error(`Downloads pull: ${error.message}`);
+  const cloud = data ?? [];
+
   const rawQ = await AsyncStorage.getItem(KEYS.LOCAL_DOWNLOAD_QUEUE);
   const queue: SyncPayloadDownloads['items'] = rawQ ? JSON.parse(rawQ) : [];
-  if (queue.length > 0) {
-    const rows = queue.map((d) => ({
+
+  // --- LWW merge into local (cloud adopted only when strictly newer; tie → local) ---
+  const localMap = new Map(queue.map((d: any) => [d.jobId, d]));
+  for (const cloudRow of cloud) {
+    const existing = localMap.get(cloudRow.job_id) as any;
+    if (!existing || new Date(cloudRow.updated_at) > new Date(existing.updatedAt || existing.createdAt || 0)) {
+      localMap.set(cloudRow.job_id, {
+        jobId: cloudRow.job_id,
+        chapterId: cloudRow.chapter_id,
+        mangaId: cloudRow.manga_id,
+        mangaTitle: cloudRow.manga_title,
+        chapterNumber: cloudRow.chapter_number,
+        chapterTitle: cloudRow.chapter_title,
+        status: cloudRow.status,
+        progress: cloudRow.progress,
+        totalPages: cloudRow.total_pages,
+        downloadedPages: cloudRow.downloaded_pages,
+        errorMessage: cloudRow.error_message,
+        localDir: cloudRow.local_dir,
+        createdAt: cloudRow.created_at,
+        retryCount: cloudRow.retry_count,
+      });
+    }
+  }
+  await AsyncStorage.setItem(KEYS.LOCAL_DOWNLOAD_QUEUE, JSON.stringify(Array.from(localMap.values())));
+
+  // --- Conditional push: only local rows strictly newer than the cloud copy or
+  //     absent in the cloud (union). Never re-push a row the cloud won. ---
+  const cloudMap = new Map(cloud.map((c: any) => [c.job_id, c]));
+  const toPush = queue.filter((d: any) => {
+    const cloudRow = cloudMap.get(d.jobId);
+    return !cloudRow || new Date(d.updatedAt || d.createdAt || 0) > new Date(cloudRow.updated_at);
+  });
+  if (toPush.length > 0) {
+    const rows = toPush.map((d) => ({
       user_id: userId,
       job_id: d.jobId,
       chapter_id: d.chapterId,
@@ -274,40 +336,6 @@ export async function syncDownloadsReal(userId: string): Promise<void> {
       .upsert(rows, { onConflict: 'user_id,job_id' });
     if (pushErr) throw new Error(`Downloads push: ${pushErr.message}`);
   }
-
-  // --- Pull Supabase → local ---
-  const { data, error } = await supabase
-    .from('download_queue')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(200);
-  if (error) throw new Error(`Downloads pull: ${error.message}`);
-  if (!data || data.length === 0) return;
-
-  const localMap = new Map(queue.map((d: any) => [d.jobId, d]));
-  for (const cloud of data) {
-    const existing = localMap.get(cloud.job_id) as any;
-    if (!existing || new Date(cloud.updated_at) > new Date(existing.updatedAt || existing.createdAt || 0)) {
-      localMap.set(cloud.job_id, {
-        jobId: cloud.job_id,
-        chapterId: cloud.chapter_id,
-        mangaId: cloud.manga_id,
-        mangaTitle: cloud.manga_title,
-        chapterNumber: cloud.chapter_number,
-        chapterTitle: cloud.chapter_title,
-        status: cloud.status,
-        progress: cloud.progress,
-        totalPages: cloud.total_pages,
-        downloadedPages: cloud.downloaded_pages,
-        errorMessage: cloud.error_message,
-        localDir: cloud.local_dir,
-        createdAt: cloud.created_at,
-        retryCount: cloud.retry_count,
-      });
-    }
-  }
-  await AsyncStorage.setItem(KEYS.LOCAL_DOWNLOAD_QUEUE, JSON.stringify(Array.from(localMap.values())));
 }
 
 // Preferences scope lives in cloudPrefs.ts (syncPreferencesReal / syncPreferencesFallback).

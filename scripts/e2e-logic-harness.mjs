@@ -421,8 +421,8 @@ setSuite('C.sync-real-scopes');
   await sync.syncFavoritesReal('user-1');
   let local = JSON.parse((await AS.getItem(K.LOCAL_FAVORITES)) || '[]');
   const byId = Object.fromEntries(local.map((x) => [x.mangaId, x]));
-  evidence('real favorites: newer cloud bookmarked_at does NOT survive the real path', true, 'push (onConflict upsert) overwrites the cloud row with the local row FIRST; by pull time cloud.bookmarked_at == local, the > guard keeps local, so a newer cloud record can never win on the real path. Fallback path (mergeLWW) is true LWW. Multi-device cloud-sync gap.');
-  assertEq('real favorites: equal-ts after push keeps local (shipped semantics)', byId['A'].mangaTitle, 'local-A-old');
+  assertEq('real favorites: newer cloud bookmarked_at wins (true LWW)', byId['A'].mangaTitle, 'cloud-A-new');
+  assertEq('real favorites: lost local A not re-pushed (no clobber)', __db.dump('user_library').find((r) => r.manga_id === 'A').manga_title, 'cloud-A-new');
   assertEq('real favorites: newer local kept', byId['B'].mangaTitle, 'local-B-new');
   assertEq('real favorites: local C pushed to cloud', __db.dump('user_library').some((r) => r.manga_id === 'C'), true);
   assertEq('real favorites: cloud D pulled to local', !!byId['D'], true);
@@ -440,8 +440,8 @@ setSuite('C.sync-real-scopes');
   await sync.syncProgressReal('user-1');
   local = JSON.parse((await AS.getItem(K.LOCAL_PROGRESS)) || '[]');
   const byCh = Object.fromEntries(local.map((x) => [x.chapterId, x]));
-  evidence('real progress: newer cloud last_read_at does NOT survive the real path', true, 'same push-first clobber as favorites — the LWW-intent comment at syncCore.ts does not hold for the real Supabase path; progress pull guard only ever sees post-push copies.');
-  assertEq('real progress: equal-ts after push keeps local (shipped semantics)', byCh['p1'].scrollPercentage, 20);
+  assertEq('real progress: newer cloud last_read_at wins (true LWW)', byCh['p1'].scrollPercentage, 88);
+  assertEq('real progress: lost local p1 not re-pushed (no clobber)', __db.dump('reading_progress').find((r) => r.chapter_id === 'p1').scroll_percentage, 88);
   assertEq('real progress: newer local last_read_at kept', byCh['p2'].scrollPercentage, 100);
 
   // downloads scope — the L291 guard (updated_at > local updatedAt || createdAt):
@@ -464,8 +464,8 @@ setSuite('C.sync-real-scopes');
   await sync.syncDownloadsReal('user-1');
   local = JSON.parse((await AS.getItem(K.LOCAL_DOWNLOAD_QUEUE)) || '[]');
   const byJob = Object.fromEntries(local.map((x) => [x.jobId, x]));
-  evidence('real downloads L291: newer cloud updated_at does NOT survive the real path', true, 'the syncCore.ts:291 guard IS timestamp-correct, but push (updated_at: isoNow()) rewrites the row before pull, so a genuinely newer cloud row (another device) is clobbered at push time. The guard is only reachable for cloud-only rows.');
-  assertEq('real downloads L291: equal-ts after push keeps local (shipped semantics)', byJob['q1'].status, 'failed');
+  assertEq('real downloads L291: newer cloud updated_at wins (true LWW)', byJob['q1'].status, 'completed');
+  assertEq('real downloads L291: lost local q1 not re-pushed (no clobber)', __db.dump('download_queue').find((r) => r.job_id === 'q1').status, 'completed');
   assertEq('real downloads L291: newer local updatedAt kept', byJob['q2'].status, 'failed');
   assertEq('real downloads L291: local createdAt fallback beats older cloud', byJob['q3'].status, 'completed');
   assertEq('real downloads L291: cloud-only row pulled', byJob['q4'] && byJob['q4'].status, 'completed');
@@ -657,7 +657,7 @@ for (const r of results) {
   if (r.suite !== lastSuite) { console.log('  ' + r.suite); lastSuite = r.suite; }
   console.log('  ' + (r.ok ? 'PASS' : 'FAIL') + '  ' + r.name + (r.ok ? '' : '  — ' + r.detail));
 }
-console.log('EVIDENCE-GAPS ' + evidenceCount + ' (documented LWW-intent gaps on the real sync path — expected FAILs) [' + PLATFORM + ']');
+console.log('EVIDENCE-GAPS ' + evidenceCount + (evidenceCount > 0 ? ' (documented LWW-intent gaps on the real sync path — expected FAILs)' : ' (documented LWW-intent gaps — all closed by the true-LWW real-path fix)') + ' [' + PLATFORM + ']');
 console.log('TOTAL ' + results.length + ' assertions, ' + failed.length + ' failed, ' + evidenceCount + ' evidence-gaps [' + PLATFORM + ']');
 process.exitCode = failed.length - evidenceCount;
 export {};
