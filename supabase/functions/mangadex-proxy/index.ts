@@ -7,8 +7,10 @@
 // mount prefix stripped from the path before forwarding (Vercel uses
 // /api/mangadex instead).
 //
-// Deploy:
-//   supabase functions deploy mangadex-proxy --project-ref <your-project>
+// Deploy (--no-verify-jwt is REQUIRED — the browser calls this with a bare
+// fetch() and no Authorization header, so platform JWT verification would 401
+// every proxied MangaDex request):
+//   supabase functions deploy mangadex-proxy --no-verify-jwt --project-ref <your-project>
 // Then set EXPO_PUBLIC_MANGADEX_PROXY_URL=
 // https://<project-ref>.supabase.co/functions/v1/mangadex-proxy
 // in the Expo web build env (see api/mangadex/README.md).

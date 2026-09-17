@@ -21,6 +21,11 @@
 //
 // Required secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, SUPABASE_URL,
 // SUPABASE_SERVICE_ROLE_KEY.
+//
+// Deploy (--no-verify-jwt is REQUIRED — the caller is Stripe, which sends a
+// Stripe-Signature header, never a Supabase JWT; requiring one would 401 every
+// entitlement write):
+//   supabase functions deploy stripe-webhook --no-verify-jwt --project-ref <your-project>
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
