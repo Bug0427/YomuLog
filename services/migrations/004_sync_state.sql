@@ -17,14 +17,17 @@ CREATE TABLE IF NOT EXISTS sync_state (
 -- RLS
 ALTER TABLE sync_state ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can read own sync state" ON sync_state;
 CREATE POLICY "Users can read own sync state"
   ON sync_state FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own sync state" ON sync_state;
 CREATE POLICY "Users can insert own sync state"
   ON sync_state FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own sync state" ON sync_state;
 CREATE POLICY "Users can update own sync state"
   ON sync_state FOR UPDATE
   USING (auth.uid() = user_id);

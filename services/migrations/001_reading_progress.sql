@@ -25,18 +25,22 @@ CREATE INDEX IF NOT EXISTS idx_reading_progress_user
 -- RLS: users can only access their own rows
 ALTER TABLE reading_progress ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can read own progress" ON reading_progress;
 CREATE POLICY "Users can read own progress"
   ON reading_progress FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own progress" ON reading_progress;
 CREATE POLICY "Users can insert own progress"
   ON reading_progress FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own progress" ON reading_progress;
 CREATE POLICY "Users can update own progress"
   ON reading_progress FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own progress" ON reading_progress;
 CREATE POLICY "Users can delete own progress"
   ON reading_progress FOR DELETE
   USING (auth.uid() = user_id);

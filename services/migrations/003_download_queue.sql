@@ -35,18 +35,22 @@ CREATE INDEX IF NOT EXISTS idx_download_queue_user_status
 -- RLS
 ALTER TABLE download_queue ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can read own downloads" ON download_queue;
 CREATE POLICY "Users can read own downloads"
   ON download_queue FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own downloads" ON download_queue;
 CREATE POLICY "Users can insert own downloads"
   ON download_queue FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own downloads" ON download_queue;
 CREATE POLICY "Users can update own downloads"
   ON download_queue FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own downloads" ON download_queue;
 CREATE POLICY "Users can delete own downloads"
   ON download_queue FOR DELETE
   USING (auth.uid() = user_id);
