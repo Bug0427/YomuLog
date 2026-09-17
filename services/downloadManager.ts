@@ -73,6 +73,23 @@ export class DownloadLimitError extends Error {
   }
 }
 
+/**
+ * Raised when a chapter download finishes with fewer pages than the server
+ * reported. Completeness is a gate, not a hint: a corrupt/empty download must
+ * never be recorded as completed (KPI-3 "completed without error or
+ * corruption"). A page-level failure is treated as a permanent failure on the
+ * first attempt — retrying the same failing pages cannot repair a corrupt
+ * chapter — while transient network errors keep the existing
+ * retry-to-MAX_RETRIES path. The user can still re-enqueue a failed job later
+ * (recovery path resets retryCount → status 'pending').
+ */
+export class DownloadIncompleteError extends Error {
+  constructor(written: number, expected: number) {
+    super(`Incomplete download: ${written}/${expected} pages written`);
+    this.name = 'DownloadIncompleteError';
+  }
+}
+
 // ─── Download reliability instrumentation (G-2, KPI 3) ──────────────
 //
 // Cumulative success/failure counters persisted in AsyncStorage so the
@@ -383,9 +400,15 @@ export async function processNextDownload(): Promise<boolean> {
       }
     }
 
-    // Ensure final progress is persisted
+    // Completeness is a gate, not a save hint: an incomplete download (fewer
+    // pages written than the server reported) is corrupt and must NOT be
+    // marked completed nor recorded in the downloaded-chapters index (KPI-3).
+    // Throw so the catch below sends the job down the failure path — it stays
+    // out of the free-tier cap as a finished download.
     if (downloaded === pageUrls.length) {
       await saveQueue(queue);
+    } else {
+      throw new DownloadIncompleteError(downloaded, pageUrls.length);
     }
 
     // 4. Mark as completed
@@ -424,10 +447,18 @@ export async function processNextDownload(): Promise<boolean> {
     job.localDir = `${baseDir}${job.mangaId}/${job.chapterId}/`;
     await saveQueue(queue);
 
-    // G-2: count only permanent failures (retries exhausted) as a failure —
-    // a retryable attempt that will be retried isn't a final outcome. Web
-    // downloads are simulated → excluded from the real counters.
-    if (!isWeb && job.retryCount >= MAX_RETRIES) {
+    // G-2: count only permanent failures as a failure — a retryable attempt
+    // that will be retried isn't a final outcome. Two permanent cases:
+    //  (a) retries exhausted (retryCount >= MAX_RETRIES, transient errors);
+    //  (b) an incomplete chapter download (DownloadIncompleteError): the
+    //      chapter is provably corrupt (fewer pages than the server
+    //      reported), retrying the same failing pages cannot repair it, so it
+    //      is counted as a real failure on the first attempt (KPI-3).
+    // Web downloads are simulated → excluded from the real counters.
+    if (
+      !isWeb &&
+      (job.retryCount >= MAX_RETRIES || err instanceof DownloadIncompleteError)
+    ) {
       await incrementReliability({ failed: 1 });
     }
     return false;
