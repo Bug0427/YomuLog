@@ -11,18 +11,26 @@
 -- expects (services/stripeService.ts). They are NOT SQL — do not paste this
 -- file into the SQL Editor.
 --
--- Required secrets (set via `supabase secrets set`):
---   STRIPE_SECRET_KEY=sk_live_...
---   STRIPE_WEBHOOK_SECRET=whsec_...
---   STRIPE_MONTHLY_PRICE_ID=price_...
---   STRIPE_YEARLY_PRICE_ID=price_...
+-- Required secrets (set via `supabase secrets set`) — exactly what the
+-- deployed functions read via Deno.env.get():
+--   STRIPE_SECRET_KEY=sk_live_...        all three functions (Stripe REST calls)
+--   STRIPE_WEBHOOK_SECRET=whsec_...      stripe-webhook only (signature check)
 --   SUPABASE_URL=https://<project-ref>.supabase.co
---   SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
+--   SUPABASE_SERVICE_ROLE_KEY=sb_secret_...  all three (PostgREST + Auth calls)
+-- The monthly/yearly prices are NOT read by any function: checkout is a Stripe
+-- hosted payment link (PREMIUM_CHECKOUT_URL in services/stripeService.ts) and
+-- the plan is derived from the price's lookup key on the subscription.
 --
 -- Environment variables in .env (client-side):
---   EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
 --   EXPO_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
---   EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
+--   EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon public key>
+--
+-- Authorization model (hardened after the PR #239 review):
+--   stripe-portal / stripe-cancel require the caller's Supabase access token
+--   (`Authorization: Bearer <access token>`); the JWT subject is verified with
+--   Supabase Auth and must match the `userId` in the body. They write only
+--   through the service role, and upsert_subscription is revoked from
+--   PUBLIC/anon/authenticated (migration 006).
 
 -- The edge function creates a Stripe Checkout Session for subscriptions
 -- and returns the client_secret for the React Native SDK.
