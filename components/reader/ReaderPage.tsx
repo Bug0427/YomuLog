@@ -1,7 +1,7 @@
 // components/reader/ReaderPage.tsx
 // Single manga page renderer (extracted from ReaderScreen — H-6 decomposition).
 // Uses the reader theme's background for the letterboxed page box.
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { SCREEN_W, SCREEN_H } from './pageConstants';
@@ -19,11 +19,9 @@ export const ReaderPage = React.memo(function ReaderPage({ uri, index, isActive,
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  useEffect(() => {
-    if (isActive && !loaded) {
-      Image.prefetch(uri).catch(() => {});
-    }
-  }, [isActive, uri, loaded]);
+  // F2(c): no Image.prefetch here — the screen-level prefetch (currentPage ±3,
+  // deduped in ReaderScreen) already covers every page that can become active;
+  // this duplicated every one of those fetches on activation.
 
   if (!isActive && !loaded) {
     return <View style={[styles.pagePlaceholder, { backgroundColor: bg }]} />;
