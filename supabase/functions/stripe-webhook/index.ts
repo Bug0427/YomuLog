@@ -6,10 +6,18 @@
 // customer.subscription.updated, customer.subscription.deleted,
 // invoice.payment_failed.
 //
-// Verifies the Stripe-Signature header (Web Crypto SubtleCrypto, no SDK),
-// resolves the Supabase user id (subscription metadata `supabase_user_id`,
-// falling back to customer email → auth admin lookup), and upserts
-// user_subscriptions via the migration-006 upsert_subscription RPC.
+// Verifies the Stripe-Signature header (Web Crypto SubtleCrypto, no SDK — every
+// `v1` signature in the header is checked with a constant-time comparison, so a
+// secret rotation that sends multiple signatures is accepted: PR #239 review
+// finding 3), resolves the Supabase user id (subscription metadata
+// `supabase_user_id`, falling back to customer email → auth admin lookup), and
+// upserts user_subscriptions via the migration-006 upsert_subscription RPC.
+//
+// Out-of-order protection (PR #239 review finding 4): the event's `created`
+// timestamp is forwarded as p_event_created_at; migration 006 stores it as a
+// high-water mark and ignores events older than the row's stored value, so a
+// delayed/retried invoice.payment_failed or subscription.deleted cannot revoke
+// (or restore) entitlements that a newer event already settled.
 //
 // Required secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, SUPABASE_URL,
 // SUPABASE_SERVICE_ROLE_KEY.
@@ -34,20 +42,33 @@ async function stripeGet(secret: string, path: string): Promise<any> {
   return res.json();
 }
 
+/** Length-checked, value-independent hex comparison (no early exit). */
+function timingSafeEqualHex(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 // Verify Stripe webhook signature (https://docs.stripe.com/webhooks/signature).
+// Header format: `t=<unix>[,v1=<hex>...]` — Stripe emits more than one `v1`
+// value while a signing secret is being rotated, and any of them may be the
+// valid one, so all candidates are compared.
 async function verifySignature(raw: string, header: string, secret: string): Promise<boolean> {
-  const parts = Object.fromEntries(header.split(',').map((kv) => kv.split('=')));
-  const t = parts['t'];
-  const v1 = parts['v1'];
-  if (!t || !v1) return false;
+  const parts = header.split(',').map((p) => p.trim());
+  const t = parts.find((p) => p.startsWith('t='))?.slice(2);
+  const candidates = parts.filter((p) => p.startsWith('v1=')).map((p) => p.slice(3));
+  if (!t || candidates.length === 0) return false;
+  const ts = Number(t);
+  if (!Number.isFinite(ts)) return false;
   // 5-minute timestamp tolerance (also enforced server-side by Stripe).
-  if (Math.abs(Date.now() / 1000 - Number(t)) > 300) return false;
+  if (Math.abs(Date.now() / 1000 - ts) > 300) return false;
   const key = await crypto.subtle.importKey(
     'raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
   );
   const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${t}.${raw}`));
-  const hex = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
-  return hex === v1;
+  const expected = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  return candidates.some((candidate) => timingSafeEqualHex(candidate, expected));
 }
 
 Deno.serve(async (req: Request) => {
@@ -68,7 +89,9 @@ Deno.serve(async (req: Request) => {
     apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json',
   };
   try {
-    const event = JSON.parse(raw) as { type: string; data: { object: any } };
+    const event = JSON.parse(raw) as {
+      type: string; created?: number; data: { object: any };
+    };
     const obj = event.data.object ?? {};
     // Only subscription-lifecycle events carry entitlement state.
     const HANDLED = new Set([
@@ -95,6 +118,11 @@ Deno.serve(async (req: Request) => {
     const periodEnd = sub.current_period_end
       ? new Date(sub.current_period_end * 1000).toISOString()
       : null;
+    // Ordering high-water mark: Stripe's own event creation time (unix seconds).
+    const eventCreatedAt =
+      typeof event.created === 'number' && Number.isFinite(event.created)
+        ? new Date(event.created * 1000).toISOString()
+        : null;
     // Resolve the Supabase user: prefer the id stamped at checkout time.
     let supabaseUserId: string | undefined = sub.metadata?.supabase_user_id;
     if (!supabaseUserId && event.type === 'checkout.session.completed') {
@@ -129,6 +157,7 @@ Deno.serve(async (req: Request) => {
         p_is_active: isActive,
         p_current_period_end: periodEnd,
         p_cancel_at_period_end: sub.cancel_at_period_end ?? false,
+        p_event_created_at: eventCreatedAt,
       }),
     });
     if (!rpcRes.ok) return json(502, { error: 'Entitlement upsert failed' });
