@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
   View, Text, Image, FlatList, Pressable, ActivityIndicator,
   Dimensions, StyleSheet, StatusBar, ScrollView, NativeSyntheticEvent,
-  NativeScrollEvent,
+  NativeScrollEvent, GestureResponderEvent,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, RouteProp, useRoute } from '@react-navigation/native';
@@ -97,6 +97,10 @@ function ReaderScreen() {
   const flatListRef = useRef<FlatList>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const lastTapRef = useRef(0);
+  /** F1: origin/time of the current touch on the vertical-mode ScrollView —
+   *  used to tell taps apart from pans so the ScrollView never loses the
+   *  pan gesture (the old full-screen Pressable ate every drag). */
+  const tapStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const progressSavedRef = useRef(false);
 
   // ─── G-3 retention heartbeat — reading is a strong activity signal ──────
@@ -246,6 +250,10 @@ function ReaderScreen() {
   }, [mangaId, chapterId, chapterNum, mangaTitle, isRead]);
 
   // ─── Double-tap to toggle controls ────────────────────────────────────
+  // F1: in vertical mode the tap detection lives on the ScrollView itself
+  // (no overlay), so pans always reach the ScrollView. Taps are recognised
+  // by short duration + small movement, then fed through the same 300 ms
+  // double-tap window as the paged-mode Pressable below.
 
   const handleDoubleTap = useCallback(() => {
     const now = Date.now();
@@ -255,6 +263,26 @@ function ReaderScreen() {
     } else {
       lastTapRef.current = now;
     }
+  }, []);
+
+  const handleTapStart = useCallback((e: GestureResponderEvent) => {
+    const { pageX, pageY } = e.nativeEvent;
+    tapStartRef.current = { x: pageX, y: pageY, t: Date.now() };
+  }, []);
+
+  const handleTapEnd = useCallback((e: GestureResponderEvent) => {
+    const start = tapStartRef.current;
+    tapStartRef.current = null;
+    if (!start) return;
+    const { pageX, pageY } = e.nativeEvent;
+    // A drag or long-press is not a tap — let the ScrollView keep scrolling.
+    if (Date.now() - start.t > 400) return;
+    if (Math.hypot(pageX - start.x, pageY - start.y) > 10) return;
+    handleDoubleTap();
+  }, [handleDoubleTap]);
+
+  const handleTapCancel = useCallback(() => {
+    tapStartRef.current = null;
   }, []);
 
   // ─── Navigate to another chapter ──────────────────────────────────────
@@ -416,6 +444,13 @@ function ReaderScreen() {
           showsVerticalScrollIndicator={false}
           onScroll={handleScroll}
           scrollEventThrottle={100}
+          // F1: tap detection on the ScrollView itself — no overlay Pressable
+          // above it, so pans/drags always reach the ScrollView (vertical
+          // scroll was previously dead: the absoluteFill Pressable claimed
+          // every touch).
+          onTouchStart={handleTapStart}
+          onTouchEnd={handleTapEnd}
+          onTouchCancel={handleTapCancel}
           onMomentumScrollEnd={() => {
             saveProgress(currentPage, pageUrls.length);
           }}
@@ -430,8 +465,10 @@ function ReaderScreen() {
           })}
         </ScrollView>
         {brightnessOverlay}
+        {/* F1: no full-screen Pressable in vertical mode — it ate the
+            ScrollView's pan gesture. ReaderControls is the topmost sibling,
+            so its buttons are tappable while visible. */}
         {showControls && renderControls()}
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleDoubleTap} />
         {renderThemePicker()}
       </View>
     );
@@ -500,6 +537,10 @@ function ReaderScreen() {
 
       {brightnessOverlay}
       {showControls && renderControls()}
+      {/* F1: paged mode has no ScrollView, so a full-screen tap layer is
+          safe here (it blocks nothing scrollable). It stays BELOW the
+          ReaderControls overlay (zIndex 1000) and the side arrows/chapter
+          nav (zIndex 10), so all controls remain tappable. */}
       <Pressable style={StyleSheet.absoluteFill} onPress={handleDoubleTap} />
       {renderThemePicker()}
     </View>
