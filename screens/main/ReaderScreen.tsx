@@ -101,6 +101,13 @@ function ReaderScreen() {
    *  used to tell taps apart from pans so the ScrollView never loses the
    *  pan gesture (the old full-screen Pressable ate every drag). */
   const tapStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  /** F2(a): last integer page committed from vertical scroll — suppresses the
+   *  per-frame setCurrentPage so the reader only re-renders / re-prefetches on
+   *  actual page-boundary crossings (not on every scroll event). */
+  const lastScrollPageRef = useRef(-1);
+  /** F2(c): page indices with a prefetch already in flight — dedupes
+   *  Image.prefetch so overlapping ±3 windows never double-fetch a URI. */
+  const prefetchingRef = useRef<Set<number>>(new Set());
   const progressSavedRef = useRef(false);
 
   // ─── G-3 retention heartbeat — reading is a strong activity signal ──────
@@ -123,6 +130,9 @@ function ReaderScreen() {
     setLoading(true);
     setError(null);
     progressSavedRef.current = false;
+    // F2: a new chapter starts from a clean scroll/prefetch state.
+    lastScrollPageRef.current = -1;
+    prefetchingRef.current = new Set();
 
     // Offline-first chapter fetching
     getLocalPageUris(chapterId).then((localUris) => {
@@ -177,18 +187,37 @@ function ReaderScreen() {
       });
     });
 
-    // Fetch chapter list for navigation
+    // Fetch chapter list for navigation. F2(b): fetch a bounded page (200 —
+    // the open-path JSON parse/sort cost is the 500-chapter case; QA measured
+    // a clear stall on slower devices). For series with more chapters, extend
+    // page-by-page ONLY while the opened chapter isn't in the list yet, so
+    // in-reader prev/next keeps working for deep chapters (bounded to 3 pages
+    // = 600 chapters max, still far cheaper than one 500-item wall per open).
     if (mangaId) {
-      getMangaFeed(mangaId, 500, 0).then((feed) => {
+      const FEED_PAGE_LIMIT = 200;
+      const MAX_FEED_PAGES = 3;
+      getMangaFeed(mangaId, FEED_PAGE_LIMIT, 0).then(async (first) => {
         if (cancelled) return;
-        const chapters = feed.data.map((c) => ({ id: c.id, chapter: c.chapter }));
+        let data = first.data;
+        let offset = FEED_PAGE_LIMIT;
+        while (
+          !data.some((c) => c.id === chapterId) &&
+          (first.total ?? 0) > offset &&
+          offset < FEED_PAGE_LIMIT * MAX_FEED_PAGES
+        ) {
+          const page = await getMangaFeed(mangaId, FEED_PAGE_LIMIT, offset);
+          if (cancelled) return;
+          data = [...data, ...page.data];
+          offset += FEED_PAGE_LIMIT;
+        }
+        const chapters = data.map((c) => ({ id: c.id, chapter: c.chapter }));
         // Sort ascending
         chapters.sort((a, b) => parseFloat(a.chapter) - parseFloat(b.chapter));
         setChapterList(chapters);
         const idx = chapters.findIndex((c) => c.id === chapterId);
         setCurrentChapterIdx(idx);
         if (idx >= 0) {
-          setMangaTitle(feed.data[idx]?.title ? `Ch. ${feed.data[idx].chapter}` : '');
+          setMangaTitle(data[idx]?.title ? `Ch. ${data[idx].chapter}` : '');
         }
       }).catch(() => {});
     }
@@ -208,11 +237,20 @@ function ReaderScreen() {
   // ─── Prefetch neighbouring pages ──────────────────────────────────────
 
   const prefetchPage = useCallback((index: number) => {
-    if (index >= 0 && index < pageUrls.length && !loadedImagesRef.current.has(index)) {
-      Image.prefetch(pageUrls[index]).then(() => {
-        loadedImagesRef.current.add(index);
-      }).catch(() => {});
-    }
+    if (index < 0 || index >= pageUrls.length) return;
+    if (loadedImagesRef.current.has(index)) return;
+    // F2(c): dedupe — skip URIs whose prefetch is already in flight (the ±3
+    // window of consecutive page-crossings overlaps heavily; without this the
+    // same URI gets fetched several times during a fast fling).
+    if (prefetchingRef.current.has(index)) return;
+    prefetchingRef.current.add(index);
+    Image.prefetch(pageUrls[index]).then(() => {
+      loadedImagesRef.current.add(index);
+      prefetchingRef.current.delete(index);
+    }).catch(() => {
+      // Release the in-flight marker so a later pass can retry.
+      prefetchingRef.current.delete(index);
+    });
   }, [pageUrls]);
 
   useEffect(() => {
@@ -318,7 +356,13 @@ function ReaderScreen() {
       (contentOffset.y / (contentSize.height - layoutMeasurement.height)) * 100
     )));
     const page = Math.round((pct / 100) * (pageUrls.length - 1));
-    setCurrentPage(page);
+    // F2(a): commit the page only when the rounded page index actually
+    // changes — previously every scroll event re-rendered the screen and
+    // re-fired the 7-way prefetch (up to ~70 Image.prefetch/s on a fling).
+    if (page !== lastScrollPageRef.current) {
+      lastScrollPageRef.current = page;
+      setCurrentPage(page);
+    }
     if (pageUrls.length > 0 && !progressSavedRef.current) {
       saveProgress(page, pageUrls.length);
       // Throttle the scroll-frame save to once per chapter: the ref is reset
@@ -486,6 +530,9 @@ function ReaderScreen() {
     const next = isRtl ? currentPage + 1 : currentPage - 1;
     if (next >= 0 && next < pageUrls.length) {
       setCurrentPage(next);
+      // F2(a): keep the scroll-guard ref in sync so switching back to
+      // vertical mode doesn't suppress a legit page commit.
+      lastScrollPageRef.current = next;
       saveProgress(next, pageUrls.length);
     }
   };
@@ -494,6 +541,7 @@ function ReaderScreen() {
     const next = isRtl ? currentPage - 1 : currentPage + 1;
     if (next >= 0 && next < pageUrls.length) {
       setCurrentPage(next);
+      lastScrollPageRef.current = next;
       saveProgress(next, pageUrls.length);
     }
   };
