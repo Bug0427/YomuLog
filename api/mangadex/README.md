@@ -67,10 +67,12 @@ A ready-to-deploy Supabase Edge Function lives at
 only difference is the mount prefix: the function is mounted at
 `/functions/v1/mangadex-proxy` instead of `/api/mangadex`.
 
-Deploy with the Supabase CLI:
+Deploy with the Supabase CLI (**`--no-verify-jwt` is REQUIRED** — the browser
+calls this function with a bare `fetch()` and no Authorization header, so
+platform JWT verification would 401 every proxied MangaDex request):
 
 ```bash
-supabase functions deploy mangadex-proxy --project-ref <your-project>
+supabase functions deploy mangadex-proxy --no-verify-jwt --project-ref <your-project>
 ```
 
 Then set `EXPO_PUBLIC_MANGADEX_PROXY_URL=https://<project-ref>.supabase.co/functions/v1/mangadex-proxy`.

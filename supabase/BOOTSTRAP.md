@@ -134,9 +134,17 @@ token themselves, `stripe-webhook` verifies the Stripe signature, and
 supabase login
 supabase link --project-ref <your-project-ref>
 
-# one deploy per function (do NOT pass --no-verify-jwt)
-supabase functions deploy mangadex-proxy
-supabase functions deploy stripe-webhook
+# one deploy per function — the JWT-verification flag is PER-FUNCTION, not global.
+#  - mangadex-proxy  → MUST pass --no-verify-jwt: the browser calls it with a bare
+#    fetch() and no Authorization header (services/mangaAPI.ts:101,129,164,209,239,333),
+#    so platform JWT verification would 401 every proxied MangaDex request.
+#  - stripe-webhook  → MUST pass --no-verify-jwt: its caller is Stripe, which sends a
+#    Stripe-Signature header, never a Supabase JWT; requiring one 401s every entitlement write.
+#  - stripe-portal / stripe-cancel → keep verification ON (no flag): the app sends the
+#    caller's access token (services/stripeService.ts:260,296) and the functions hard-fail
+#    without it (they check it via Supabase Auth /auth/v1/user themselves).
+supabase functions deploy mangadex-proxy --no-verify-jwt
+supabase functions deploy stripe-webhook --no-verify-jwt
 supabase functions deploy stripe-portal
 supabase functions deploy stripe-cancel
 ```

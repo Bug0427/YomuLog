@@ -3,10 +3,14 @@
 -- NOTE: checkout is a Stripe-hosted payment link (no stripe-checkout function
 -- exists or is needed — the app opens PREMIUM_CHECKOUT_URL directly). The
 -- deployable functions live in supabase/functions/ and are deployed via
--- `supabase functions deploy <name> --project-ref <project>`:
---   supabase/functions/stripe-portal/index.ts   (Manage screen → portal URL)
---   supabase/functions/stripe-cancel/index.ts   (Manage screen → cancel at period end)
---   supabase/functions/stripe-webhook/index.ts  (Stripe → user_subscriptions entitlement)
+-- `supabase functions deploy <name> [flags] --project-ref <project>`:
+--   stripe-portal   (Manage screen → portal URL) — keep JWT verification ON (no flag)
+--   stripe-cancel   (Manage screen → cancel at period end) — keep JWT verification ON (no flag)
+--   stripe-webhook  (Stripe → user_subscriptions entitlement) — deploy with
+--                    `--no-verify-jwt` (caller is Stripe: sends a Stripe-Signature
+--                    header, never a Supabase JWT; requiring one 401s every write).
+--   mangadex-proxy  (CORS proxy) — deploy with `--no-verify-jwt` (browser calls it
+--                    with a bare fetch(); see api/mangadex/README.md).
 -- The pseudocode sketches below document the request/response shapes the app
 -- expects (services/stripeService.ts). They are NOT SQL — do not paste this
 -- file into the SQL Editor.

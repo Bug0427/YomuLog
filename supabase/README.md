@@ -242,7 +242,10 @@ Both share one core (`services/proxyCore.ts`); no logic is duplicated.
 
 **Option A — Supabase Edge Function** (already in this repo):
 ```bash
-supabase functions deploy mangadex-proxy --project-ref <your-project>
+# --no-verify-jwt is REQUIRED: the browser calls this function with a bare
+# fetch() and no Authorization header (services/mangaAPI.ts:101,129,164,209,239,333),
+# so platform JWT verification would 401 every proxied MangaDex request.
+supabase functions deploy mangadex-proxy --no-verify-jwt --project-ref <your-project>
 ```
 → base URL `https://<project-ref>.supabase.co/functions/v1/mangadex-proxy`
 
