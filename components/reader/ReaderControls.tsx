@@ -124,6 +124,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    // F1: lift the whole controls subtree above the reader's full-screen
+    // double-tap Pressable (paged mode) so every button is tappable.
+    zIndex: 1000,
   },
   // Top bar
   topBar: {
