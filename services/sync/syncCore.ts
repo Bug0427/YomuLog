@@ -141,13 +141,151 @@ export function mergeLWW<T extends Record<string, unknown>>(
 }
 
 // ─── Supabase-backed scope sync ──────────────────────────────────────
+//
+// TRUE last-write-wins on the real Supabase path. Every scope sync follows the
+// same authoritative order:
+//
+//   1. PULL  — read the cloud rows FIRST, before any local write can touch
+//              them. (These functions historically pushed first with
+//              `updated_at: isoNow()`, so by pull time the cloud row had been
+//              overwritten with the local copy and the timestamp guard could
+//              only ever see post-push copies — a genuinely newer change from
+//              another device could never win.)
+//   2. MERGE — apply the scope's LWW rule into the local store: the cloud copy
+//              is adopted only when strictly newer; ties keep local
+//              (deterministic tie rule).
+//   3. PUSH  — upsert ONLY local rows that are absent in the cloud or whose
+//              user-visible fields DIFFER from the cloud copy. Rows the cloud
+//              won at merge time are identical to the cloud row, so they are
+//              never re-pushed (no unbounded clobbering). Field-diff — not a
+//              timestamp-only comparison — is required because production
+//              local records carry NO updatedAt: favourites stamp only
+//              bookmarkedAt (a readingStatus-only change leaves it untouched)
+//              and download jobs stamp only createdAt. A timestamp-only push
+//              silently drops exactly those local mutations.
+
+/** Compare a value on both sides, treating undefined/null as equal and
+ *  normalising arrays/objects to a stable string (field order preserved). */
+function sameValue(a: unknown, b: unknown): boolean {
+  const norm = (v: unknown): unknown =>
+    v !== null && typeof v === 'object' ? JSON.stringify(v) : (v ?? null);
+  return norm(a) === norm(b);
+}
+
+function favoriteDiffersFromCloud(
+  local: BookmarkedManga,
+  cloud: Record<string, any>,
+): boolean {
+  return (
+    !sameValue(local.mangaTitle, cloud.manga_title) ||
+    !sameValue(local.mangaImage, cloud.manga_image) ||
+    !sameValue(local.genres, cloud.genres) ||
+    !sameValue(local.bookmarkedAt, cloud.bookmarked_at) ||
+    !sameValue(local.readingStatus, cloud.reading_status)
+  );
+}
+
+function progressDiffersFromCloud(
+  local: ChapterProgress,
+  cloud: Record<string, any>,
+): boolean {
+  return (
+    !sameValue(local.mangaId, cloud.manga_id) ||
+    !sameValue(local.mangaTitle, cloud.manga_title) ||
+    !sameValue(local.mangaImage, cloud.manga_image) ||
+    !sameValue(local.chapterTitle, cloud.chapter_title) ||
+    !sameValue(local.chapterNumber, cloud.chapter_number) ||
+    !sameValue(local.scrollPercentage, cloud.scroll_percentage) ||
+    !sameValue(local.isRead, cloud.is_read) ||
+    !sameValue(local.lastReadAt, cloud.last_read_at)
+  );
+}
+
+function downloadDiffersFromCloud(
+  local: SyncPayloadDownloads['items'][number],
+  cloud: Record<string, any>,
+): boolean {
+  return (
+    !sameValue(local.chapterId, cloud.chapter_id) ||
+    !sameValue(local.mangaId, cloud.manga_id) ||
+    !sameValue(local.mangaTitle, cloud.manga_title) ||
+    !sameValue(local.chapterNumber, cloud.chapter_number) ||
+    !sameValue(local.chapterTitle, cloud.chapter_title) ||
+    !sameValue(local.status, cloud.status) ||
+    !sameValue(local.progress, cloud.progress) ||
+    !sameValue(local.totalPages, cloud.total_pages) ||
+    !sameValue(local.downloadedPages, cloud.downloaded_pages) ||
+    !sameValue(local.errorMessage, cloud.error_message) ||
+    !sameValue(local.localDir, cloud.local_dir) ||
+    !sameValue(local.retryCount, cloud.retry_count) ||
+    !sameValue(local.createdAt, cloud.created_at)
+  );
+}
+
+/** Build the local download-job shape from a cloud row (merge/adopt helper). */
+function adoptDownloadRow(
+  cloudRow: Record<string, any>,
+): SyncPayloadDownloads['items'][number] {
+  return {
+    jobId: cloudRow.job_id,
+    chapterId: cloudRow.chapter_id,
+    mangaId: cloudRow.manga_id,
+    mangaTitle: cloudRow.manga_title,
+    chapterNumber: cloudRow.chapter_number,
+    chapterTitle: cloudRow.chapter_title,
+    status: cloudRow.status,
+    progress: cloudRow.progress,
+    totalPages: cloudRow.total_pages,
+    downloadedPages: cloudRow.downloaded_pages,
+    errorMessage: cloudRow.error_message,
+    localDir: cloudRow.local_dir,
+    createdAt: cloudRow.created_at,
+    retryCount: cloudRow.retry_count,
+  };
+}
 
 export async function syncFavoritesReal(userId: string): Promise<void> {
-  // --- Push local → Supabase ---
+  // 1) PULL Supabase → local FIRST (true LWW — see header comment).
+  const { data, error } = await supabase
+    .from('user_library')
+    .select('*')
+    .eq('user_id', userId)
+    .order('bookmarked_at', { ascending: false });
+  if (error) throw new Error(`Favorites pull: ${error.message}`);
+  const cloud = data ?? [];
+
   const raw = await AsyncStorage.getItem(KEYS.LOCAL_FAVORITES);
   const local: BookmarkedManga[] = raw ? JSON.parse(raw) : [];
-  if (local.length > 0) {
-    const rows = local.map((f) => ({
+
+  // 2) MERGE: adopt the cloud copy only when its bookmarked_at is strictly
+  //    newer; tie → keep local (deterministic).
+  const localMap = new Map(local.map((f) => [f.mangaId, f]));
+  for (const cloudRow of cloud) {
+    const existing = localMap.get(cloudRow.manga_id);
+    if (!existing || new Date(cloudRow.bookmarked_at) > new Date(existing.bookmarkedAt)) {
+      localMap.set(cloudRow.manga_id, {
+        mangaId: cloudRow.manga_id,
+        mangaTitle: cloudRow.manga_title,
+        mangaImage: cloudRow.manga_image,
+        genres: cloudRow.genres,
+        bookmarkedAt: cloudRow.bookmarked_at,
+        readingStatus: cloudRow.reading_status,
+      });
+    }
+  }
+  const merged = Array.from(localMap.values());
+  await AsyncStorage.setItem(KEYS.LOCAL_FAVORITES, JSON.stringify(merged));
+
+  // 3) PUSH rows that are absent in the cloud or differ from the cloud copy.
+  //    Production favourites carry no updatedAt — a readingStatus-only change
+  //    leaves bookmarkedAt untouched, so it is only detectable as a field diff.
+  const cloudMap = new Map(cloud.map((c) => [c.manga_id, c]));
+  const toPush = merged.filter((f) => {
+    const cloudRow = cloudMap.get(f.mangaId);
+    return !cloudRow || favoriteDiffersFromCloud(f, cloudRow);
+  });
+  if (toPush.length > 0) {
+    const rows = toPush.map((f) => ({
       user_id: userId,
       manga_id: f.mangaId,
       manga_title: f.mangaTitle,
@@ -157,47 +295,60 @@ export async function syncFavoritesReal(userId: string): Promise<void> {
       reading_status: f.readingStatus,
       updated_at: isoNow(),
     }));
-    const { error } = await supabase
+    const { error: pushErr } = await supabase
       .from('user_library')
       .upsert(rows, { onConflict: 'user_id,manga_id' });
-    if (error) throw new Error(`Favorites push: ${error.message}`);
+    if (pushErr) throw new Error(`Favorites push: ${pushErr.message}`);
   }
-
-  // --- Pull Supabase → local (LWW merge) ---
-  const { data, error } = await supabase
-    .from('user_library')
-    .select('*')
-    .eq('user_id', userId)
-    .order('bookmarked_at', { ascending: false });
-  if (error) throw new Error(`Favorites pull: ${error.message}`);
-  if (!data || data.length === 0) return;
-
-  const localMap = new Map(local.map((f) => [f.mangaId, f]));
-  for (const cloud of data) {
-    const existing = localMap.get(cloud.manga_id);
-    if (!existing || new Date(cloud.bookmarked_at) > new Date(existing.bookmarkedAt)) {
-      localMap.set(cloud.manga_id, {
-        mangaId: cloud.manga_id,
-        mangaTitle: cloud.manga_title,
-        mangaImage: cloud.manga_image,
-        genres: cloud.genres,
-        bookmarkedAt: cloud.bookmarked_at,
-        readingStatus: cloud.reading_status,
-      });
-    }
-  }
-  await AsyncStorage.setItem(KEYS.LOCAL_FAVORITES, JSON.stringify(Array.from(localMap.values())));
 }
 
 export async function syncProgressReal(userId: string): Promise<void> {
-  // --- Push local → Supabase ---
+  // 1) PULL Supabase → local FIRST (true LWW — same rationale as favorites).
+  const { data, error } = await supabase
+    .from('reading_progress')
+    .select('*')
+    .eq('user_id', userId)
+    .order('last_read_at', { ascending: false })
+    .limit(500);
+  if (error) throw new Error(`Progress pull: ${error.message}`);
+  const cloud = data ?? [];
+
   const raw = await AsyncStorage.getItem(KEYS.LOCAL_PROGRESS);
   const local: ChapterProgress[] = raw ? JSON.parse(raw) : [];
-  // G-4: attach measured per-chapter reading seconds (real reading time) so
-  // the server can SQL-aggregate hours/week from reading_progress.
-  const secondsByChapter = await getReadingSecondsByChapter();
-  if (local.length > 0) {
-    const rows = local.map((p) => ({
+
+  // 2) MERGE: adopt the cloud copy only when its last_read_at is strictly
+  //    newer; tie → keep local (deterministic).
+  const localMap = new Map(local.map((p) => [p.chapterId, p]));
+  for (const cloudRow of cloud) {
+    const existing = localMap.get(cloudRow.chapter_id);
+    if (!existing || new Date(cloudRow.last_read_at) > new Date(existing.lastReadAt)) {
+      localMap.set(cloudRow.chapter_id, {
+        chapterId: cloudRow.chapter_id,
+        mangaId: cloudRow.manga_id,
+        mangaTitle: cloudRow.manga_title,
+        mangaImage: cloudRow.manga_image,
+        chapterTitle: cloudRow.chapter_title,
+        chapterNumber: cloudRow.chapter_number,
+        scrollPercentage: cloudRow.scroll_percentage,
+        isRead: cloudRow.is_read,
+        lastReadAt: cloudRow.last_read_at,
+      });
+    }
+  }
+  const merged = Array.from(localMap.values());
+  await AsyncStorage.setItem(KEYS.LOCAL_PROGRESS, JSON.stringify(merged));
+
+  // 3) PUSH rows absent in the cloud or differing from the cloud copy.
+  const cloudMap = new Map(cloud.map((c) => [c.chapter_id, c]));
+  const toPush = merged.filter((p) => {
+    const cloudRow = cloudMap.get(p.chapterId);
+    return !cloudRow || progressDiffersFromCloud(p, cloudRow);
+  });
+  if (toPush.length > 0) {
+    // G-4: attach measured per-chapter reading seconds (real reading time) so
+    // the server can SQL-aggregate hours/week from reading_progress.
+    const secondsByChapter = await getReadingSecondsByChapter();
+    const rows = toPush.map((p) => ({
       user_id: userId,
       chapter_id: p.chapterId,
       manga_id: p.mangaId,
@@ -210,48 +361,61 @@ export async function syncProgressReal(userId: string): Promise<void> {
       last_read_at: p.lastReadAt,
       seconds_read: secondsByChapter[p.chapterId] ?? 0,
     }));
-    const { error } = await supabase
+    const { error: pushErr } = await supabase
       .from('reading_progress')
       .upsert(rows, { onConflict: 'user_id,chapter_id' });
-    if (error) throw new Error(`Progress push: ${error.message}`);
+    if (pushErr) throw new Error(`Progress push: ${pushErr.message}`);
   }
-
-  // --- Pull Supabase → local ---
-  const { data, error } = await supabase
-    .from('reading_progress')
-    .select('*')
-    .eq('user_id', userId)
-    .order('last_read_at', { ascending: false })
-    .limit(500);
-  if (error) throw new Error(`Progress pull: ${error.message}`);
-  if (!data || data.length === 0) return;
-
-  const localMap = new Map(local.map((p) => [p.chapterId, p]));
-  for (const cloud of data) {
-    const existing = localMap.get(cloud.chapter_id);
-    if (!existing || new Date(cloud.last_read_at) > new Date(existing.lastReadAt)) {
-      localMap.set(cloud.chapter_id, {
-        chapterId: cloud.chapter_id,
-        mangaId: cloud.manga_id,
-        mangaTitle: cloud.manga_title,
-        mangaImage: cloud.manga_image,
-        chapterTitle: cloud.chapter_title,
-        chapterNumber: cloud.chapter_number,
-        scrollPercentage: cloud.scroll_percentage,
-        isRead: cloud.is_read,
-        lastReadAt: cloud.last_read_at,
-      });
-    }
-  }
-  await AsyncStorage.setItem(KEYS.LOCAL_PROGRESS, JSON.stringify(Array.from(localMap.values())));
 }
 
 export async function syncDownloadsReal(userId: string): Promise<void> {
-  // --- Push local → Supabase ---
+  // 1) PULL Supabase → local FIRST (true LWW — same rationale as favorites).
+  const { data, error } = await supabase
+    .from('download_queue')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) throw new Error(`Downloads pull: ${error.message}`);
+  const cloud = data ?? [];
+
   const rawQ = await AsyncStorage.getItem(KEYS.LOCAL_DOWNLOAD_QUEUE);
   const queue: SyncPayloadDownloads['items'] = rawQ ? JSON.parse(rawQ) : [];
-  if (queue.length > 0) {
-    const rows = queue.map((d) => ({
+
+  // 2) MERGE. The cloud adopts only when it is genuinely newer:
+  //    - when the local row carries an explicit updatedAt, compare
+  //      cloud.updated_at against it (explicit local change evidence);
+  //    - production downloads carry NO updatedAt (downloadManager stamps only
+  //      createdAt). The cloud's updated_at on such rows is a sync watermark
+  //      (the legacy push stamped isoNow() at every push), NOT evidence the
+  //      download state changed — so the only honest cloud evidence is
+  //      created_at: a cloud row created AFTER the local job is a newer job
+  //      and wins; otherwise the local copy's semantic state (status/progress)
+  //      is the ground truth and must be preserved and propagated.
+  const localMap = new Map(queue.map((d) => [d.jobId, d]));
+  for (const cloudRow of cloud) {
+    const existing = localMap.get(cloudRow.job_id) as any;
+    if (!existing) {
+      localMap.set(cloudRow.job_id, adoptDownloadRow(cloudRow));
+      continue;
+    }
+    const cloudWins =
+      existing.updatedAt !== undefined
+        ? new Date(cloudRow.updated_at) > new Date(existing.updatedAt)
+        : new Date(cloudRow.created_at) > new Date(existing.createdAt);
+    if (cloudWins) localMap.set(cloudRow.job_id, adoptDownloadRow(cloudRow));
+  }
+  const merged = Array.from(localMap.values());
+  await AsyncStorage.setItem(KEYS.LOCAL_DOWNLOAD_QUEUE, JSON.stringify(merged));
+
+  // 3) PUSH rows absent in the cloud or differing from the cloud copy.
+  const cloudMap = new Map(cloud.map((c: any) => [c.job_id, c]));
+  const toPush = merged.filter((d) => {
+    const cloudRow = cloudMap.get(d.jobId);
+    return !cloudRow || downloadDiffersFromCloud(d, cloudRow);
+  });
+  if (toPush.length > 0) {
+    const rows = toPush.map((d) => ({
       user_id: userId,
       job_id: d.jobId,
       chapter_id: d.chapterId,
@@ -274,40 +438,6 @@ export async function syncDownloadsReal(userId: string): Promise<void> {
       .upsert(rows, { onConflict: 'user_id,job_id' });
     if (pushErr) throw new Error(`Downloads push: ${pushErr.message}`);
   }
-
-  // --- Pull Supabase → local ---
-  const { data, error } = await supabase
-    .from('download_queue')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(200);
-  if (error) throw new Error(`Downloads pull: ${error.message}`);
-  if (!data || data.length === 0) return;
-
-  const localMap = new Map(queue.map((d: any) => [d.jobId, d]));
-  for (const cloud of data) {
-    const existing = localMap.get(cloud.job_id) as any;
-    if (!existing || new Date(cloud.updated_at) > new Date(existing.updatedAt || existing.createdAt || 0)) {
-      localMap.set(cloud.job_id, {
-        jobId: cloud.job_id,
-        chapterId: cloud.chapter_id,
-        mangaId: cloud.manga_id,
-        mangaTitle: cloud.manga_title,
-        chapterNumber: cloud.chapter_number,
-        chapterTitle: cloud.chapter_title,
-        status: cloud.status,
-        progress: cloud.progress,
-        totalPages: cloud.total_pages,
-        downloadedPages: cloud.downloaded_pages,
-        errorMessage: cloud.error_message,
-        localDir: cloud.local_dir,
-        createdAt: cloud.created_at,
-        retryCount: cloud.retry_count,
-      });
-    }
-  }
-  await AsyncStorage.setItem(KEYS.LOCAL_DOWNLOAD_QUEUE, JSON.stringify(Array.from(localMap.values())));
 }
 
 // Preferences scope lives in cloudPrefs.ts (syncPreferencesReal / syncPreferencesFallback).
