@@ -68,6 +68,24 @@ async function readLog(): Promise<FunnelEvent[]> {
 async function writeLog(events: FunnelEvent[]): Promise<void> {
   await AsyncStorage.setItem(EVENT_LOG_KEY, JSON.stringify(events));
 }
+/**
+ * In-process mutex serializing the event log's read-modify-write. The log is
+ * a single-client local store (no cross-process concern), but without
+ * serialization two fire-and-forget events landing in the same tick both read
+ * the same log and each write their own version — last write wins and one
+ * event is silently lost (KPI-4 funnel undercount). Every mutating operation
+ * (recordFunnelEvent, clearFunnelEvents) runs inside withLogLock, so reads
+ * always see the previous operation's write.
+ */
+let logMutex: Promise<void> = Promise.resolve();
+function withLogLock<T>(fn: () => Promise<T>): Promise<T> {
+  const run = logMutex.then(fn, fn);
+  logMutex = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
 
 function generateEventId(name: string): string {
   // Same generator style as retentionService's install id: timestamp base-36
@@ -89,33 +107,35 @@ export async function recordFunnelEvent(
   name: FunnelEventName,
   payload: Record<string, unknown> = {},
 ): Promise<void> {
-  try {
-    // E5 dedupe: at most one checkout_completed per subscription id.
-    if (name === 'checkout_completed') {
-      const subId = payload.subscriptionId;
-      if (typeof subId === 'string' && subId === lastSubscriptionIdRef) {
-        return;
+  // Serialize the log's read-modify-write (KPI-4 lost-update race). The
+  // fail-soft try/catch stays inside the lock: a logging failure must never
+  // break a user action, and one failed write must not poison the mutex.
+  await withLogLock(async () => {
+    try {
+      // E5 dedupe: at most one checkout_completed per subscription id.
+      if (name === 'checkout_completed') {
+        const subId = payload.subscriptionId;
+        if (typeof subId === 'string' && subId === lastSubscriptionIdRef) {
+          return;
+        }
+        if (typeof subId === 'string') lastSubscriptionIdRef = subId;
       }
-      if (typeof subId === 'string') lastSubscriptionIdRef = subId;
+      const log = await readLog();
+      log.push({
+        event_id: generateEventId(name),
+        name,
+        occurred_at: new Date().toISOString(),
+        install_id: await getOrCreateInstallId(),
+        payload,
+      });
+      // Prune: keep only the newest EVENT_LOG_MAX entries.
+      const pruned = log.length > EVENT_LOG_MAX ? log.slice(-EVENT_LOG_MAX) : log;
+      await writeLog(pruned);
+    } catch (e) {
+      console.warn('funnelService: event record failed (non-critical)', e);
     }
-
-    const log = await readLog();
-    log.push({
-      event_id: generateEventId(name),
-      name,
-      occurred_at: new Date().toISOString(),
-      install_id: await getOrCreateInstallId(),
-      payload,
-    });
-
-    // Prune: keep only the newest EVENT_LOG_MAX entries.
-    const pruned = log.length > EVENT_LOG_MAX ? log.slice(-EVENT_LOG_MAX) : log;
-    await writeLog(pruned);
-  } catch (e) {
-    console.warn('funnelService: event record failed (non-critical)', e);
-  }
+  });
 }
-
 /** Full local event log — used by the cloud push path and local spot-checks. */
 export async function getFunnelEventLog(): Promise<FunnelEvent[]> {
   return readLog();
@@ -124,11 +144,13 @@ export async function getFunnelEventLog(): Promise<FunnelEvent[]> {
 /** Remove already-pushed events (called after a successful cloud upsert). */
 export async function clearFunnelEvents(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
-  try {
-    const log = await readLog();
-    const idSet = new Set(ids);
-    await writeLog(log.filter((e) => !idSet.has(e.event_id)));
-  } catch (e) {
-    console.warn('funnelService: clear failed (non-critical)', e);
-  }
+  await withLogLock(async () => {
+    try {
+      const log = await readLog();
+      const idSet = new Set(ids);
+      await writeLog(log.filter((e) => !idSet.has(e.event_id)));
+    } catch (e) {
+      console.warn('funnelService: clear failed (non-critical)', e);
+    }
+  });
 }
