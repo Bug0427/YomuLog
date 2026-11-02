@@ -9,9 +9,7 @@ import { AuthProvider } from './context/AuthContext';
 import { useSyncEngine } from './hooks/useSyncEngine';
 import { useRetentionHeartbeat } from './hooks/useRetentionHeartbeat';
 import SyncStatusBanner from './components/layout/SyncStatusBanner';
-
-/** Maximum width for desktop browsers to prevent stretching on ultrawide screens */
-const WEB_MAX_WIDTH = 1200;
+import { WEB_MAX_WIDTH } from './utils/findDimensions';
 
 /**
  * Global text-scale clamp (a11y). When the OS "Large" font/zoom setting is
