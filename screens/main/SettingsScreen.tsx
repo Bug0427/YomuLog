@@ -111,6 +111,21 @@ export default function SettingsScreen() {
       const savedUsername = globalThis.currentUsername;
       const savedPassword = globalThis.currentPassword;
       const savedAccountId = globalThis.currentAccountId;
+      const sessionLevel = globalThis.currentSecurityLevel;
+      // Session first — a normal login carries the security level in the
+      // session globals; the password re-verify is only a fallback for legacy
+      // sessions that predate the level global. Never null out a live session
+      // just because no password global exists: LoginScreen deliberately does
+      // not keep a plaintext password in memory, so requiring one here would
+      // hide admin-gated UI from a logged-in admin.
+      if (sessionLevel != null) {
+        if (isMounted) {
+          setSecurityLevel(sessionLevel as SecurityLevel);
+          setAccountId(savedAccountId ?? null);
+          setLoading(false);
+        }
+        return;
+      }
       if (!savedUsername || !savedPassword) {
         if (isMounted) { setSecurityLevel(null); setLoading(false); setAccountId(null); }
         return;
@@ -224,7 +239,12 @@ export default function SettingsScreen() {
     const savedUsername = globalThis.currentUsername;
     const savedPassword = globalThis.currentPassword;
     try {
-      let level = securityLevel;
+      // Session first — the security level lives in the session globals (and
+      // is mirrored into state on focus); the password re-verify is only a
+      // fallback for legacy sessions without a level. A logged-in user with a
+      // known level must reach the Change Login modal without a stored
+      // password (LoginScreen keeps no plaintext password in memory).
+      let level = securityLevel ?? ((globalThis.currentSecurityLevel ?? null) as SecurityLevel | null);
       if (!level && savedUsername && savedPassword) {
         setLoading(true);
         const row = (await verifyUser(savedUsername, savedPassword)) as VerifyRow;

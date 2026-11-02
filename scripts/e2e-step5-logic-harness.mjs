@@ -40,6 +40,11 @@
 //        paths (recordReadingSeconds -> byChapter/byDay; install id,
 //        firstLaunchAt, debounced lastActiveAt heartbeat; static guards on
 //        hooks/useReadingSession.ts + ReaderScreen).
+//     8. Auth reachability: after a normal login the header account button
+//        routes to UserAccount (so account/logout are reachable) and no gate
+//        requires a plaintext password global that LoginScreen never sets.
+//        JSX is not executable here — static source guards on LoginIcon,
+//        LoginScreen, AuthContext and UserAccount.
 //
 // HONESTY / BOUNDARIES (also stated in the report doc)
 //   - This harness STUBS Supabase and Stripe. It proves client logic and
@@ -270,6 +275,24 @@ const hookSrc = read('hooks/useReadingSession.ts');
 hostCheck('ReaderScreen mounts useReadingSession(chapterId)', /useReadingSession\(chapterId\)/.test(readerSrc));
 hostCheck('ReaderScreen calls recordHeartbeat()', /recordHeartbeat\(\)/.test(readerSrc));
 hostCheck('useReadingSession calls recordReadingSeconds', /recordReadingSeconds\(/.test(hookSrc));
+// ── Auth reachability (P1): after a normal login the header account button must
+// route to UserAccount, so logout/account is reachable. The old gate required
+// globalThis.currentPassword, which LoginScreen never sets (only the admin
+// ChangeLoginModal writes it), so every logged-in user was bounced back to
+// LoginScreen. JSX cannot be executed in this dependency-free harness, so these
+// are static source guards on the real files.
+const loginIconSrc = read('components/admin/LoginIcon.tsx');
+const loginScreenSrc = read('screens/account/LoginScreen.tsx');
+const authCtxSrc = read('context/AuthContext.tsx');
+hostCheck('LoginIcon gates on the auth session (useAuthContext)', /useAuthContext\(\)/.test(loginIconSrc) && /isLoggedIn/.test(loginIconSrc));
+hostCheck('LoginIcon does not gate on a plaintext password global', !/currentPassword/.test(loginIconSrc));
+hostCheck('LoginIcon routes to UserAccount when signed in', /if \(isLoggedIn\)[\s\S]{0,200}navigate\('UserAccount'\)/.test(loginIconSrc));
+hostCheck('LoginIcon falls back to LoginScreen when signed out', /navigate\('LoginScreen'\)/.test(loginIconSrc));
+hostCheck('LoginScreen establishes the context session via login()', /useAuthContext\(\)/.test(loginScreenSrc) && /authLogin\(/.test(loginScreenSrc));
+hostCheck('LoginScreen never stores a plaintext password global', !/globalThis\.currentPassword\s*=/.test(loginScreenSrc));
+hostCheck('AuthContext.login marks the session signed in', /setState\(\{[^}]*isLoggedIn: true/.test(authCtxSrc) && /globalThis\.currentAccountId = accountId/.test(authCtxSrc));
+hostCheck('AuthContext.logout clears the session', /setState\(\{[^}]*isLoggedIn: false/.test(authCtxSrc));
+hostCheck('UserAccount does not require a password global', !/currentPassword/.test(read('screens/account/UserAccount.tsx')));
 // ─── 4b. Parse the REAL funnel event names from the union type ─────────
 // The four names are never retyped in the suite: FUNNEL_NAMES comes from this
 // parse of services/funnelService.ts, so a rename decouples and fails loudly.
