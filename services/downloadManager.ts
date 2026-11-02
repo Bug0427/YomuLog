@@ -43,6 +43,13 @@ export type DownloadJob = {
   /** ISO timestamp set when the job reaches 'completed' (G-2) */
   completedAt?: string;
   retryCount: number;
+  /**
+   * True when this job has already been counted in the KPI-3 `totalFailed`
+   * counter (retries exhausted). If the chapter is later recovered and
+   * completes, the completion moves the count from `failed` to `completed`
+   * instead of leaving one chapter counted twice.
+   */
+  failedCounted?: boolean;
   /** Absolute local directory where pages are stored */
   localDir?: string;
 };
@@ -84,11 +91,11 @@ export class DownloadLimitError extends Error {
  * Raised when a chapter download finishes with fewer pages than the server
  * reported. Completeness is a gate, not a hint: a corrupt/empty download must
  * never be recorded as completed (KPI-3 "completed without error or
- * corruption"). A page-level failure is treated as a permanent failure on the
- * first attempt — retrying the same failing pages cannot repair a corrupt
- * chapter — while transient network errors keep the existing
- * retry-to-MAX_RETRIES path. The user can still re-enqueue a failed job later
- * (recovery path resets retryCount → status 'pending').
+ * corruption"). Like a transient network error it stays retryable up to
+ * MAX_RETRIES and is counted as a failure only once those retries are
+ * exhausted — never per attempt — so one corrupt chapter cannot read as three
+ * failures. The user can still re-enqueue a failed job later (recovery path
+ * resets retryCount → status 'pending').
  */
 export class DownloadIncompleteError extends Error {
   constructor(written: number, expected: number) {
@@ -148,9 +155,9 @@ async function incrementReliability(delta: ReliabilityDelta): Promise<void> {
   const op = reliabilityChain.then(async () => {
     const stats = await getDownloadReliabilityStats();
     await setJson(RELIABILITY_KEY, {
-      totalCompleted: stats.totalCompleted + (delta.completed ?? 0),
-      totalFailed: stats.totalFailed + (delta.failed ?? 0),
-      webSimulatedCompleted: stats.webSimulatedCompleted + (delta.webSimulatedCompleted ?? 0),
+      totalCompleted: Math.max(0, stats.totalCompleted + (delta.completed ?? 0)),
+      totalFailed: Math.max(0, stats.totalFailed + (delta.failed ?? 0)),
+      webSimulatedCompleted: Math.max(0, stats.webSimulatedCompleted + (delta.webSimulatedCompleted ?? 0)),
     });
   });
   // Keep the chain alive even if this op fails — later increments must still
@@ -192,12 +199,21 @@ export async function isCachedPremium(): Promise<boolean> {
   }
 }
 
-/** Chapters currently queued (non-failed) or already downloaded. */
+/** Chapters currently queued (non-failed) or already downloaded — each counted ONCE. */
 export async function getDownloadUsage(): Promise<number> {
   const queue = await getDownloadQueue();
-  const queued = queue.filter((j) => j.status !== 'failed').length;
-  const downloaded = (await getDownloadedChapters()).length;
-  return queued + downloaded;
+  const downloaded = await getDownloadedChapters();
+  // A completed job appears BOTH in the queue and in the downloaded index.
+  // Counting both lists double-counted every finished chapter, so a free user
+  // could only ever complete 3 of the 5 free-tier slots (D-4). Count distinct
+  // chapters instead: queue entries (pending/downloading/completed) plus index
+  // entries, keyed by chapterId.
+  const chapters = new Set<string>();
+  for (const job of queue) {
+    if (job.status !== 'failed') chapters.add(job.chapterId);
+  }
+  for (const chapter of downloaded) chapters.add(chapter.chapterId);
+  return chapters.size;
 }
 
 /** Free-tier allowance snapshot for the UI (upsell prompt at the cap). */
@@ -433,6 +449,11 @@ export async function processNextDownload(): Promise<boolean> {
     }
 
     // 4. Mark as completed
+    // A job that was already counted as a permanent failure (retries
+    // exhausted) and is now recovered by a re-download must be counted ONCE:
+    // the completion below moves the count from failed → completed.
+    const reclassifyFailure = job.failedCounted === true;
+    job.failedCounted = false;
     job.status = 'completed';
     job.progress = 100;
     job.localDir = localDir;
@@ -458,7 +479,9 @@ export async function processNextDownload(): Promise<boolean> {
     if (isWeb) {
       await incrementReliability({ webSimulatedCompleted: 1 });
     } else {
-      await incrementReliability({ completed: 1 });
+      await incrementReliability(
+        reclassifyFailure ? { completed: 1, failed: -1 } : { completed: 1 },
+      );
     }
 
     return true;
@@ -467,21 +490,22 @@ export async function processNextDownload(): Promise<boolean> {
     job.errorMessage = err?.message ?? 'Unknown error';
     const baseDir = await resolveBaseDir();
     job.localDir = `${baseDir}${job.mangaId}/${job.chapterId}/`;
+
+    // G-2 / KPI-3: one chapter is ONE outcome. A failed attempt is only a real
+    // failure once retries are exhausted (retryCount >= MAX_RETRIES) — an
+    // incomplete/corrupt chapter and a transient network error both stay
+    // retryable (processNextDownload re-picks `failed && retryCount < MAX`), so
+    // counting per attempt made one corrupt chapter read as 3 failures, and a
+    // chapter that failed once then succeeded read as 50% reliability.
+    // `failedCounted` remembers the count so a later successful re-download
+    // moves it to `completed` instead of double-counting the chapter.
+    const countedFailure = !isWeb && job.retryCount >= MAX_RETRIES;
+    if (countedFailure) job.failedCounted = true;
     touchJob(job);
     await saveQueue(queue);
 
-    // G-2: count only permanent failures as a failure — a retryable attempt
-    // that will be retried isn't a final outcome. Two permanent cases:
-    //  (a) retries exhausted (retryCount >= MAX_RETRIES, transient errors);
-    //  (b) an incomplete chapter download (DownloadIncompleteError): the
-    //      chapter is provably corrupt (fewer pages than the server
-    //      reported), retrying the same failing pages cannot repair it, so it
-    //      is counted as a real failure on the first attempt (KPI-3).
     // Web downloads are simulated → excluded from the real counters.
-    if (
-      !isWeb &&
-      (job.retryCount >= MAX_RETRIES || err instanceof DownloadIncompleteError)
-    ) {
+    if (countedFailure) {
       await incrementReliability({ failed: 1 });
     }
     return false;
@@ -648,17 +672,21 @@ async function handleCorruptedDownload(chapter: DownloadedChapter): Promise<void
   // processNextDownload/retryFailedDownloads picks it up again.
   const queue = await getDownloadQueue();
   const job = queue.find((j) => j.chapterId === chapter.chapterId);
+  // A corrupted completed download is a failed outcome for the reliability
+  // rate, counted ONCE here; `failedCounted` lets a successful re-download move
+  // that count to `completed` instead of leaving the chapter counted twice.
+  const countedFailure = !isWeb;
   if (job) {
     job.status = 'failed';
     job.errorMessage = 'Download corrupted (missing or empty pages) — retry to re-download';
     job.retryCount = 0;
     job.completedAt = undefined;
+    if (countedFailure) job.failedCounted = true;
     touchJob(job);
     await saveQueue(queue);
   }
 
-  // A corrupted completed download is a failed outcome for the reliability rate
-  if (!isWeb) {
+  if (countedFailure) {
     await incrementReliability({ failed: 1 });
   }
 }

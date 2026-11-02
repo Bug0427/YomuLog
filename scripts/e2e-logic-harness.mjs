@@ -64,11 +64,14 @@ for (const dir of ['services', 'utils']) {
 
 // ─── 2. Append .ts to relative import/export specifiers (Node ESM) ────
 const EXT_RE = /\.(ts|js|mjs|cjs|json|png|jpe?g|gif|svg|webp|ttf|otf)$/;
+// Handles static (`from './x'`, `import './x'`) AND dynamic (`import('./x')`)
+// specifiers: the services lazy-load some modules with `await import(...)`
+// (e.g. cloudPrefs → preferencesService), and Node cannot resolve those
+// without an explicit extension — an unrewritten dynamic import rejects at
+// runtime and silently drops the whole scope.
+const IMPORT_RE = /((?:from\s+['"]|import\s*\(\s*['"]|import\s+['"]))(\.\.?\/[^'"]+?)(['"])/g;
 function fixImports(code) {
-  return code.replace(
-    /((?:from|import)\s+['"])(\.\.?\/[^'"]+?)(['"])/g,
-    (m, pre, spec, post) => (EXT_RE.test(spec) ? m : pre + spec + '.ts' + post),
-  );
+  return code.replace(IMPORT_RE, (m, pre, spec, post) => (EXT_RE.test(spec) ? m : pre + spec + '.ts' + post));
 }
 function walk(dir) {
   const out = [];
@@ -206,7 +209,15 @@ export default { documentDirectory, downloadAsync, makeDirectoryAsync, getInfoAs
 `,
   'legacy.js': `const ok = { status: 200, uri: '/tmp/e2e-fs/file' };
 const documentDirectory = '/tmp/e2e-fs/';
-const downloadAsync = async () => ok;
+// globalThis.__pageFailures lets the suite simulate an INCOMPLETE chapter
+// download (pages fail -> DownloadIncompleteError) on the native pass.
+const downloadAsync = async () => {
+  if (globalThis.__pageFailures > 0) {
+    globalThis.__pageFailures -= 1;
+    return { status: 500, uri: '/tmp/e2e-fs/file' };
+  }
+  return ok;
+};
 const makeDirectoryAsync = async () => {};
 const getInfoAsync = async () => ({ exists: true, size: 1 });
 const readDirectoryAsync = async () => [];
@@ -632,6 +643,27 @@ setSuite('D.download-state-machine-' + PLATFORM);
   assertEq('free tier: 6th download throws DownloadLimitError', capThrew, true);
   await AS.clear(); // drop the cap-test jobs so the queue is clean for the next scenario
 
+  // D-4 regression: the free-tier cap must count each chapter ONCE. A finished
+  // chapter exists BOTH as a completed queue job AND as a downloaded-index
+  // entry; adding both lists let a free user complete only 3 of the 5 slots.
+  await AS.setItem(PREMIUM_KEY, 'true');
+  for (let i = 1; i <= 4; i++) {
+    await dm.enqueueDownload('used-' + i, 'usedm', 'Used Manga', String(i));
+    await dm.processNextDownload();
+  }
+  const doneJobs = (await dm.getDownloadQueue()).filter((x) => x.status === 'completed').length;
+  assertEq('cap: 4 chapters completed', doneJobs, 4);
+  assertEq('cap: 4 chapters in the downloaded index', (await dm.getDownloadedChapters()).length, 4);
+  await AS.setItem(PREMIUM_KEY, 'false');
+  const allow4 = await dm.getDownloadAllowance();
+  assertEq('cap: 4 completed chapters use 4 slots (not 8)', allow4.used, 4);
+  const fifth = await dm.enqueueDownload('used-5', 'usedm', 'Used Manga', '5');
+  assertEq('cap: 5th chapter allowed for a free user', fifth.status, 'pending');
+  let sixthThrew = false;
+  try { await dm.enqueueDownload('used-6', 'usedm', 'Used Manga', '6'); } catch (e) { sixthThrew = e instanceof dm.DownloadLimitError; }
+  assertEq('cap: 6th chapter blocked at the free-tier cap', sixthThrew, true);
+  await AS.clear(); // counters reset so the next scenario starts from zero
+
   // premium flow: success cycle
   await AS.setItem(PREMIUM_KEY, 'true');
   const job = await dm.enqueueDownload('ch-ok', 'm1', 'Manga One', '1', 'First chapter');
@@ -684,9 +716,54 @@ setSuite('D.download-state-machine-' + PLATFORM);
   assertEq('recovery: reprocessed to completed', j.status, 'completed');
   const rel3 = await dm.getDownloadReliabilityStats();
   if (PLATFORM === 'web') {
-    assertEq('web: recovery counted as simulated', rel3.webSimulatedCompleted, 2);
+    // Counters were cleared at the start of this scenario, so one recovered
+    // chapter is one simulated completion (the earlier "2" assumed the wiped
+    // success-cycle count was still there).
+    assertEq('web: recovery counted as simulated', rel3.webSimulatedCompleted, 1);
   } else {
-    assertEq('ios: recovery counted as completed', rel3.totalCompleted, 2);
+    // One chapter is ONE outcome: the failure counted at exhaustion is
+    // re-bucketed to completed on recovery instead of leaving the chapter
+    // counted twice (which read as 50% reliability for one download).
+    assertEq('ios: recovery counted as completed', rel3.totalCompleted, 1);
+    assertEq('ios: recovery re-buckets the failure (chapter counted once)', rel3.totalFailed, 0);
+    const recoveredRate = await dm.getDownloadReliabilityRate();
+    assertEq('ios: recovery keeps reliability at 100%', recoveredRate.rate, 1);
+  }
+
+  // KPI-3: an incomplete (corrupt) chapter is counted ONCE, only once retries
+  // are exhausted — never once per attempt (one corrupt chapter used to read as
+  // 3 failures). Native only: on web every page download is simulated 200.
+  await AS.clear();
+  await AS.setItem(PREMIUM_KEY, 'true');
+  if (PLATFORM === 'web') {
+    assert(true, 'web: incomplete-download counting not applicable (downloads simulated)');
+  } else {
+    await dm.enqueueDownload('ch-corrupt', 'm4', 'Manga Four', '4');
+    (globalThis as any).__pageFailures = 999; // every page download fails -> incomplete
+    for (let i = 0; i < 4; i++) { await dm.processNextDownload(); }
+    const cq = await dm.getDownloadQueue();
+    const cj = cq.find((x) => x.chapterId === 'ch-corrupt');
+    assertEq('incomplete: still retryable, ends failed after exhaustion', cj.status, 'failed');
+    assertEq('incomplete: retryCount == MAX_RETRIES', cj.retryCount, MAX_RETRIES);
+    assertEq('incomplete: never recorded in the downloaded index', (await dm.getDownloadedChapters()).length, 0);
+    const rel4 = await dm.getDownloadReliabilityStats();
+    assertEq('ios: one corrupt chapter = ONE failure (not 3)', rel4.totalFailed, 1);
+    (globalThis as any).__pageFailures = 0;
+
+    // Incomplete on attempt 1, pages recover on the automatic re-pick: one
+    // chapter, counted completed once, zero failures (not 50% reliability).
+    await AS.clear();
+    await AS.setItem(PREMIUM_KEY, 'true');
+    await dm.enqueueDownload('ch-flaky', 'm5', 'Manga Five', '5');
+    (globalThis as any).__pageFailures = 3;
+    await dm.processNextDownload();
+    (globalThis as any).__pageFailures = 0;
+    await dm.processNextDownload();
+    const rel5 = await dm.getDownloadReliabilityStats();
+    assertEq('flaky: incomplete-then-success = 1 completed, 0 failed',
+      [rel5.totalCompleted, rel5.totalFailed], [1, 0]);
+    const flakyRate = await dm.getDownloadReliabilityRate();
+    assertEq('flaky: reliability 100% for one chapter', flakyRate.rate, 1);
   }
 
   // interrupted-download recovery: a job stuck in 'downloading' is reconciled.

@@ -620,7 +620,10 @@ if (PASS === 'configured' && PLATFORM === 'ios') {
   assertEq('recovery: reprocessed to completed', reprocessed, true);
   rel = await dm.getDownloadReliabilityStats();
   assertEq('recovery: completed +1, not doubled (past failure does not re-count)', rel.totalCompleted, 2);
-  assertEq('recovery: failed counter stays 1 (failure already counted at exhaustion)', rel.totalFailed, 1);
+  // One chapter is ONE outcome: the recovery moves the count from failed to
+  // completed instead of leaving ch-fail counted twice (which read as 50%).
+  assertEq('recovery: failure re-bucketed to completed (chapter counted once)', rel.totalFailed, 0);
+  assertEq('recovery: rate back to 100% (2 chapters, 2 completed)', (await dm.getDownloadReliabilityRate()).rate, 1);
   // ── scenario 4: all pages fail at page level (HTTP 500, no throw) ──
   // KPI-3 counts "successfully completed without error or corruption" — a
   // download where every page returns non-200 has downloaded ZERO pages and
@@ -635,7 +638,15 @@ if (PASS === 'configured' && PLATFORM === 'ios') {
   const zj = q.find((x) => x.chapterId === 'ch-zeropage');
   rel = await dm.getDownloadReliabilityStats();
   assertEq('zero-page download: status failed (not completed)', zj.status, 'failed');
-  assertEq('zero-page download: totalFailed +1 (not completed)', rel.totalFailed, 2);
+  assertEq('zero-page download: not counted before retries are exhausted', rel.totalFailed, 0);
+  // Drain the retries: ONE corrupt chapter is ONE failure, not one per attempt.
+  for (let i = 0; i < 3; i++) { await dm.processNextDownload(); }
+  q = await dm.getDownloadQueue();
+  const zj2 = q.find((x) => x.chapterId === 'ch-zeropage');
+  rel = await dm.getDownloadReliabilityStats();
+  assertEq('zero-page download: retries exhausted', zj2.retryCount, 3);
+  assertEq('zero-page download: totalFailed +1 once (not per attempt)', rel.totalFailed, 1);
+  fsLegacy.__setPageDownloadFail(false);
 }
 // ══════════════════════════════════════════════════════════════════════
 // summary
