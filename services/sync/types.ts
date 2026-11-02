@@ -48,6 +48,8 @@ export type SyncPayloadDownloads = {
     downloadedPages: number;
     errorMessage?: string;
     createdAt: string;
+    /** Local mutation stamp — the LWW key (see services/sync/syncCore.ts). */
+    updatedAt?: string;
     retryCount: number;
     localDir?: string;
   }>;

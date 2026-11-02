@@ -33,6 +33,13 @@ export type DownloadJob = {
   downloadedPages: number;
   errorMessage?: string;
   createdAt: string;         // ISO timestamp
+  /**
+   * ISO timestamp of the last LOCAL mutation of this job — the LWW key the sync
+   * engine compares against the cloud row's `updated_at`. `createdAt` never
+   * moves, so it cannot evidence a later status/progress change. Absent on jobs
+   * written before this stamp existed; the sync merge falls back to `createdAt`.
+   */
+  updatedAt?: string;
   /** ISO timestamp set when the job reaches 'completed' (G-2) */
   completedAt?: string;
   retryCount: number;
@@ -240,6 +247,16 @@ async function saveQueue(queue: DownloadJob[]): Promise<void> {
   await setJson(DOWNLOAD_QUEUE_KEY, queue);
 }
 
+/**
+ * Stamp a job's local mutation time. This is the last-write-wins key the sync
+ * engine compares against the cloud row's `updated_at`: `createdAt` alone
+ * cannot evidence a later status/progress change, so every mutation of a job
+ * must call this before it is persisted.
+ */
+function touchJob(job: DownloadJob): void {
+  job.updatedAt = new Date().toISOString();
+}
+
 /** Add a chapter to the download queue. */
 export async function enqueueDownload(
   chapterId: string,
@@ -263,6 +280,7 @@ export async function enqueueDownload(
     existing.downloadedPages = 0;
     existing.errorMessage = undefined;
     existing.retryCount = 0;
+    touchJob(existing);
     await saveQueue(queue);
     return existing;
   }
@@ -286,6 +304,7 @@ export async function enqueueDownload(
     createdAt: new Date().toISOString(),
     retryCount: 0,
   };
+  touchJob(job);
 
   queue.push(job);
   await saveQueue(queue);
@@ -357,6 +376,7 @@ export async function processNextDownload(): Promise<boolean> {
   // Mark as downloading
   job.status = 'downloading';
   job.retryCount += 1;
+  touchJob(job);
   await saveQueue(queue);
 
   try {
@@ -393,6 +413,7 @@ export async function processNextDownload(): Promise<boolean> {
       // Update progress — persist at milestones to reduce AsyncStorage writes
       job.downloadedPages = downloaded;
       job.progress = Math.round((downloaded / pageUrls.length) * 100);
+      touchJob(job);
       const milestone = Math.floor(job.progress / 10);
       if (milestone > lastPersistedMilestone) {
         await saveQueue(queue);
@@ -416,6 +437,7 @@ export async function processNextDownload(): Promise<boolean> {
     job.progress = 100;
     job.localDir = localDir;
     job.completedAt = new Date().toISOString();
+    touchJob(job);
     await saveQueue(queue);
 
     // 5. Record in downloaded chapters index
@@ -445,6 +467,7 @@ export async function processNextDownload(): Promise<boolean> {
     job.errorMessage = err?.message ?? 'Unknown error';
     const baseDir = await resolveBaseDir();
     job.localDir = `${baseDir}${job.mangaId}/${job.chapterId}/`;
+    touchJob(job);
     await saveQueue(queue);
 
     // G-2: count only permanent failures as a failure — a retryable attempt
@@ -533,12 +556,14 @@ export async function resumeInterruptedDownloads(): Promise<number> {
       job.retryCount = 0;
       job.errorMessage = undefined;
       job.localDir = localDir;
+      touchJob(job);
       resumed++;
     } else if (job.status === 'downloading') {
       job.status = 'pending';
       job.retryCount = 0;
       job.errorMessage = undefined;
       job.localDir = localDir;
+      touchJob(job);
       resumed++;
     }
   }
@@ -562,6 +587,7 @@ export async function retryFailedDownloads(): Promise<number> {
     job.progress = 0;
     job.downloadedPages = 0;
     job.errorMessage = undefined;
+    touchJob(job);
   }
   await saveQueue(queue);
   await processAllDownloads();
@@ -627,6 +653,7 @@ async function handleCorruptedDownload(chapter: DownloadedChapter): Promise<void
     job.errorMessage = 'Download corrupted (missing or empty pages) — retry to re-download';
     job.retryCount = 0;
     job.completedAt = undefined;
+    touchJob(job);
     await saveQueue(queue);
   }
 

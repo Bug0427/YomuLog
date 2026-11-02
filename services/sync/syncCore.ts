@@ -157,12 +157,22 @@ export function mergeLWW<T extends Record<string, unknown>>(
 //   3. PUSH  — upsert ONLY local rows that are absent in the cloud or whose
 //              user-visible fields DIFFER from the cloud copy. Rows the cloud
 //              won at merge time are identical to the cloud row, so they are
-//              never re-pushed (no unbounded clobbering). Field-diff — not a
-//              timestamp-only comparison — is required because production
-//              local records carry NO updatedAt: favourites stamp only
-//              bookmarkedAt (a readingStatus-only change leaves it untouched)
-//              and download jobs stamp only createdAt. A timestamp-only push
-//              silently drops exactly those local mutations.
+//              never re-pushed (no unbounded clobbering).
+//
+// THE LWW KEY IS THE LOCAL MUTATION STAMP, NOT THE FIELD DIFF.
+// A field diff only says the two sides disagree — never which one is newer — so
+// merging on it (or on an unrelated field like bookmarkedAt/createdAt) makes the
+// last device to sync win instead of the last write: a stale device that changed
+// nothing would overwrite another device's newer status. Every local mutation
+// therefore stamps `updatedAt` (favoritesService / downloadManager), and that
+// stamp is compared against the cloud row's `updated_at` in BOTH directions:
+// the cloud is adopted when its `updated_at` is strictly newer, and a local row
+// is pushed with `updated_at` set to its own stamp (not `isoNow()`, which would
+// make every push look like a fresh write and defeat the comparison next time).
+// Legacy records written before the stamp existed fall back to bookmarkedAt /
+// createdAt; they can lose one race against a cloud row whose `updated_at` is a
+// newer legacy push watermark, which is the only deterministic choice available
+// for records that carry no mutation evidence.
 
 /** Compare a value on both sides, treating undefined/null as equal and
  *  normalising arrays/objects to a stable string (field order preserved). */
@@ -170,6 +180,40 @@ function sameValue(a: unknown, b: unknown): boolean {
   const norm = (v: unknown): unknown =>
     v !== null && typeof v === 'object' ? JSON.stringify(v) : (v ?? null);
   return norm(a) === norm(b);
+}
+
+/**
+ * True when `candidate` is a strictly newer ISO timestamp than `reference`.
+ * Missing/unparseable timestamps sort oldest, so a record without a stamp can
+ * never win against one that has it, and two unstamped records tie.
+ * (String comparison is wrong here: Postgres emits `...:00.5+00:00` while
+ * `toISOString()` emits `...:00.500Z` — only Date parsing compares them right.)
+ */
+function isNewer(candidate: unknown, reference: unknown): boolean {
+  const a = typeof candidate === 'string' ? Date.parse(candidate) : NaN;
+  const b = typeof reference === 'string' ? Date.parse(reference) : NaN;
+  if (Number.isNaN(a)) return false;
+  if (Number.isNaN(b)) return true;
+  return a > b;
+}
+
+/**
+ * The local mutation stamp of a favourite — the LWW key. `updatedAt` is written
+ * by favoritesService on every mutation; records created before that stamp
+ * existed fall back to `bookmarkedAt` (their only local write evidence).
+ */
+function favoriteLocalStamp(f: BookmarkedManga): string {
+  return f.updatedAt ?? f.bookmarkedAt ?? '';
+}
+
+/**
+ * The local mutation stamp of a download job — same contract as
+ * favoriteLocalStamp; legacy jobs fall back to `createdAt`.
+ */
+function downloadLocalStamp(
+  d: SyncPayloadDownloads['items'][number],
+): string {
+  return d.updatedAt ?? d.createdAt ?? '';
 }
 
 function favoriteDiffersFromCloud(
@@ -241,6 +285,9 @@ function adoptDownloadRow(
     localDir: cloudRow.local_dir,
     createdAt: cloudRow.created_at,
     retryCount: cloudRow.retry_count,
+    // The cloud row's own mutation stamp becomes the local record's, so the
+    // next comparison on this device is stamp-against-stamp.
+    updatedAt: cloudRow.updated_at,
   };
 }
 
@@ -257,12 +304,12 @@ export async function syncFavoritesReal(userId: string): Promise<void> {
   const raw = await AsyncStorage.getItem(KEYS.LOCAL_FAVORITES);
   const local: BookmarkedManga[] = raw ? JSON.parse(raw) : [];
 
-  // 2) MERGE: adopt the cloud copy only when its bookmarked_at is strictly
-  //    newer; tie → keep local (deterministic).
+  // 2) MERGE: adopt the cloud copy only when its updated_at is strictly newer
+  //    than the local mutation stamp; tie → keep local (deterministic).
   const localMap = new Map(local.map((f) => [f.mangaId, f]));
   for (const cloudRow of cloud) {
     const existing = localMap.get(cloudRow.manga_id);
-    if (!existing || new Date(cloudRow.bookmarked_at) > new Date(existing.bookmarkedAt)) {
+    if (!existing || isNewer(cloudRow.updated_at, favoriteLocalStamp(existing))) {
       localMap.set(cloudRow.manga_id, {
         mangaId: cloudRow.manga_id,
         mangaTitle: cloudRow.manga_title,
@@ -270,6 +317,7 @@ export async function syncFavoritesReal(userId: string): Promise<void> {
         genres: cloudRow.genres,
         bookmarkedAt: cloudRow.bookmarked_at,
         readingStatus: cloudRow.reading_status,
+        updatedAt: cloudRow.updated_at,
       });
     }
   }
@@ -277,8 +325,8 @@ export async function syncFavoritesReal(userId: string): Promise<void> {
   await AsyncStorage.setItem(KEYS.LOCAL_FAVORITES, JSON.stringify(merged));
 
   // 3) PUSH rows that are absent in the cloud or differ from the cloud copy.
-  //    Production favourites carry no updatedAt — a readingStatus-only change
-  //    leaves bookmarkedAt untouched, so it is only detectable as a field diff.
+  //    The row carries its own mutation stamp as updated_at so the next sync
+  //    (on this or any other device) compares like with like.
   const cloudMap = new Map(cloud.map((c) => [c.manga_id, c]));
   const toPush = merged.filter((f) => {
     const cloudRow = cloudMap.get(f.mangaId);
@@ -293,7 +341,7 @@ export async function syncFavoritesReal(userId: string): Promise<void> {
       genres: f.genres ?? null,
       bookmarked_at: f.bookmarkedAt,
       reading_status: f.readingStatus,
-      updated_at: isoNow(),
+      updated_at: favoriteLocalStamp(f) || isoNow(),
     }));
     const { error: pushErr } = await supabase
       .from('user_library')
@@ -382,16 +430,12 @@ export async function syncDownloadsReal(userId: string): Promise<void> {
   const rawQ = await AsyncStorage.getItem(KEYS.LOCAL_DOWNLOAD_QUEUE);
   const queue: SyncPayloadDownloads['items'] = rawQ ? JSON.parse(rawQ) : [];
 
-  // 2) MERGE. The cloud adopts only when it is genuinely newer:
-  //    - when the local row carries an explicit updatedAt, compare
-  //      cloud.updated_at against it (explicit local change evidence);
-  //    - production downloads carry NO updatedAt (downloadManager stamps only
-  //      createdAt). The cloud's updated_at on such rows is a sync watermark
-  //      (the legacy push stamped isoNow() at every push), NOT evidence the
-  //      download state changed — so the only honest cloud evidence is
-  //      created_at: a cloud row created AFTER the local job is a newer job
-  //      and wins; otherwise the local copy's semantic state (status/progress)
-  //      is the ground truth and must be preserved and propagated.
+  // 2) MERGE. The cloud wins only when its updated_at is strictly newer than
+  //    the local mutation stamp (downloadManager stamps `updatedAt` on every
+  //    status/progress change). Legacy jobs written before that stamp existed
+  //    fall back to `createdAt`; their cloud copy's updated_at is an old push
+  //    watermark, so the cloud wins that one race — the only deterministic
+  //    choice for a record that carries no mutation evidence.
   const localMap = new Map(queue.map((d) => [d.jobId, d]));
   for (const cloudRow of cloud) {
     const existing = localMap.get(cloudRow.job_id) as any;
@@ -399,16 +443,15 @@ export async function syncDownloadsReal(userId: string): Promise<void> {
       localMap.set(cloudRow.job_id, adoptDownloadRow(cloudRow));
       continue;
     }
-    const cloudWins =
-      existing.updatedAt !== undefined
-        ? new Date(cloudRow.updated_at) > new Date(existing.updatedAt)
-        : new Date(cloudRow.created_at) > new Date(existing.createdAt);
-    if (cloudWins) localMap.set(cloudRow.job_id, adoptDownloadRow(cloudRow));
+    if (isNewer(cloudRow.updated_at, downloadLocalStamp(existing))) {
+      localMap.set(cloudRow.job_id, adoptDownloadRow(cloudRow));
+    }
   }
   const merged = Array.from(localMap.values());
   await AsyncStorage.setItem(KEYS.LOCAL_DOWNLOAD_QUEUE, JSON.stringify(merged));
 
-  // 3) PUSH rows absent in the cloud or differing from the cloud copy.
+  // 3) PUSH rows absent in the cloud or differing from the cloud copy, carrying
+  //    the local mutation stamp as updated_at (see favorites above).
   const cloudMap = new Map(cloud.map((c: any) => [c.job_id, c]));
   const toPush = merged.filter((d) => {
     const cloudRow = cloudMap.get(d.jobId);
@@ -431,7 +474,7 @@ export async function syncDownloadsReal(userId: string): Promise<void> {
       local_dir: d.localDir ?? null,
       retry_count: d.retryCount,
       created_at: d.createdAt,
-      updated_at: isoNow(),
+      updated_at: downloadLocalStamp(d) || isoNow(),
     }));
     const { error: pushErr } = await supabase
       .from('download_queue')
