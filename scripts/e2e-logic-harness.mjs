@@ -487,6 +487,134 @@ setSuite('C.sync-real-scopes');
 }
 
 // ══════════════════════════════════════════════════════════════════════
+// SUITE C2 — TWO devices, ONE cloud: cross-device last-write-wins
+// The regression this suite locks down: device B marks a favourite completed
+// and syncs; stale device A (which changed nothing) then syncs, keeps
+// 'reading' and pushes it back, so the cloud reverts to whichever device
+// synced last instead of the last write.
+// Devices are two independent AsyncStorage snapshots; the fake Supabase
+// tables are the single shared cloud.
+// ══════════════════════════════════════════════════════════════════════
+setSuite('C2.multi-device-lww');
+{
+  const favsSvc = await import('./services/favoritesService.ts');
+  const mdKeys = [K.LOCAL_FAVORITES, K.LOCAL_PROGRESS, K.LOCAL_DOWNLOAD_QUEUE];
+  const dev = { A: {}, B: {} };
+  const saveDev = async (d) => { for (const k of mdKeys) dev[d][k] = await AS.getItem(k); };
+  const loadDev = async (d) => {
+    for (const k of mdKeys) {
+      if (dev[d][k] == null) await AS.removeItem(k); else await AS.setItem(k, dev[d][k]);
+    }
+    // Sync stays off so a stray favoritesService.scheduleSync() timer cannot
+    // run a full sync mid-scenario; these tests drive each scope explicitly.
+    await AS.setItem(K.SYNC_STATE, JSON.stringify({ status: 'pending', lastSyncedAt: null, lastError: null, syncEnabled: false, scopeTimestamps: {} }));
+  };
+  const local = (d, k) => JSON.parse(dev[d][k] || '[]');
+  const setLocal = (d, k, v) => { dev[d][k] = JSON.stringify(v); };
+  const syncAs = async (d) => {
+    await loadDev(d);
+    await sync.syncFavoritesReal('user-1');
+    await sync.syncProgressReal('user-1');
+    await sync.syncDownloadsReal('user-1');
+    await saveDev(d);
+  };
+  const cloudFav = (id) => __db.dump('user_library').find((r) => r.manga_id === id);
+  const cloudJob = (id) => __db.dump('download_queue').find((r) => r.job_id === id);
+  const PREMIUM_KEY = '@YomuLog:premium';
+
+  __db.clear();
+  __db.session = { user: { id: 'user-1' } };
+  await AS.clear();
+
+  // Both devices and the cloud agree; legacy record shape (no updatedAt yet).
+  const fav = { mangaId: 'F1', mangaTitle: 'Fav', bookmarkedAt: '2026-01-01T00:00:00Z', readingStatus: 'reading' };
+  for (const d of ['A', 'B']) {
+    setLocal(d, K.LOCAL_FAVORITES, [fav]);
+    setLocal(d, K.LOCAL_PROGRESS, []);
+    setLocal(d, K.LOCAL_DOWNLOAD_QUEUE, []);
+  }
+  await syncAs('A');
+  await syncAs('B');
+  assertEq('md setup: cloud holds F1 reading', cloudFav('F1').reading_status, 'reading');
+
+  // 1. The local mutation path stamps updatedAt — the LWW key.
+  await loadDev('B');
+  await favsSvc.updateReadingStatus('F1', 'completed');
+  const bFavs = JSON.parse((await AS.getItem(K.LOCAL_FAVORITES)) || '[]');
+  assertEq('md B: readingStatus change applied', bFavs[0].readingStatus, 'completed');
+  assert(typeof bFavs[0].updatedAt === 'string' && !Number.isNaN(Date.parse(bFavs[0].updatedAt)),
+    'md B: local mutation stamps updatedAt', 'updatedAt=' + JSON.stringify(bFavs[0].updatedAt));
+  await saveDev('B');
+
+  // 2. B syncs: its newer stamp reaches the cloud.
+  await syncAs('B');
+  assertEq('md B: newer status reached cloud', cloudFav('F1').reading_status, 'completed');
+  assertEq('md B: cloud row carries the local mutation stamp', cloudFav('F1').updated_at, bFavs[0].updatedAt);
+
+  // 3. Stale device A changed nothing — it must adopt, never revert.
+  await syncAs('A');
+  assertEq('md A: stale device adopts newer status (LWW)', local('A', K.LOCAL_FAVORITES)[0].readingStatus, 'completed');
+  assertEq('md A: stale device does NOT revert the cloud', cloudFav('F1').reading_status, 'completed');
+
+  // 4. B syncs again: no ping-pong.
+  await syncAs('B');
+  assertEq('md B: still completed after A synced', local('B', K.LOCAL_FAVORITES)[0].readingStatus, 'completed');
+  assertEq('md cloud: still completed', cloudFav('F1').reading_status, 'completed');
+
+  // 5. Control: a genuinely newer change on A must still win (the rule is
+  //    last-write-wins, not cloud-always-wins). The fake cloud resolves in
+  //    microtasks, so several syncs can land in the same millisecond — the tick
+  //    keeps the two writes in distinct milliseconds so a clock tie cannot
+  //    decide the assertion instead of the rule under test.
+  await new Promise((r) => setTimeout(r, 5));
+  await loadDev('A');
+  await favsSvc.updateReadingStatus('F1', 'on_hold');
+  await saveDev('A');
+  await syncAs('A');
+  assertEq('md A: newer local change wins the cloud', cloudFav('F1').reading_status, 'on_hold');
+  await syncAs('B');
+  assert(local('B', K.LOCAL_FAVORITES)[0].readingStatus === 'on_hold',
+    'md B: adopts the newer A change',
+    'actual=' + JSON.stringify(local('B', K.LOCAL_FAVORITES)[0].readingStatus) +
+    ' expected="on_hold" b_updatedAt=' + JSON.stringify(local('B', K.LOCAL_FAVORITES)[0].updatedAt) +
+    ' cloud_updated_at=' + JSON.stringify(cloudFav('F1').updated_at));
+
+  // 6. Download jobs: A creates a job, both devices hold it, B finishes it via
+  //    the real downloadManager, then stale A syncs.
+  await loadDev('A');
+  await AS.setItem(PREMIUM_KEY, 'true');
+  const mdJob = await dm.enqueueDownload('md-ch-1', 'md-m1', 'MD Manga', '1');
+  await saveDev('A');
+  setLocal('B', K.LOCAL_DOWNLOAD_QUEUE, local('A', K.LOCAL_DOWNLOAD_QUEUE));
+  await syncAs('A');
+  await syncAs('B');
+  assertEq('md downloads setup: cloud holds job pending', cloudJob(mdJob.jobId).status, 'pending');
+  assertEq('md downloads setup: B adopted the job', local('B', K.LOCAL_DOWNLOAD_QUEUE)[0].jobId, mdJob.jobId);
+
+  // B completes it through the real download path. The short delay keeps the
+  // completion stamp in a strictly later millisecond than job creation, so the
+  // LWW comparison is decided by the rule under test, not by a clock tie.
+  await loadDev('B');
+  await AS.setItem(PREMIUM_KEY, 'true');
+  await new Promise((r) => setTimeout(r, 5));
+  await dm.processNextDownload();
+  const bQueue = JSON.parse((await AS.getItem(K.LOCAL_DOWNLOAD_QUEUE)) || '[]');
+  assertEq('md B: job completed locally', bQueue[0].status, 'completed');
+  assert(typeof bQueue[0].updatedAt === 'string' && bQueue[0].updatedAt > mdJob.createdAt,
+    'md B: completion stamps a newer updatedAt', 'updatedAt=' + JSON.stringify(bQueue[0].updatedAt) + ' createdAt=' + JSON.stringify(mdJob.createdAt));
+  await saveDev('B');
+  await syncAs('B');
+  assertEq('md B: completion reached cloud', cloudJob(mdJob.jobId).status, 'completed');
+
+  // Stale A (still 'pending') must adopt the completion, not revert it.
+  await syncAs('A');
+  assertEq('md A: stale device adopts completed download', local('A', K.LOCAL_DOWNLOAD_QUEUE)[0].status, 'completed');
+  assertEq('md A: stale device does NOT revert cloud download status', cloudJob(mdJob.jobId).status, 'completed');
+
+  await AS.clear();
+}
+
+// ══════════════════════════════════════════════════════════════════════
 // SUITE D — download queue state machine + KPI-3 counters
 // ══════════════════════════════════════════════════════════════════════
 setSuite('D.download-state-machine-' + PLATFORM);

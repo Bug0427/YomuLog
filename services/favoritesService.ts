@@ -21,6 +21,14 @@ export type BookmarkedManga = {
   genres?: string[];
   bookmarkedAt: string;
   readingStatus: ReadingStatus;
+  /**
+   * ISO timestamp of the last LOCAL mutation of this record — the LWW key the
+   * sync engine compares against the cloud row's `updated_at`. `bookmarkedAt`
+   * only moves when the record is created, so it cannot evidence a later
+   * readingStatus change. Absent on records written before this stamp existed;
+   * the sync merge falls back to `bookmarkedAt` for those.
+   */
+  updatedAt?: string;
 };
 
 export type MangaUpdate = {
@@ -69,7 +77,8 @@ export async function addFavorite(
 ): Promise<void> {
   const list = await getFavoritesRaw();
   if (list.some((m) => m.mangaId === mangaId)) return;
-  list.push({ mangaId, mangaTitle, mangaImage, genres, bookmarkedAt: new Date().toISOString(), readingStatus: 'reading' });
+  const now = new Date().toISOString();
+  list.push({ mangaId, mangaTitle, mangaImage, genres, bookmarkedAt: now, readingStatus: 'reading', updatedAt: now });
   await setJson(STORAGE_KEY, list);
   scheduleSync();
 }
@@ -83,7 +92,15 @@ export async function removeFavorite(mangaId: string): Promise<void> {
 export async function updateReadingStatus(mangaId: string, status: ReadingStatus): Promise<void> {
   const list = await getFavoritesRaw();
   const idx = list.findIndex((m) => m.mangaId === mangaId);
-  if (idx >= 0) { list[idx].readingStatus = status; await setJson(STORAGE_KEY, list); }
+  if (idx >= 0) {
+    if (list[idx].readingStatus !== status) {
+      list[idx].readingStatus = status;
+      // Real mutation stamp — without it a status-only change is invisible to
+      // last-write-wins sync (bookmarkedAt never moves).
+      list[idx].updatedAt = new Date().toISOString();
+    }
+    await setJson(STORAGE_KEY, list);
+  }
   scheduleSync();
 }
 
@@ -179,8 +196,11 @@ export async function updateReadingStatusBatch(
 ): Promise<void> {
   const idSet = new Set(ids);
   const list = await getFavoritesRaw();
+  const now = new Date().toISOString();
   const updated = list.map((m) =>
-    idSet.has(m.mangaId) ? { ...m, readingStatus: status } : m,
+    idSet.has(m.mangaId) && m.readingStatus !== status
+      ? { ...m, readingStatus: status, updatedAt: now }
+      : m,
   );
   await setJson(STORAGE_KEY, updated);
   scheduleSync();
