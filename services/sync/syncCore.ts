@@ -546,8 +546,12 @@ export async function setSyncEnabled(enabled: boolean): Promise<SyncState> {
   if (enabled) {
     await saveSyncState({ syncEnabled: true, status: 'syncing' });
     try {
-      await performFullSync();
-      return await saveSyncState({ status: 'synced', lastSyncedAt: isoNow(), lastError: null });
+      // performFullSync already persists the real outcome — 'synced' with the
+      // per-scope timestamps, or 'error' with the scope errors. Returning that
+      // state keeps a scope-level failure visible: previously this overwrote it
+      // with an unconditional 'synced', so a scope that never synced (no
+      // timestamp) still reported a clean sync.
+      return await performFullSync();
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Unknown sync error';
       return await saveSyncState({ status: 'error', lastError: msg });
